@@ -1,0 +1,57 @@
+# =========================
+# Sistema operativo
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Editores / IDE
+# =========================
+.vscode/
+.idea/
+*.iml
+
+# =========================
+# Node / React
+# =========================
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# =========================
+# Java / Spring Boot
+# =========================
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/.env
+backend/*.log
+
+# =========================
+# Maven
+# =========================
+.mvn/timing.properties
+
+# =========================
+# MySQL / Base de datos
+# =========================
+*.sql.bak
+*.dump
+*.db
+*.sqlite
+*.sqlite3
+
+# =========================
+# Archivos temporales
+# =========================
+*.tmp
+*.temp
+*.bak
+*.swp
