@@ -13,7 +13,7 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:5173") // Permite que tu React aqua se conecte
 public class DisponibilidadSemanalController {
 //
-//    @Autowired
+    @Autowired
     private DisponibilidadSemanalService service;
 
     // GET: http://localhost:8080/api/disponibilidades/estudiante/1/ciclo/1
