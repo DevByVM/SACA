@@ -2,7 +2,7 @@ import React from 'react';
 
 function MateriaForm({ handleSubmit, codigo, setCodigo, nombre, setNombre, uv, setUv }) {
   return (
-    <div className="lg:col-span-2 bg-[#1e293b]/40 border border-slate-800 p-6 rounded-xl shadow-2xl backdrop-blur-sm h-fit">
+    <div className="lg:col-span-2 bg-[#ffffff]/40 border border-slate-800 p-6 rounded-xl shadow-2xl backdrop-blur-sm h-fit">
       <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-5 flex items-center space-x-2 border-b border-slate-800 pb-3">
         <i className="fa-solid fa-square-plus text-pink-500 text-sm"></i>
         <span>Ingresar Nueva Materia</span>

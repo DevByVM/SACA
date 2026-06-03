@@ -1,6 +1,5 @@
 import React from 'react';
 
-// Subcomponente reutilizable para los botones del menú
 function SidebarItem({ id, label, icon, vistaActiva, setVistaActiva }) {
   const isActive = vistaActiva === id;
 
@@ -9,11 +8,14 @@ function SidebarItem({ id, label, icon, vistaActiva, setVistaActiva }) {
       onClick={() => setVistaActiva(id)}
       className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 cursor-pointer ${
         isActive
-          ? "bg-[#1F2937] text-cyan-400 font-semibold shadow-lg shadow-black/20"
-          : "hover:bg-[#1F2937]/50 hover:text-slate-200"
+          ? "bg-[#960000] text-[#eeeeee] font-semibold shadow-md"
+          : "text-[#430000] hover:bg-[#430000]/10"
       }`}
     >
-      <i className={`fa-solid ${icon} text-base ${isActive ? "text-cyan-400" : "text-slate-500"}`}></i>
+      <i className={`fa-solid ${icon} text-base ${
+        isActive ? "text-[#eeeeee]" : "text-[#430000]"
+      }`}></i>
+
       <span>{label}</span>
     </button>
   );
@@ -21,26 +23,28 @@ function SidebarItem({ id, label, icon, vistaActiva, setVistaActiva }) {
 
 function Sidebar({ vistaActiva, setVistaActiva }) {
   return (
-    <aside className="w-full md:w-64 bg-[#111827] text-slate-400 flex flex-col justify-between md:min-h-screen border-b md:border-b-0 md:border-r border-slate-800 font-sans select-none shadow-2xl relative flex-shrink-0">
-      
-      {/* LÍNEA DECORATIVA MORADA IZQUIERDA */}
-      <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-[#6366F1] hidden md:block"></div>
+    <aside className="w-full md:w-64 bg-[#ffffff] flex flex-col justify-between md:min-h-screen border-r border-[#430000]/20 shadow-lg">
+
+      {/* Línea decorativa */}
+      <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-[#960000] hidden md:block"></div>
 
       <div>
-        {/* LOGO Y ENCABEZADO */}
-        <div className="p-5 flex items-center space-x-3 border-b border-gray-800/40 bg-[#1F2937]/30 pl-5 md:pl-7">
-          <div className="text-cyan-400 text-2xl flex items-center justify-center filter drop-shadow-[0_2px_8px_rgba(34,211,238,0.3)]">
+
+        {/* HEADER */}
+        <div className="p-5 flex items-center space-x-3 border-b border-[#430000]/20 bg-[#960000]/10">
+
+          <div className="text-[#960000] text-2xl">
             <i className="fa-solid fa-graduation-cap"></i>
           </div>
-          <h1 className="text-xl font-extrabold text-white tracking-tight">
-            SACA<span className="text-white opacity-90"></span>
+
+          <h1 className="text-xl font-extrabold text-[#430000]">
+            SACA
           </h1>
         </div>
 
-        {/* NAVEGACIÓN PRINCIPAL */}
-        <nav className="p-4 space-y-1 pl-4 md:pl-6">
-          
-          {/* Dashboard */}
+        {/* NAV */}
+        <nav className="p-4 space-y-1">
+
           <SidebarItem 
             id="dashboard" 
             label="Dashboard" 
@@ -49,7 +53,6 @@ function Sidebar({ vistaActiva, setVistaActiva }) {
             setVistaActiva={setVistaActiva} 
           />
 
-          {/* Gestión de Materias */}
           <SidebarItem 
             id="materias" 
             label="Gestión de Materias" 
@@ -58,11 +61,10 @@ function Sidebar({ vistaActiva, setVistaActiva }) {
             setVistaActiva={setVistaActiva} 
           />
 
-          <div className="pt-6 pb-2 px-4 text-[11px] font-bold tracking-widest text-slate-500 uppercase">
+          <div className="pt-6 pb-2 px-4 text-[11px] font-bold tracking-widest text-[#430000]/60 uppercase">
             Módulos del Sistema
           </div>
 
-          {/* Análisis de Carga */}
           <SidebarItem 
             id="analisis" 
             label="Análisis de Carga" 
@@ -75,17 +77,23 @@ function Sidebar({ vistaActiva, setVistaActiva }) {
       </div>
 
       {/* TARJETA INFERIOR */}
-      <div className="p-4 m-4 md:mx-5 bg-gradient-to-br from-cyan-950/40 via-[#111827] to-[#111827] border border-cyan-800/40 rounded-2xl shadow-xl">
-        <h3 className="text-white font-bold text-base tracking-tight">Carga Académica UES</h3>
-        <p className="text-xs text-slate-400 mt-1 leading-relaxed">Monitoreo automático de horas.</p>
-        
-        {/* Botón inferior en aqua sólido */}
+      <div className="p-4 m-4 md:mx-5 bg-[#960000]/10 border border-[#430000]/20 rounded-2xl shadow-sm">
+
+        <h3 className="text-[#430000] font-bold text-base">
+          Carga Académica UES
+        </h3>
+
+        <p className="text-xs text-[#430000]/70 mt-1">
+          Monitoreo automático de horas.
+        </p>
+
         <button 
           onClick={() => alert("¡MVP Grupo 03 Completo!")}
-          className="w-full mt-4 py-2.5 px-4 bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-cyan-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+          className="w-full mt-4 py-2.5 px-4 bg-[#960000] hover:bg-[#430000] text-[#eeeeee] text-xs font-bold rounded-xl transition-all"
         >
           Ciclo I-2026 Activo
         </button>
+
       </div>
 
     </aside>
