@@ -1,57 +1,108 @@
 # =========================
-# Sistema operativo
+# SACA MVP - Git Ignore
+# Spring Boot + React/Vite
 # =========================
-.DS_Store
-Thumbs.db
-desktop.ini
+
+AGENTS.md
+agents.md
+docs/
 
 # =========================
-# Editores / IDE
-# =========================
-.vscode/
-.idea/
-*.iml
-
-# =========================
-# Node / React
-# =========================
-frontend/node_modules/
-frontend/dist/
-frontend/.env
-frontend/.env.local
-frontend/.env.development.local
-frontend/.env.test.local
-frontend/.env.production.local
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
-
-# =========================
-# Java / Spring Boot
+# Java / Spring Boot / Maven
 # =========================
 backend/target/
 backend/.mvn/wrapper/maven-wrapper.jar
-backend/.env
-backend/*.log
+
+*.class
+*.jar
+*.war
+*.ear
+
+# Logs
+*.log
+logs/
+
+# Spring Boot local config
+backend/src/main/resources/application-local.properties
+backend/src/main/resources/application-local.yml
+backend/src/main/resources/application-dev.properties
+backend/src/main/resources/application-dev.yml
+
+# Environment variables
+.env
+.env.*
+!.env.example
 
 # =========================
-# Maven
+# IntelliJ IDEA
 # =========================
-.mvn/timing.properties
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
 
 # =========================
-# MySQL / Base de datos
+# VS Code
 # =========================
-*.sql.bak
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.example.json
+
+# =========================
+# React / Vite / Node / pnpm
+# =========================
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Package manager logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+# pnpm store / cache
+.pnpm-store/
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini
+
+# =========================
+# Docker / local database
+# =========================
+mysql-data/
+docker-data/
+*.sql.gz
 *.dump
-*.db
-*.sqlite
-*.sqlite3
+
+# Keep docker-compose versioned
+!docker-compose.yml
 
 # =========================
-# Archivos temporales
+# Test / coverage
 # =========================
+coverage/
+frontend/coverage/
+backend/coverage/
+
+# =========================
+# Temporary files
+# =========================
+tmp/
+temp/
 *.tmp
-*.temp
 *.bak
 *.swp
+*.swo
