@@ -3,7 +3,7 @@ import { login, registrar } from "../services/authService";
 
 function Login({ onLoginSuccess }) {
 
-    const [modo, setModo] = useState("login"); 
+    const [modo, setModo] = useState("login");
 
     const [form, setForm] = useState({
         nombre: "",
@@ -46,9 +46,9 @@ function Login({ onLoginSuccess }) {
 
         try {
             const respuesta = await registrar(form);
+
             alert(respuesta);
 
-            // después del registro vuelve a login
             setModo("login");
 
         } catch (error) {
@@ -56,85 +56,109 @@ function Login({ onLoginSuccess }) {
         }
     };
 
-return (
-    <div className="min-h-screen flex items-center justify-center bg-[#111827] text-slate-300">
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-[#ffffff] p-6">
 
-        <div className="w-full max-w-md p-8 rounded-2xl bg-[#1e293b]/40 border border-slate-800 shadow-xl backdrop-blur-sm">
+            <div className="w-full max-w-md p-8 rounded-2xl bg-[#ffffff] border border-[#430000]/20 shadow-lg">
 
-            <h1 className="text-3xl font-bold text-white text-center mb-6">
-                SACA UES
-            </h1>
+               {/* LOGO */}
+<div className="flex flex-col items-center mb-6">
 
-            <h2 className="text-cyan-400 text-center mb-6">
-                {modo === "login" ? "Iniciar Sesión" : "Registro"}
-            </h2>
+    <div className="w-20 h-20 rounded-full bg-[#960000]/10 border border-[#960000]/20 flex items-center justify-center mb-4">
+        <i className="fa-solid fa-graduation-cap text-[#960000] text-4xl"></i>
+    </div>
 
-            <form onSubmit={
-                modo === "login"
-                    ? handleLogin
-                    : handleRegistro
-            } className="flex flex-col gap-4">
+    <h1 className="text-3xl font-bold text-[#430000] text-center">
+        SACA UES
+    </h1>
 
-                {modo === "registro" && (
-                    <>
-                        <input
-                            name="nombre"
-                            placeholder="Nombre"
-                            className="p-3 rounded-lg bg-[#0f172a] border border-slate-700"
-                            onChange={handleChange}
-                        />
+    <p className="text-sm text-[#430000]/60 mt-1">
+        Sistema de Análisis de Carga Académica
+    </p>
 
-                        <input
-                            name="carnet"
-                            placeholder="Carnet"
-                            className="p-3 rounded-lg bg-[#0f172a] border border-slate-700"
-                            onChange={handleChange}
-                        />
-                    </>
-                )}
+    <div className="w-16 h-1 bg-[#960000] rounded-full mt-4"></div>
 
-                <input
-                    name="correoInstitucional"
-                    placeholder="Correo institucional"
-                    className="p-3 rounded-lg bg-[#0f172a] border border-slate-700"
-                    onChange={handleChange}
-                />
+</div>
 
-                <input
-                    name="contrasenia"
-                    type="password"
-                    placeholder="Contraseña"
-                    className="p-3 rounded-lg bg-[#0f172a] border border-slate-700"
-                    onChange={handleChange}
-                />
+                {/* SUBTÍTULO */}
+                <h2 className="text-[#960000] text-center font-semibold mb-6">
+                    {modo === "login"
+                        ? "Iniciar Sesión"
+                        : "Registro"}
+                </h2>
+
+                <form
+                    onSubmit={
+                        modo === "login"
+                            ? handleLogin
+                            : handleRegistro
+                    }
+                    className="flex flex-col gap-4"
+                >
+
+                    {modo === "registro" && (
+                        <>
+                            <input
+                                name="nombre"
+                                placeholder="Nombre"
+                                className="p-3 rounded-lg bg-[#eeeeee] border border-[#430000]/20 text-[#430000] outline-none focus:border-[#960000]"
+                                onChange={handleChange}
+                            />
+
+                            <input
+                                name="carnet"
+                                placeholder="Carnet"
+                                className="p-3 rounded-lg bg-[#eeeeee] border border-[#430000]/20 text-[#430000] outline-none focus:border-[#960000]"
+                                onChange={handleChange}
+                            />
+                        </>
+                    )}
+
+                    <input
+                        name="correoInstitucional"
+                        placeholder="Correo institucional"
+                        className="p-3 rounded-lg bg-[#eeeeee] border border-[#430000]/20 text-[#430000] outline-none focus:border-[#960000]"
+                        onChange={handleChange}
+                    />
+
+                    <input
+                        name="contrasenia"
+                        type="password"
+                        placeholder="Contraseña"
+                        className="p-3 rounded-lg bg-[#eeeeee] border border-[#430000]/20 text-[#430000] outline-none focus:border-[#960000]"
+                        onChange={handleChange}
+                    />
+
+                    <button
+                        type="submit"
+                        className="bg-[#960000] hover:bg-[#430000] text-[#eeeeee] font-bold p-3 rounded-lg transition-all"
+                    >
+                        {modo === "login"
+                            ? "Ingresar"
+                            : "Registrarse"}
+                    </button>
+
+                </form>
 
                 <button
-                    type="submit"
-                    className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold p-3 rounded-lg transition"
+                    onClick={() =>
+                        setModo(
+                            modo === "login"
+                                ? "registro"
+                                : "login"
+                        )
+                    }
+                    className="mt-5 text-sm text-[#430000]/70 hover:text-[#960000] w-full transition-colors"
                 >
                     {modo === "login"
-                        ? "Ingresar"
-                        : "Registrarse"}
+                        ? "¿No tienes cuenta? Regístrate"
+                        : "¿Ya tienes cuenta? Inicia sesión"}
                 </button>
-            </form>
 
-            <button
-                onClick={() =>
-                    setModo(modo === "login"
-                        ? "registro"
-                        : "login"
-                    )
-                }
-                className="mt-4 text-sm text-slate-400 hover:text-cyan-400 w-full"
-            >
-                {modo === "login"
-                    ? "Ir a Registro"
-                    : "Ir a Login"}
-            </button>
+            </div>
 
         </div>
-    </div>
-);
+    );
 }
 
 export default Login;
