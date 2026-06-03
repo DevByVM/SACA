@@ -9,8 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/disponibilidades")
-@CrossOrigin(origins = "http://localhost:5173") // Permite que tu React aqua se conecte
+@RequestMapping("/api/disponibilidades")// Permite que tu React aqua se conecte
 public class DisponibilidadSemanalController {
 //
     @Autowired
