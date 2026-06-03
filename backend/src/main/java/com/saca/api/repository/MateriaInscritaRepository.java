@@ -16,4 +16,6 @@ public interface MateriaInscritaRepository extends JpaRepository<MateriaInscrita
 	Optional<MateriaInscrita> findByIdAndCicloAcademicoEstudianteId(Long id, Long estudianteId);
 
 	boolean existsByCicloAcademicoIdAndCodigoIgnoreCase(Long cicloAcademicoId, String codigo);
+
+	boolean existsByCicloAcademicoIdAndCodigoIgnoreCaseAndIdNot(Long cicloAcademicoId, String codigo, Long id);
 }
