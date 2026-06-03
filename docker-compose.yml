@@ -1,0 +1,53 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: saca_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: saca_mvp
+      MYSQL_USER: saca_user
+      MYSQL_PASSWORD: saca_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - saca_mysql_data:/var/lib/mysql
+      - ./database/saca_schema.sql:/docker-entrypoint-initdb.d/01-saca-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u$${MYSQL_USER} -p$${MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: saca_backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/saca_mvp?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/El_Salvador
+      SPRING_DATASOURCE_USERNAME: saca_user
+      SPRING_DATASOURCE_PASSWORD: saca_password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "true"
+    ports:
+      - "8080:8080"
+
+  # Frontend pendiente: agregar este servicio cuando exista la app React/Vite.
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: saca_frontend
+  #   depends_on:
+  #     - backend
+  #   ports:
+  #     - "5173:5173"
+
+volumes:
+  saca_mysql_data:
