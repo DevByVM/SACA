@@ -31,7 +31,7 @@ public class MateriaInscrita {
 	@Column(name = "grupo_teorico", nullable = false, length = 30)
 	private String grupoTeorico;
 
-	protected MateriaInscrita() {
+	public MateriaInscrita() {
 	}
 
 	public Long getId() {

@@ -42,7 +42,7 @@ public class CicloAcademico {
 	@Column(name = "estado", nullable = false, length = 20)
 	private EstadoCiclo estado;
 
-	protected CicloAcademico() {
+	public CicloAcademico() {
 	}
 
 	public Long getId() {

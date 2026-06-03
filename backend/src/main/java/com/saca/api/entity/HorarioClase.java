@@ -43,7 +43,7 @@ public class HorarioClase {
 	@Column(name = "docente_tutor", length = 120)
 	private String docenteTutor;
 
-	protected HorarioClase() {
+	public HorarioClase() {
 	}
 
 	public Long getId() {
