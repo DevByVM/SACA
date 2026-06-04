@@ -1,5 +1,5 @@
 {
-  "name": "saca-vite-frontend",
+  "name": "frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "axios": "^1.16.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
@@ -18,10 +19,13 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.4.1",
+    "autoprefixer": "^10.5.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^15.15.0",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^3.4.17",
     "vite": "^6.3.6"
   }
 }

@@ -1,5 +1,7 @@
 package com.saca.api.entity;
 
+import java.sql.Timestamp;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -18,10 +20,25 @@ public class Estudiante {
 	@Column(name = "carnet", length = 20, unique = true)
 	private String carnet;
 
+	@Column(name = "nombre", length = 120)
+	private String nombre;
+
 	@Column(name = "correo_institucional", length = 120, unique = true)
 	private String correoInstitucional;
 
-	protected Estudiante() {
+	@Column(name = "contrasenia")
+	private String contrasenia;
+
+	@Column(name = "cuenta_activa")
+	private Boolean cuentaActiva;
+
+	@Column(name = "intentos_fallidos")
+	private Integer intentosFallidos;
+
+	@Column(name = "bloqueado_hasta")
+	private Timestamp bloqueadoHasta;
+
+	public Estudiante() {
 	}
 
 	public Estudiante(Long id) {
@@ -44,11 +61,51 @@ public class Estudiante {
 		this.carnet = carnet;
 	}
 
+	public String getNombre() {
+		return nombre;
+	}
+
+	public void setNombre(String nombre) {
+		this.nombre = nombre;
+	}
+
 	public String getCorreoInstitucional() {
 		return correoInstitucional;
 	}
 
 	public void setCorreoInstitucional(String correoInstitucional) {
 		this.correoInstitucional = correoInstitucional;
+	}
+
+	public String getContrasenia() {
+		return contrasenia;
+	}
+
+	public void setContrasenia(String contrasenia) {
+		this.contrasenia = contrasenia;
+	}
+
+	public Boolean getCuentaActiva() {
+		return cuentaActiva;
+	}
+
+	public void setCuentaActiva(Boolean cuentaActiva) {
+		this.cuentaActiva = cuentaActiva;
+	}
+
+	public Integer getIntentosFallidos() {
+		return intentosFallidos;
+	}
+
+	public void setIntentosFallidos(Integer intentosFallidos) {
+		this.intentosFallidos = intentosFallidos;
+	}
+
+	public Timestamp getBloqueadoHasta() {
+		return bloqueadoHasta;
+	}
+
+	public void setBloqueadoHasta(Timestamp bloqueadoHasta) {
+		this.bloqueadoHasta = bloqueadoHasta;
 	}
 }
