@@ -4,6 +4,7 @@ import PerfilAcademico from "./components/PerfilAcademico";
 import Sidebar from "./components/Sidebar.jsx";
 import TableroCargaSemanal from "./components/TableroCargaSemanal.jsx";
 import GestionAcademica from "./components/GestionAcademica.jsx";
+import GestionDisponiblidad from "./components/GestionDisponibilidad.jsx";
 
 function App() {
   const [logueado, setLogueado] = useState(false);
@@ -40,9 +41,8 @@ function App() {
           </div>
 
           <div
-            className={`w-full pt-16 sm:pt-12 ${
-              vistaActiva === "dashboard" ? "xl:w-2/5" : "w-full"
-            } flex flex-col justify-start`}
+            className={`w-full pt-16 sm:pt-12 ${vistaActiva === "dashboard" ? "xl:w-2/5" : "w-full"
+              } flex flex-col justify-start`}
           >
             <span className="w-20 h-2 bg-[#960000] mb-6 block rounded-full"></span>
 
@@ -53,6 +53,7 @@ function App() {
                 {vistaActiva === "academico" && "Gestión Académica"}
                 {vistaActiva === "perfil" && "Perfil Académico"}
                 {vistaActiva === "analisis" && "Semáforo Horario"}
+                {vistaActiva === "disponibilidad" && "Gestión disponibilidad"}
               </span>
             </h1>
 
@@ -66,6 +67,7 @@ function App() {
               {vistaActiva === "perfil" && <PerfilAcademico />}
 
               {vistaActiva === "analisis" && <TableroCargaSemanal />}
+              {vistaActiva === "disponibilidad" && <GestionDisponiblidad estudiante={estudiante} />}
             </div>
           </div>
 
