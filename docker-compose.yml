@@ -4,10 +4,10 @@ services:
     container_name: saca_mysql
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: saca_mvp
-      MYSQL_USER: saca_user
-      MYSQL_PASSWORD: saca_password
-      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: saca_db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 
+      MYSQL_ROOT_PASSWORD: 
     ports:
       - "3306:3306"
     volumes:
@@ -30,9 +30,9 @@ services:
       mysql:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/saca_mvp?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/El_Salvador
-      SPRING_DATASOURCE_USERNAME: saca_user
-      SPRING_DATASOURCE_PASSWORD: saca_password
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/saca_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/El_Salvador
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "true"
     ports:

@@ -1,6 +1,12 @@
 import React from 'react';
 
-function SidebarItem({ id, label, icon, vistaActiva, setVistaActiva }) {
+function SidebarItem({
+  id,
+  label,
+  icon,
+  vistaActiva,
+  setVistaActiva
+}) {
   const isActive = vistaActiva === id;
 
   return (
@@ -12,22 +18,34 @@ function SidebarItem({ id, label, icon, vistaActiva, setVistaActiva }) {
           : "text-[#430000] hover:bg-[#430000]/10"
       }`}
     >
-      <i className={`fa-solid ${icon} text-base ${
-        isActive ? "text-[#eeeeee]" : "text-[#430000]"
-      }`}></i>
+      <i
+        className={`fa-solid ${icon} text-base ${
+          isActive
+            ? "text-[#eeeeee]"
+            : "text-[#430000]"
+        }`}
+      ></i>
 
       <span>{label}</span>
     </button>
   );
 }
 
-function Sidebar({ vistaActiva, setVistaActiva }) {
+function Sidebar({
+  vistaActiva,
+  setVistaActiva,
+  cerrarSesion
+}) {
   return (
     <aside className="w-full md:w-64 bg-[#ffffff] flex flex-col justify-between md:min-h-screen border-r border-[#430000]/20 shadow-lg">
+
       <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-[#960000] hidden md:block"></div>
 
       <div>
+
+        {/* HEADER */}
         <div className="p-5 flex items-center space-x-3 border-b border-[#430000]/20 bg-[#960000]/10">
+
           <div className="text-[#960000] text-2xl">
             <i className="fa-solid fa-graduation-cap"></i>
           </div>
@@ -35,9 +53,12 @@ function Sidebar({ vistaActiva, setVistaActiva }) {
           <h1 className="text-xl font-extrabold text-[#430000]">
             SACA
           </h1>
+
         </div>
 
+        {/* NAVEGACIÓN */}
         <nav className="p-4 space-y-1">
+
           <div className="pb-2 px-4 text-[11px] font-bold tracking-widest text-[#430000]/60 uppercase">
             Módulos del Sistema
           </div>
@@ -73,10 +94,25 @@ function Sidebar({ vistaActiva, setVistaActiva }) {
             vistaActiva={vistaActiva}
             setVistaActiva={setVistaActiva}
           />
+
+          <hr className="my-4 border-[#430000]/20" />
+
+          <button
+            onClick={cerrarSesion}
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-red-700 hover:bg-red-50 transition-all"
+          >
+            <i className="fa-solid fa-right-from-bracket"></i>
+
+            <span>Cerrar Sesión</span>
+          </button>
+
         </nav>
+
       </div>
 
+      {/* TARJETA INFERIOR */}
       <div className="p-4 m-4 md:mx-5 bg-[#960000]/10 border border-[#430000]/20 rounded-2xl shadow-sm">
+
         <h3 className="text-[#430000] font-bold text-base">
           Carga Académica UES
         </h3>
@@ -91,7 +127,9 @@ function Sidebar({ vistaActiva, setVistaActiva }) {
         >
           Ciclo I-2026 Activo
         </button>
+
       </div>
+
     </aside>
   );
 }
