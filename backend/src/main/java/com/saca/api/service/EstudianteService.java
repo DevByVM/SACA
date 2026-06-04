@@ -9,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.saca.api.dto.LoginRequest;
+import com.saca.api.dto.LoginResponse;
 import com.saca.api.dto.RegistroRequest;
 import com.saca.api.entity.Estudiante;
 import com.saca.api.repository.EstudianteRepository;
@@ -24,18 +25,18 @@ public class EstudianteService {
 
     public String registrar(RegistroRequest request) {
 
-        if (!request.getCorreoInstitucional()
-                .endsWith("@ues.edu.sv")) {
+        String correoInstitucional = normalizarCorreo(request.getCorreoInstitucional());
+        String carnet = normalizarTexto(request.getCarnet());
+
+        if (!correoInstitucional.endsWith("@ues.edu.sv")) {
             return "Correo institucional inválido";
         }
 
-        if (repository.existsByCarnet(
-                request.getCarnet())) {
+        if (repository.existsByCarnet(carnet)) {
             return "Carnet ya registrado";
         }
 
-        if (repository.existsByCorreoInstitucional(
-                request.getCorreoInstitucional())) {
+        if (repository.existsByCorreoInstitucional(correoInstitucional)) {
             return "Correo ya registrado";
         }
 
@@ -47,9 +48,8 @@ public class EstudianteService {
         Estudiante estudiante = new Estudiante();
 
         estudiante.setNombre(request.getNombre());
-        estudiante.setCarnet(request.getCarnet());
-        estudiante.setCorreoInstitucional(
-                request.getCorreoInstitucional());
+        estudiante.setCarnet(carnet);
+        estudiante.setCorreoInstitucional(correoInstitucional);
 
         estudiante.setContrasenia(
                 passwordEncoder.encode(
@@ -65,20 +65,21 @@ public class EstudianteService {
         return "Usuario registrado correctamente";
     }
 
-    public String login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request) {
+
+        String correoInstitucional = normalizarCorreo(request.getCorreoInstitucional());
 
         Optional<Estudiante> estudianteOpt =
-                repository.findByCorreoInstitucional(
-                        request.getCorreoInstitucional());
+                repository.findByCorreoInstitucional(correoInstitucional);
 
         if (estudianteOpt.isEmpty()) {
-            return "Usuario no encontrado";
+            return LoginResponse.error("Usuario no encontrado");
         }
 
         Estudiante estudiante = estudianteOpt.get();
 
-        if (!estudiante.getCuentaActiva()) {
-            return "Cuenta no activada";
+        if (!Boolean.TRUE.equals(estudiante.getCuentaActiva())) {
+            return LoginResponse.error("Cuenta no activada");
         }
 
         if (estudiante.getBloqueadoHasta() != null &&
@@ -86,18 +87,22 @@ public class EstudianteService {
                         .after(Timestamp.valueOf(
                                 LocalDateTime.now()))) {
 
-            return "Cuenta bloqueada temporalmente";
+            return LoginResponse.error("Cuenta bloqueada temporalmente");
         }
 
         boolean passwordCorrecta =
+                esHashBCrypt(estudiante.getContrasenia()) &&
                 passwordEncoder.matches(
                         request.getContrasenia(),
                         estudiante.getContrasenia());
 
         if (!passwordCorrecta) {
 
-            estudiante.setIntentosFallidos(
-                    estudiante.getIntentosFallidos() + 1);
+            int intentosFallidos = estudiante.getIntentosFallidos() == null
+                    ? 0
+                    : estudiante.getIntentosFallidos();
+
+            estudiante.setIntentosFallidos(intentosFallidos + 1);
 
             if (estudiante.getIntentosFallidos() >= 3) {
 
@@ -108,12 +113,12 @@ public class EstudianteService {
 
                 repository.save(estudiante);
 
-                return "Cuenta bloqueada por 5 minutos";
+                return LoginResponse.error("Cuenta bloqueada por 5 minutos");
             }
 
             repository.save(estudiante);
 
-            return "Credenciales incorrectas";
+            return LoginResponse.error("Credenciales incorrectas");
         }
 
         estudiante.setIntentosFallidos(0);
@@ -121,6 +126,26 @@ public class EstudianteService {
 
         repository.save(estudiante);
 
-        return "LOGIN_OK";
+        return new LoginResponse(
+                true,
+                "LOGIN_OK",
+                estudiante.getId(),
+                estudiante.getNombre(),
+                estudiante.getCarnet(),
+                estudiante.getCorreoInstitucional());
+    }
+
+    private String normalizarCorreo(String correo) {
+        return normalizarTexto(correo).toLowerCase();
+    }
+
+    private String normalizarTexto(String texto) {
+        return texto == null ? "" : texto.trim();
+    }
+
+    private boolean esHashBCrypt(String contraseniaAlmacenada) {
+        return contraseniaAlmacenada != null
+                && contraseniaAlmacenada.length() >= 60
+                && contraseniaAlmacenada.startsWith("$2");
     }
 }

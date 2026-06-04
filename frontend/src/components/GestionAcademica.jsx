@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   actualizarCiclo,
   crearCiclo,
@@ -42,8 +42,8 @@ const horarioInicial = {
   docenteTutor: "",
 };
 
-function GestionAcademica() {
-  const [estudianteId, setEstudianteId] = useState("1");
+function GestionAcademica({ estudiante }) {
+  const estudianteId = estudiante?.id ? String(estudiante.id) : "";
   const [vista, setVista] = useState("ciclos");
   const [mensaje, setMensaje] = useState(null);
   const [cargando, setCargando] = useState(false);
@@ -197,16 +197,6 @@ function GestionAcademica() {
             Ciclos, materias inscritas y horarios de clase.
           </p>
         </div>
-        <label className="text-sm font-semibold text-[#430000]">
-          Estudiante ID
-          <input
-            className="mt-1 block w-32 rounded-lg border border-[#430000]/20 px-3 py-2"
-            min="1"
-            type="number"
-            value={estudianteId}
-            onChange={(event) => setEstudianteId(event.target.value)}
-          />
-        </label>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -423,16 +413,45 @@ function Panel({ titulo, children }) {
 }
 
 function Campo({ label, value, onChange, type = "text", required = true }) {
+  const inputRef = useRef(null);
+  const hasPicker = type === "date" || type === "time";
+  const pickerIcon = type === "date" ? "fa-calendar-days" : "fa-clock";
+
+  function abrirPicker() {
+    if (inputRef.current?.showPicker) {
+      inputRef.current.showPicker();
+      return;
+    }
+
+    inputRef.current?.focus();
+  }
+
   return (
     <label className="block text-sm font-semibold text-[#430000]">
       {label}
-      <input
-        required={required}
-        className="mt-1 block w-full rounded-lg border border-[#430000]/20 px-3 py-2"
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
+      <div className="relative mt-1">
+        <input
+          ref={inputRef}
+          required={required}
+          className={`block w-full rounded-lg border border-[#430000]/20 bg-white px-3 py-2 text-[#430000] outline-none transition focus:border-[#960000] focus:ring-2 focus:ring-[#960000]/20 ${
+            hasPicker ? "pr-11" : ""
+          }`}
+          type={type}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
+
+        {hasPicker && (
+          <button
+            aria-label={`Abrir selector de ${label.toLowerCase()}`}
+            className="absolute inset-y-1 right-1 flex w-9 items-center justify-center rounded-md text-[#960000] transition hover:bg-[#960000]/10"
+            type="button"
+            onClick={abrirPicker}
+          >
+            <i className={`fa-solid ${pickerIcon}`}></i>
+          </button>
+        )}
+      </div>
     </label>
   );
 }

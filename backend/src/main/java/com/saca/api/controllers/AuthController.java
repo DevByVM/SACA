@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.saca.api.service.EstudianteService;
 import com.saca.api.dto.LoginRequest;
+import com.saca.api.dto.LoginResponse;
 import com.saca.api.dto.RegistroRequest;
 
 @RestController
@@ -23,7 +24,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String login(
+    public LoginResponse login(
             @RequestBody LoginRequest request) {
 
         return service.login(request);

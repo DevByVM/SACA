@@ -29,10 +29,15 @@ function Login({ onLoginSuccess }) {
                 contrasenia: form.contrasenia
             });
 
-            if (respuesta === "LOGIN_OK") {
-                onLoginSuccess();
+            if (respuesta.autenticado) {
+                onLoginSuccess({
+                    id: respuesta.estudianteId,
+                    nombre: respuesta.nombre,
+                    carnet: respuesta.carnet,
+                    correoInstitucional: respuesta.correoInstitucional
+                });
             } else {
-                alert(respuesta);
+                alert(respuesta.mensaje || "Credenciales incorrectas");
             }
 
         } catch (error) {

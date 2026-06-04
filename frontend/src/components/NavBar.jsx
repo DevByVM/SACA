@@ -28,17 +28,6 @@ function Navbar({ vistaActiva, setVistaActiva }) {
             </button>
 
             <button
-              onClick={() => setVistaActiva("materias")}
-              className={`py-2 px-6 rounded-lg transition-colors ${
-                vistaActiva === "materias"
-                  ? "bg-[#960000] text-[#eeeeee] font-bold"
-                  : "hover:bg-[#960000]/10"
-              }`}
-            >
-              Materias
-            </button>
-
-            <button
               onClick={() => setVistaActiva("analisis")}
               className={`py-2 px-6 rounded-lg transition-colors ${
                 vistaActiva === "analisis"

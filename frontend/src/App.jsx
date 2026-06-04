@@ -1,16 +1,23 @@
 import { useState } from "react";
 import Login from "./components/Login";
 import Sidebar from "./components/Sidebar.jsx";
-import ListaMaterias from "./components/ListaMaterias.jsx";
 import TableroCargaSemanal from "./components/TableroCargaSemanal.jsx";
 import GestionAcademica from "./components/GestionAcademica.jsx";
 
 function App() {
   const [logueado, setLogueado] = useState(false);
+  const [estudiante, setEstudiante] = useState(null);
   const [vistaActiva, setVistaActiva] = useState("dashboard");
 
   if (!logueado) {
-    return <Login onLoginSuccess={() => setLogueado(true)} />;
+    return (
+      <Login
+        onLoginSuccess={(estudianteAutenticado) => {
+          setEstudiante(estudianteAutenticado);
+          setLogueado(true);
+        }}
+      />
+    );
   }
 
   return (
@@ -19,8 +26,20 @@ function App() {
 
       <div className="flex-1 flex relative z-20 items-stretch overflow-hidden min-w-0 bg-[#ffffff]">
         <div className="container mx-auto px-6 flex flex-col xl:flex-row relative py-8 gap-8 items-stretch w-full">
+          <div className="absolute right-6 top-4 sm:top-6 flex items-center gap-3 rounded-lg border border-[#430000]/20 bg-[#ffffff] px-4 py-2 text-right shadow-sm">
+            <i className="fa-solid fa-user-graduate text-[#960000]"></i>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#430000]/50">
+                Estudiante
+              </p>
+              <p className="max-w-44 truncate text-sm font-black text-[#430000]">
+                {estudiante?.nombre || "Sin estudiante"}
+              </p>
+            </div>
+          </div>
+
           <div
-            className={`w-full ${
+            className={`w-full pt-16 sm:pt-12 ${
               vistaActiva === "dashboard" ? "xl:w-2/5" : "w-full"
             } flex flex-col justify-start`}
           >
@@ -30,7 +49,6 @@ function App() {
               SACA UES
               <span className="text-3xl sm:text-4xl text-[#960000] font-black mt-1">
                 {vistaActiva === "dashboard" && "Control Global"}
-                {vistaActiva === "materias" && "Inscripción"}
                 {vistaActiva === "academico" && "Gestión Académica"}
                 {vistaActiva === "analisis" && "Semáforo Horario"}
               </span>
@@ -41,11 +59,7 @@ function App() {
             </p>
 
             <div className="w-full flex-1">
-              {(vistaActiva === "dashboard" || vistaActiva === "materias") && (
-                <ListaMaterias vistaActiva={vistaActiva} />
-              )}
-
-              {vistaActiva === "academico" && <GestionAcademica />}
+              {vistaActiva === "academico" && <GestionAcademica estudiante={estudiante} />}
 
               {vistaActiva === "analisis" && <TableroCargaSemanal />}
             </div>

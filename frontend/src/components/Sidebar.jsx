@@ -44,6 +44,9 @@ function Sidebar({ vistaActiva, setVistaActiva }) {
 
         {/* NAV */}
         <nav className="p-4 space-y-1">
+          <div className="pb-2 px-4 text-[11px] font-bold tracking-widest text-[#430000]/60 uppercase">
+            Módulos del Sistema
+          </div>
 
           <SidebarItem 
             id="dashboard" 
@@ -54,24 +57,12 @@ function Sidebar({ vistaActiva, setVistaActiva }) {
           />
 
           <SidebarItem 
-            id="materias" 
-            label="Gestión de Materias" 
-            icon="fa-box-archive" 
-            vistaActiva={vistaActiva} 
-            setVistaActiva={setVistaActiva} 
-          />
-
-          <SidebarItem 
             id="academico" 
-            label="Ciclos y Horarios" 
+            label="Gestión Académica" 
             icon="fa-calendar-days" 
             vistaActiva={vistaActiva} 
             setVistaActiva={setVistaActiva} 
           />
-
-          <div className="pt-6 pb-2 px-4 text-[11px] font-bold tracking-widest text-[#430000]/60 uppercase">
-            Módulos del Sistema
-          </div>
 
           <SidebarItem 
             id="analisis" 

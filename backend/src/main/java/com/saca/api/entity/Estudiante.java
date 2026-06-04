@@ -26,7 +26,7 @@ public class Estudiante {
 	@Column(name = "correo_institucional", length = 120, unique = true)
 	private String correoInstitucional;
 
-	@Column(name = "contrasenia")
+	@Column(name = "contrasenia", length = 255, nullable = false)
 	private String contrasenia;
 
 	@Column(name = "cuenta_activa")
