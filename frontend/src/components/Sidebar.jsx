@@ -6,15 +6,13 @@ function SidebarItem({ id, label, icon, vistaActiva, setVistaActiva }) {
   return (
     <button
       onClick={() => setVistaActiva(id)}
-      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 cursor-pointer ${
-        isActive
+      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 cursor-pointer ${isActive
           ? "bg-[#960000] text-[#eeeeee] font-semibold shadow-md"
           : "text-[#430000] hover:bg-[#430000]/10"
-      }`}
+        }`}
     >
-      <i className={`fa-solid ${icon} text-base ${
-        isActive ? "text-[#eeeeee]" : "text-[#430000]"
-      }`}></i>
+      <i className={`fa-solid ${icon} text-base ${isActive ? "text-[#eeeeee]" : "text-[#430000]"
+        }`}></i>
 
       <span>{label}</span>
     </button>
@@ -70,6 +68,13 @@ function Sidebar({ vistaActiva, setVistaActiva }) {
             id="analisis"
             label="Análisis de Carga"
             icon="fa-gauge-high"
+            vistaActiva={vistaActiva}
+            setVistaActiva={setVistaActiva}
+          />
+          <SidebarItem
+            id="disponibilidad"
+            label="Gestión disponibilidad"
+            icon="fa-calendar-days"
             vistaActiva={vistaActiva}
             setVistaActiva={setVistaActiva}
           />
