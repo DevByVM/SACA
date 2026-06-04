@@ -37,6 +37,8 @@ function Navbar({ vistaActiva, setVistaActiva }) {
             >
               Materias
             </button>
+            
+
 
             <button
               onClick={() => setVistaActiva("analisis")}

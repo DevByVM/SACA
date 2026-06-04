@@ -30,8 +30,14 @@ function Login({ onLoginSuccess }) {
             });
 
             if (respuesta === "LOGIN_OK") {
-                onLoginSuccess();
-            } else {
+
+    localStorage.setItem(
+        "correoInstitucional",
+        form.correoInstitucional
+    );
+
+    onLoginSuccess();
+         }else {
                 alert(respuesta);
             }
 

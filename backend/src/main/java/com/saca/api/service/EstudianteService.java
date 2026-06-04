@@ -13,6 +13,9 @@ import com.saca.api.dto.RegistroRequest;
 import com.saca.api.entity.Estudiante;
 import com.saca.api.repository.EstudianteRepository;
 
+import java.util.Optional;
+import com.saca.api.dto.ActualizarPerfilRequest;
+
 @Service
 public class EstudianteService {
 
@@ -123,4 +126,82 @@ public class EstudianteService {
 
         return "LOGIN_OK";
     }
+
+    public String actualizarPerfil(
+        Long id,
+        ActualizarPerfilRequest request) {
+
+    Optional<Estudiante> estudianteOpt =
+            repository.findById(id);
+
+    if (estudianteOpt.isEmpty()) {
+        return "Usuario no encontrado";
+    }
+
+    Estudiante estudiante =
+            estudianteOpt.get();
+
+    if (request.getNombre() == null ||
+            request.getNombre().isBlank()) {
+
+        return "Nombre obligatorio";
+    }
+
+    if (!request.getCorreoInstitucional()
+            .endsWith("@ues.edu.sv")) {
+
+        return "Correo institucional inválido";
+    }
+
+    Optional<Estudiante> carnetExistente =
+            repository.findByCarnet(
+                    request.getCarnet());
+
+    if (carnetExistente.isPresent()
+            && !carnetExistente.get()
+            .getId().equals(id)) {
+
+        return "Carnet ya registrado";
+    }
+
+    Optional<Estudiante> correoExistente =
+            repository.findByCorreoInstitucional(
+                    request.getCorreoInstitucional());
+
+    if (correoExistente.isPresent()
+            && !correoExistente.get()
+            .getId().equals(id)) {
+
+        return "Correo ya registrado";
+    }
+
+    if (!request.getContrasenia()
+            .matches("^(?=.*[A-Z])(?=.*\\d).{8,}$")) {
+
+        return "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número";
+    }
+
+    estudiante.setNombre(
+            request.getNombre());
+
+    estudiante.setCarnet(
+            request.getCarnet());
+
+    estudiante.setCorreoInstitucional(
+            request.getCorreoInstitucional());
+
+    estudiante.setContrasenia(
+            passwordEncoder.encode(
+                    request.getContrasenia()));
+
+    repository.save(estudiante);
+
+    return "Perfil actualizado correctamente";
+}
+public Estudiante obtenerPorCorreo(String correo) {
+
+    return repository
+            .findByCorreoInstitucional(correo)
+            .orElse(null);
+}
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Login from "./components/Login";
-
+import PerfilAcademico from "./components/PerfilAcademico";
 import Sidebar from "./components/Sidebar.jsx";
 import ListaMaterias from "./components/ListaMaterias.jsx";
 import TableroCargaSemanal from "./components/TableroCargaSemanal.jsx";
@@ -47,11 +47,12 @@ function App() {
             <h1 className="font-extrabold uppercase text-4xl sm:text-5xl flex flex-col leading-none text-[#430000] tracking-tight mb-2">
               SACA UES
 
-              <span className="text-3xl sm:text-4xl text-[#960000] font-black mt-1">
-                {vistaActiva === "dashboard" && "Control Global"}
-                {vistaActiva === "materias" && "Inscripción"}
-                {vistaActiva === "analisis" && "Semáforo Horario"}
-              </span>
+             <span className="text-3xl sm:text-4xl text-[#960000] font-black mt-1">
+            {vistaActiva === "dashboard" && "Control Global"}
+            {vistaActiva === "materias" && "Inscripción"}
+            {vistaActiva === "analisis" && "Semáforo Horario"}
+            {vistaActiva === "perfil" && "Perfil Académico"}
+            </span>
             </h1>
 
             {/* DESCRIPCIÓN */}
@@ -62,18 +63,22 @@ function App() {
             {/* CONTENIDO DINÁMICO */}
             <div className="w-full flex-1">
 
-              {(vistaActiva === "dashboard" ||
-                vistaActiva === "materias") && (
-                <ListaMaterias
-                  vistaActiva={vistaActiva}
-                />
-              )}
+           {(vistaActiva === "dashboard" ||
+            vistaActiva === "materias") && (
+           <ListaMaterias
+           vistaActiva={vistaActiva}
+             />
+            )}
 
-              {vistaActiva === "analisis" && (
-                <TableroCargaSemanal />
-              )}
+           {vistaActiva === "analisis" && (
+           <TableroCargaSemanal />
+             )}
 
-            </div>
+         {vistaActiva === "perfil" && (
+         <PerfilAcademico />
+          )}
+
+         </div>
           </div>
 
           {/* PANEL DERECHO DASHBOARD */}
