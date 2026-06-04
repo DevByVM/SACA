@@ -1,122 +1,332 @@
-import React, { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
+// Importación de las funciones del archivo de servicio independiente
+import {
+  listarDisponibilidades,
+  crearDisponibilidad,
+  actualizarDisponibilidad,
+  eliminarDisponibilidad,
+  listarCiclos
+} from "../services/disponibilidadService"; // <- Ajusta esta ruta según tu estructura
 
-function GestionDisponibilidad() {
-  // Estado para SDACAS-7 (Configuración de disponibilidad)
-  const [horasDisponibles, setHorasDisponibles] = useState(40);
-  
-  // Estados para SDACAS-8 (Registro de jornada laboral)
-  const [trabaja, setTrabaja] = useState(false);
-  const [horasTrabajo, setHorasTrabajo] = useState(0);
+const disponibilidadInicial = {
+  diaSemana: "LUNES",
+  horaInicio: "",
+  horaFin: "",
+  tipoBloque: "CLASE",
+  cicloId: "",
+};
 
-  const guardarConfiguracion = (e) => {
-    e.preventDefault();
-    alert(`¡Configuración guardada! Horas netas disponibles para estudiar: ${horasDisponibles - horasTrabajo} hrs.`);
-  };
+function GestionDisponibilidad({ estudiante }) {
+  const estudianteId = estudiante?.id ? String(estudiante.id) : "";
+  const [mensaje, setMensaje] = useState(null);
+  const [cargando, setCargando] = useState(false);
+
+  const [disponibilidades, setDisponibilidades] = useState([]);
+  const [ciclos, setCiclos] = useState([]);
+
+  const [form, setForm] = useState(disponibilidadInicial);
+  const [editando, setEditando] = useState({ tipo: null, id: null });
+
+  const cargarDatos = useCallback(async () => {
+    if (!estudianteId.trim()) return;
+
+    try {
+      setCargando(true);
+      setMensaje(null);
+      const [disponibilidadesData, ciclosData] = await Promise.all([
+        listarDisponibilidades(estudianteId),
+        listarCiclos(estudianteId),
+      ]);
+      setDisponibilidades(disponibilidadesData);
+      setCiclos(ciclosData);
+    } catch (error) {
+      setMensaje({ tipo: "error", texto: error.message });
+    } finally {
+      setCargando(false);
+    }
+  }, [estudianteId]);
+
+  useEffect(() => {
+    cargarDatos();
+  }, [cargarDatos]);
+
+  async function guardarDisponibilidad(event) {
+    event.preventDefault();
+
+    const payload = {
+      ...form,
+      cicloId: Number(form.cicloId),
+      estudianteId: Number(estudianteId),
+    };
+
+    try {
+      setMensaje(null);
+      if (editando.tipo === "disponibilidad") {
+        await actualizarDisponibilidad(editando.id, estudianteId, payload);
+      } else {
+        await crearDisponibilidad(estudianteId, payload);
+      }
+
+      setForm(disponibilidadInicial);
+      setEditando({ tipo: null, id: null });
+      setMensaje({ tipo: "exito", texto: "Disponibilidad guardada correctamente" });
+      await cargarDatos();
+    } catch (error) {
+      setMensaje({ tipo: "error", texto: error.message });
+    }
+  }
+
+  async function eliminar(id) {
+    try {
+      setMensaje(null);
+      await eliminarDisponibilidad(id, estudianteId);
+      setMensaje({ tipo: "exito", texto: "Registro eliminado" });
+      await cargarDatos();
+    } catch (error) {
+      setMensaje({ tipo: "error", texto: error.message });
+    }
+  }
+
+  function editarDisponibilidad(disponibilidad) {
+    setEditando({ tipo: "disponibilidad", id: disponibilidad.id });
+    setForm({
+      diaSemana: disponibilidad.diaSemana,
+      horaInicio: disponibilidad.horaInicio,
+      horaFin: disponibilidad.horaFin,
+      tipoBloque: disponibilidad.tipoBloque,
+      cicloId: disponibilidad.cicloId,
+    });
+  }
 
   return (
-    <div className="space-y-6 text-slate-300">
-      {/* ENCABEZADO */}
-      <div className="border-b border-slate-800 pb-4">
-        <h3 className="text-lg font-bold text-white">Disponibilidad y Jornada Laboral</h3>
-        <p className="text-xs text-slate-500 mt-0.5">Establece tus límites de tiempo semanales para el cálculo de carga</p>
+    <section className="space-y-5">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 className="text-2xl font-black text-[#430000]">Disponibilidad Semanal</h2>
+          <p className="text-sm text-[#430000]/70">
+            Gestiona tus bloques de tiempo disponibles por cada ciclo académico.
+          </p>
+        </div>
       </div>
 
-      {/* RESTRICCIONES EN GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        
-        {/* FORMULARIO DE RESTRICCIONES (SDACAS-7 y SDACAS-8) */}
-        <div className="lg:col-span-2 bg-[#1e293b]/40 border border-slate-800 p-6 rounded-xl shadow-2xl backdrop-blur-sm h-fit">
-          <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-5 flex items-center space-x-2 border-b border-slate-800 pb-3">
-            <i className="fa-solid fa-clock text-cyan-400 text-sm"></i>
-            <span>Configurar Tiempos</span>
-          </h4>
+      {mensaje && (
+        <div
+          className={`rounded-lg border px-4 py-3 text-sm font-semibold ${mensaje.tipo === "error"
+            ? "border-red-200 bg-red-50 text-red-800"
+            : "border-green-200 bg-green-50 text-green-800"
+            }`}
+        >
+          {mensaje.texto}
+        </div>
+      )}
 
-          <form onSubmit={guardarConfiguracion} className="space-y-4">
-            {/* SDACAS-7: Disponibilidad Semanal */}
-            <div>
-              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                Horas máximas de estudio semanales
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500 text-xs">
-                  <i className="fa-solid fa-hourglass-half"></i>
-                </span>
-                <input
-                  type="number"
-                  value={horasDisponibles}
-                  onChange={(e) => setHorasDisponibles(Number(e.target.value))}
-                  className="w-full text-sm pl-9 pr-4 py-2.5 bg-[#111827]/60 border border-slate-800 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-400 text-white transition-all outline-none"
-                />
-              </div>
-            </div>
+      {cargando && <p className="text-sm text-[#430000]/70">Cargando información...</p>}
 
-            {/* SDACAS-8: Toggle de Jornada Laboral */}
-            <div className="p-3 bg-[#111827]/40 border border-slate-800 rounded-xl flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">¿Posees jornada laboral?</span>
-              <input 
-                type="checkbox" 
-                checked={trabaja}
-                onChange={(e) => {
-                  setTrabaja(e.target.checked);
-                  if(!e.target.checked) setHorasTrabajo(0);
+      <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
+        {/* Formulario */}
+        <Panel titulo={editando.tipo ? "Editar Disponibilidad" : "Nueva Disponibilidad"}>
+          <form className="space-y-3" onSubmit={guardarDisponibilidad}>
+            <Select
+              label="Ciclo Académico"
+              value={form.cicloId}
+              onChange={(cicloId) => setForm({ ...form, cicloId })}
+              options={ciclos.map((ciclo) => ({
+                value: ciclo.id,
+                label: `${ciclo.nombre} - ${ciclo.anio}`,
+              }))}
+            />
+            <Select
+              label="Día de la Semana"
+              value={form.diaSemana}
+              onChange={(diaSemana) => setForm({ ...form, diaSemana })}
+              options={["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"]}
+            />
+            <Select
+              label="Tipo de Bloque"
+              value={form.tipoBloque}
+              onChange={(tipoBloque) => setForm({ ...form, tipoBloque })}
+              options={["CLASE", "ESTUDIO", "TRABAJO", "LIBRE"]}
+            />
+            <Campo
+              label="Hora Inicio"
+              type="time"
+              value={form.horaInicio}
+              onChange={(horaInicio) => setForm({ ...form, horaInicio })}
+            />
+            <Campo
+              label="Hora Fin"
+              type="time"
+              value={form.horaFin}
+              onChange={(horaFin) => setForm({ ...form, horaFin })}
+            />
+            <BotonGuardar />
+            {editando.tipo && (
+              <button
+                type="button"
+                className="w-full text-sm font-semibold text-[#430000]/70 hover:underline mt-2"
+                onClick={() => {
+                  setEditando({ tipo: null, id: null });
+                  setForm(disponibilidadInicial);
                 }}
-                className="w-4 h-4 text-cyan-600 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2 cursor-pointer"
-              />
-            </div>
-
-            {/* Horas de trabajo si aplica */}
-            {trabaja && (
-              <div className="animate-fadeIn">
-                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                  Horas semanales de trabajo
-                </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500 text-xs">
-                    <i className="fa-solid fa-briefcase"></i>
-                  </span>
-                  <input
-                    type="number"
-                    value={horasTrabajo}
-                    onChange={(e) => setHorasTrabajo(Number(e.target.value))}
-                    placeholder="Ej: 20 o 40 hrs"
-                    className="w-full text-sm pl-9 pr-4 py-2.5 bg-[#111827]/60 border border-slate-800 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-400 text-white transition-all outline-none"
-                  />
-                </div>
-              </div>
+              >
+                Cancelar Edición
+              </button>
             )}
-
-            <button
-              type="submit"
-              className="w-full mt-3 flex items-center justify-center space-x-2 py-3 bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-cyan-600/20 transition-all duration-150 cursor-pointer"
-            >
-              <i className="fa-solid fa-floppy-disk"></i>
-              <span>Guardar Parámetros</span>
-            </button>
           </form>
-        </div>
+        </Panel>
 
-        {/* BALANCE DE HORAS (Sustento visual para la entrega) */}
-        <div className="lg:col-span-3 bg-[#1e293b]/20 border border-slate-800/60 p-6 rounded-xl flex flex-col justify-between">
-          <div>
-            <h4 className="text-sm font-bold text-slate-200 mb-2">Cómputo Automático</h4>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Las horas netas reales dedicadas a la Universidad de El Salvador se calculan deduciendo tu jornada laboral del tope máximo de tu disponibilidad semanal.
-            </p>
-          </div>
-          
-          <div className="p-6 bg-[#111827]/60 border border-slate-800 rounded-xl text-center my-auto">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Tiempo neto disponible para estudio</span>
-            <span className="text-5xl font-black text-cyan-400 block my-2">
-              {horasDisponibles - horasTrabajo} hrs
-            </span>
-            <span className="text-[10px] text-slate-500 block">
-              {trabaja ? `(${horasDisponibles} Disponibles - ${horasTrabajo} Laborales)` : "Sin deducciones por trabajo"}
-            </span>
-          </div>
-        </div>
+        {/* Tabla de Registros */}
+        <Tabla
+          columnas={["Día", "Horario", "Tipo de Bloque", "Ciclo"]}
+          filas={disponibilidades.map((disp) => {
+            const cicloAsociado = ciclos.find((c) => Number(c.id) === Number(disp.cicloId));
+            const cicloLabel = cicloAsociado ? `${cicloAsociado.nombre} (${cicloAsociado.anio})` : "No asignado";
 
+            return {
+              id: disp.id,
+              celdas: [
+                disp.diaSemana,
+                `${disp.horaInicio} - ${disp.horaFin}`,
+                disp.tipoBloque,
+                cicloLabel,
+              ],
+              item: disp,
+            };
+          })}
+          onEdit={editarDisponibilidad}
+          onDelete={eliminar}
+        />
       </div>
+    </section>
+  );
+}
+
+/* ==========================================================================
+   SUBCOMPONENTES REUTILIZABLES
+   ========================================================================== */
+
+function Tabla({ columnas, filas, onEdit, onDelete }) {
+  return (
+    <Panel titulo="Bloques de Disponibilidad Registrados">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[680px] text-left text-sm">
+          <thead className="bg-[#430000]/10 text-[#430000]">
+            <tr>
+              {columnas.map((columna) => (
+                <th key={columna} className="px-3 py-2">{columna}</th>
+              ))}
+              <th className="px-3 py-2">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filas.map((fila) => (
+              <tr key={fila.id} className="border-b border-[#430000]/10">
+                {fila.celdas.map((celda, index) => (
+                  <td key={`${fila.id}-${index}`} className="px-3 py-2">{celda || "Sin dato"}</td>
+                ))}
+                <td className="flex gap-2 px-3 py-2">
+                  <button
+                    className="rounded bg-[#430000]/10 px-3 py-1 font-semibold text-[#430000] hover:bg-[#430000]/20 transition"
+                    type="button"
+                    onClick={() => onEdit(fila.item)}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    className="rounded bg-[#960000] px-3 py-1 font-semibold text-white hover:bg-[#7a0000] transition"
+                    type="button"
+                    onClick={() => onDelete(fila.id)}
+                  >
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {filas.length === 0 && <p className="p-4 text-sm text-[#430000]/60">No hay registros.</p>}
+      </div>
+    </Panel>
+  );
+}
+
+function Panel({ titulo, children }) {
+  return (
+    <div className="rounded-xl border border-[#430000]/20 bg-white p-5 shadow-sm">
+      <h3 className="mb-4 text-lg font-black text-[#430000]">{titulo}</h3>
+      {children}
     </div>
+  );
+}
+
+function Campo({ label, value, onChange, type = "text", required = true }) {
+  const inputRef = useRef(null);
+  const hasPicker = type === "date" || type === "time";
+  const pickerIcon = type === "date" ? "fa-calendar-days" : "fa-clock";
+
+  function abrirPicker() {
+    if (inputRef.current?.showPicker) {
+      inputRef.current.showPicker();
+      return;
+    }
+    inputRef.current?.focus();
+  }
+
+  return (
+    <label className="block text-sm font-semibold text-[#430000]">
+      {label}
+      <div className="relative mt-1">
+        <input
+          ref={inputRef}
+          required={required}
+          className={`block w-full rounded-lg border border-[#430000]/20 bg-white px-3 py-2 text-[#430000] outline-none transition focus:border-[#960000] focus:ring-2 focus:ring-[#960000]/20 ${hasPicker ? "pr-11" : ""
+            }`}
+          type={type}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
+
+        {hasPicker && (
+          <button
+            aria-label={`Abrir selector de ${label.toLowerCase()}`}
+            className="absolute inset-y-1 right-1 flex w-9 items-center justify-center rounded-md text-[#960000] transition hover:bg-[#960000]/10"
+            type="button"
+            onClick={abrirPicker}
+          >
+            <i className={`fa-solid ${pickerIcon}`}></i>
+          </button>
+        )}
+      </div>
+    </label>
+  );
+}
+
+function Select({ label, value, onChange, options }) {
+  return (
+    <label className="block text-sm font-semibold text-[#430000]">
+      {label}
+      <select
+        required
+        className="mt-1 block w-full rounded-lg border border-[#430000]/20 px-3 py-2 text-[#430000] bg-white outline-none focus:border-[#960000] focus:ring-2 focus:ring-[#960000]/20"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        <option value="">Seleccione</option>
+        {options.map((option) => {
+          const valueOption = typeof option === "string" ? option : option.value;
+          const labelOption = typeof option === "string" ? option : option.label;
+          return <option key={valueOption} value={valueOption}>{labelOption}</option>;
+        })}
+      </select>
+    </label>
+  );
+}
+
+function BotonGuardar() {
+  return (
+    <button className="w-full rounded-lg bg-[#960000] px-4 py-2 font-bold text-white hover:bg-[#7a0000] transition" type="submit">
+      Guardar Disponibilidad
+    </button>
   );
 }
 
