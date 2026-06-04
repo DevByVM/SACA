@@ -21,14 +21,14 @@ function ClimaActual() {
         // Guardamos los datos del clima actual en el estado
         setClima(respuesta.data.current_weather);
         setCargando(false);
-      } catch (err) {
+      } catch {
         setError("No se pudo obtener el clima. Inténtalo de nuevo.");
         setCargando(false);
       }
     };
 
     obtenerClima();
-  }, []); // Array vacío para que solo se ejecute al montar el componente
+  }, [latitud, longitud]);
 
   // Renderizado condicional
   if (cargando) return <p style={styles.texto}>Cargando el clima actual...</p>;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {obtenerPerfil,actualizarPerfil} from "../services/perfilService";
 
 function PerfilAcademico() {
@@ -11,11 +11,7 @@ function PerfilAcademico() {
     contrasenia: ""
   });
 
-  useEffect(() => {
-    cargarPerfil();
-  }, []);
-
-  const cargarPerfil = async () => {
+  const cargarPerfil = useCallback(async () => {
 
     const data =
       await obtenerPerfil();
@@ -28,7 +24,11 @@ function PerfilAcademico() {
         data.correoInstitucional,
       contrasenia: ""
     });
-  };
+  }, []);
+
+  useEffect(() => {
+    cargarPerfil();
+  }, [cargarPerfil]);
 
   const handleChange = (e) => {
 
@@ -60,7 +60,7 @@ function PerfilAcademico() {
 
       alert(respuesta);
 
-    } catch (error) {
+    } catch {
 
       alert(
         "Error al actualizar perfil"

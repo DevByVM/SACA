@@ -8,13 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.saca.api.dto.ActualizarPerfilRequest;
 import com.saca.api.dto.LoginRequest;
+import com.saca.api.dto.LoginResponse;
 import com.saca.api.dto.RegistroRequest;
 import com.saca.api.entity.Estudiante;
 import com.saca.api.repository.EstudianteRepository;
-
-import java.util.Optional;
-import com.saca.api.dto.ActualizarPerfilRequest;
 
 @Service
 public class EstudianteService {
@@ -22,44 +21,34 @@ public class EstudianteService {
     @Autowired
     private EstudianteRepository repository;
 
-    private final BCryptPasswordEncoder passwordEncoder =
-            new BCryptPasswordEncoder();
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public String registrar(RegistroRequest request) {
+        String correoInstitucional = normalizarCorreo(request.getCorreoInstitucional());
+        String carnet = normalizarTexto(request.getCarnet());
 
-        if (!request.getCorreoInstitucional()
-                .endsWith("@ues.edu.sv")) {
+        if (!correoInstitucional.endsWith("@ues.edu.sv")) {
             return "Correo institucional inválido";
         }
 
-        if (repository.existsByCarnet(
-                request.getCarnet())) {
+        if (repository.existsByCarnet(carnet)) {
             return "Carnet ya registrado";
         }
 
-        if (repository.existsByCorreoInstitucional(
-                request.getCorreoInstitucional())) {
+        if (repository.existsByCorreoInstitucional(correoInstitucional)) {
             return "Correo ya registrado";
         }
 
-        if (!request.getContrasenia()
-                .matches("^(?=.*[A-Z])(?=.*\\d).{8,}$")) {
+        if (!contraseniaValida(request.getContrasenia())) {
             return "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número";
         }
 
         Estudiante estudiante = new Estudiante();
-
-        estudiante.setNombre(request.getNombre());
-        estudiante.setCarnet(request.getCarnet());
-        estudiante.setCorreoInstitucional(
-                request.getCorreoInstitucional());
-
-        estudiante.setContrasenia(
-                passwordEncoder.encode(
-                        request.getContrasenia()));
-
+        estudiante.setNombre(normalizarTexto(request.getNombre()));
+        estudiante.setCarnet(carnet);
+        estudiante.setCorreoInstitucional(correoInstitucional);
+        estudiante.setContrasenia(passwordEncoder.encode(request.getContrasenia()));
         estudiante.setCuentaActiva(true);
-
         estudiante.setIntentosFallidos(0);
         estudiante.setBloqueadoHasta(null);
 
@@ -68,140 +57,129 @@ public class EstudianteService {
         return "Usuario registrado correctamente";
     }
 
-    public String login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request) {
+        String correoInstitucional = normalizarCorreo(request.getCorreoInstitucional());
 
         Optional<Estudiante> estudianteOpt =
-                repository.findByCorreoInstitucional(
-                        request.getCorreoInstitucional());
+                repository.findByCorreoInstitucional(correoInstitucional);
+
+        if (estudianteOpt.isEmpty()) {
+            return LoginResponse.error("Usuario no encontrado");
+        }
+
+        Estudiante estudiante = estudianteOpt.get();
+
+        if (!Boolean.TRUE.equals(estudiante.getCuentaActiva())) {
+            return LoginResponse.error("Cuenta no activada");
+        }
+
+        if (estudiante.getBloqueadoHasta() != null
+                && estudiante.getBloqueadoHasta().after(Timestamp.valueOf(LocalDateTime.now()))) {
+            return LoginResponse.error("Cuenta bloqueada temporalmente");
+        }
+
+        boolean passwordCorrecta =
+                esHashBCrypt(estudiante.getContrasenia())
+                        && passwordEncoder.matches(
+                                request.getContrasenia(),
+                                estudiante.getContrasenia());
+
+        if (!passwordCorrecta) {
+            int intentosFallidos = estudiante.getIntentosFallidos() == null
+                    ? 0
+                    : estudiante.getIntentosFallidos();
+
+            estudiante.setIntentosFallidos(intentosFallidos + 1);
+
+            if (estudiante.getIntentosFallidos() >= 3) {
+                estudiante.setBloqueadoHasta(Timestamp.valueOf(LocalDateTime.now().plusMinutes(5)));
+                repository.save(estudiante);
+                return LoginResponse.error("Cuenta bloqueada por 5 minutos");
+            }
+
+            repository.save(estudiante);
+            return LoginResponse.error("Credenciales incorrectas");
+        }
+
+        estudiante.setIntentosFallidos(0);
+        estudiante.setBloqueadoHasta(null);
+        repository.save(estudiante);
+
+        return new LoginResponse(
+                true,
+                "LOGIN_OK",
+                estudiante.getId(),
+                estudiante.getNombre(),
+                estudiante.getCarnet(),
+                estudiante.getCorreoInstitucional());
+    }
+
+    public String actualizarPerfil(Long id, ActualizarPerfilRequest request) {
+        Optional<Estudiante> estudianteOpt = repository.findById(id);
 
         if (estudianteOpt.isEmpty()) {
             return "Usuario no encontrado";
         }
 
+        String nombre = normalizarTexto(request.getNombre());
+        String carnet = normalizarTexto(request.getCarnet());
+        String correoInstitucional = normalizarCorreo(request.getCorreoInstitucional());
+
+        if (nombre.isBlank()) {
+            return "Nombre obligatorio";
+        }
+
+        if (!correoInstitucional.endsWith("@ues.edu.sv")) {
+            return "Correo institucional inválido";
+        }
+
+        Optional<Estudiante> carnetExistente = repository.findByCarnet(carnet);
+
+        if (carnetExistente.isPresent() && !carnetExistente.get().getId().equals(id)) {
+            return "Carnet ya registrado";
+        }
+
+        Optional<Estudiante> correoExistente =
+                repository.findByCorreoInstitucional(correoInstitucional);
+
+        if (correoExistente.isPresent() && !correoExistente.get().getId().equals(id)) {
+            return "Correo ya registrado";
+        }
+
+        if (!contraseniaValida(request.getContrasenia())) {
+            return "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número";
+        }
+
         Estudiante estudiante = estudianteOpt.get();
-
-        if (!estudiante.getCuentaActiva()) {
-            return "Cuenta no activada";
-        }
-
-        if (estudiante.getBloqueadoHasta() != null &&
-                estudiante.getBloqueadoHasta()
-                        .after(Timestamp.valueOf(
-                                LocalDateTime.now()))) {
-
-            return "Cuenta bloqueada temporalmente";
-        }
-
-        boolean passwordCorrecta =
-                passwordEncoder.matches(
-                        request.getContrasenia(),
-                        estudiante.getContrasenia());
-
-        if (!passwordCorrecta) {
-
-            estudiante.setIntentosFallidos(
-                    estudiante.getIntentosFallidos() + 1);
-
-            if (estudiante.getIntentosFallidos() >= 3) {
-
-                estudiante.setBloqueadoHasta(
-                        Timestamp.valueOf(
-                                LocalDateTime.now()
-                                        .plusMinutes(5)));
-
-                repository.save(estudiante);
-
-                return "Cuenta bloqueada por 5 minutos";
-            }
-
-            repository.save(estudiante);
-
-            return "Credenciales incorrectas";
-        }
-
-        estudiante.setIntentosFallidos(0);
-        estudiante.setBloqueadoHasta(null);
+        estudiante.setNombre(nombre);
+        estudiante.setCarnet(carnet);
+        estudiante.setCorreoInstitucional(correoInstitucional);
+        estudiante.setContrasenia(passwordEncoder.encode(request.getContrasenia()));
 
         repository.save(estudiante);
 
-        return "LOGIN_OK";
+        return "Perfil actualizado correctamente";
     }
 
-    public String actualizarPerfil(
-        Long id,
-        ActualizarPerfilRequest request) {
-
-    Optional<Estudiante> estudianteOpt =
-            repository.findById(id);
-
-    if (estudianteOpt.isEmpty()) {
-        return "Usuario no encontrado";
+    public Estudiante obtenerPorCorreo(String correo) {
+        return repository.findByCorreoInstitucional(normalizarCorreo(correo)).orElse(null);
     }
 
-    Estudiante estudiante =
-            estudianteOpt.get();
-
-    if (request.getNombre() == null ||
-            request.getNombre().isBlank()) {
-
-        return "Nombre obligatorio";
+    private String normalizarCorreo(String correo) {
+        return normalizarTexto(correo).toLowerCase();
     }
 
-    if (!request.getCorreoInstitucional()
-            .endsWith("@ues.edu.sv")) {
-
-        return "Correo institucional inválido";
+    private String normalizarTexto(String texto) {
+        return texto == null ? "" : texto.trim();
     }
 
-    Optional<Estudiante> carnetExistente =
-            repository.findByCarnet(
-                    request.getCarnet());
-
-    if (carnetExistente.isPresent()
-            && !carnetExistente.get()
-            .getId().equals(id)) {
-
-        return "Carnet ya registrado";
+    private boolean contraseniaValida(String contrasenia) {
+        return contrasenia != null && contrasenia.matches("^(?=.*[A-Z])(?=.*\\d).{8,}$");
     }
 
-    Optional<Estudiante> correoExistente =
-            repository.findByCorreoInstitucional(
-                    request.getCorreoInstitucional());
-
-    if (correoExistente.isPresent()
-            && !correoExistente.get()
-            .getId().equals(id)) {
-
-        return "Correo ya registrado";
+    private boolean esHashBCrypt(String contraseniaAlmacenada) {
+        return contraseniaAlmacenada != null
+                && contraseniaAlmacenada.length() >= 60
+                && contraseniaAlmacenada.startsWith("$2");
     }
-
-    if (!request.getContrasenia()
-            .matches("^(?=.*[A-Z])(?=.*\\d).{8,}$")) {
-
-        return "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número";
-    }
-
-    estudiante.setNombre(
-            request.getNombre());
-
-    estudiante.setCarnet(
-            request.getCarnet());
-
-    estudiante.setCorreoInstitucional(
-            request.getCorreoInstitucional());
-
-    estudiante.setContrasenia(
-            passwordEncoder.encode(
-                    request.getContrasenia()));
-
-    repository.save(estudiante);
-
-    return "Perfil actualizado correctamente";
-}
-public Estudiante obtenerPorCorreo(String correo) {
-
-    return repository
-            .findByCorreoInstitucional(correo)
-            .orElse(null);
-}
 }

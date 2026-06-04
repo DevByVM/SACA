@@ -2,7 +2,6 @@ import { useState } from "react";
 import { login, registrar } from "../services/authService";
 
 function Login({ onLoginSuccess }) {
-
     const [modo, setModo] = useState("login");
 
     const [form, setForm] = useState({
@@ -19,7 +18,6 @@ function Login({ onLoginSuccess }) {
         });
     };
 
-    // LOGIN
     const handleLogin = async (e) => {
         e.preventDefault();
 
@@ -29,24 +27,28 @@ function Login({ onLoginSuccess }) {
                 contrasenia: form.contrasenia
             });
 
-            if (respuesta === "LOGIN_OK") {
+            if (respuesta.autenticado) {
+                const estudianteAutenticado = {
+                    id: respuesta.estudianteId,
+                    nombre: respuesta.nombre,
+                    carnet: respuesta.carnet,
+                    correoInstitucional: respuesta.correoInstitucional
+                };
 
-    localStorage.setItem(
-        "correoInstitucional",
-        form.correoInstitucional
-    );
+                localStorage.setItem(
+                    "correoInstitucional",
+                    estudianteAutenticado.correoInstitucional
+                );
 
-    onLoginSuccess();
-         }else {
-                alert(respuesta);
+                onLoginSuccess(estudianteAutenticado);
+            } else {
+                alert(respuesta.mensaje || "Credenciales incorrectas");
             }
-
         } catch (error) {
-            alert("Error al iniciar sesión");
+            alert(error.message || "Error al iniciar sesión");
         }
     };
 
-    // REGISTRO
     const handleRegistro = async (e) => {
         e.preventDefault();
 
@@ -54,54 +56,39 @@ function Login({ onLoginSuccess }) {
             const respuesta = await registrar(form);
 
             alert(respuesta);
-
             setModo("login");
-
         } catch (error) {
-            alert("Error al registrar");
+            alert(error.message || "Error al registrar");
         }
     };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#ffffff] p-6">
-
             <div className="w-full max-w-md p-8 rounded-2xl bg-[#ffffff] border border-[#430000]/20 shadow-lg">
+                <div className="flex flex-col items-center mb-6">
+                    <div className="w-20 h-20 rounded-full bg-[#960000]/10 border border-[#960000]/20 flex items-center justify-center mb-4">
+                        <i className="fa-solid fa-graduation-cap text-[#960000] text-4xl"></i>
+                    </div>
 
-               {/* LOGO */}
-<div className="flex flex-col items-center mb-6">
+                    <h1 className="text-3xl font-bold text-[#430000] text-center">
+                        SACA UES
+                    </h1>
 
-    <div className="w-20 h-20 rounded-full bg-[#960000]/10 border border-[#960000]/20 flex items-center justify-center mb-4">
-        <i className="fa-solid fa-graduation-cap text-[#960000] text-4xl"></i>
-    </div>
+                    <p className="text-sm text-[#430000]/60 mt-1">
+                        Sistema de Análisis de Carga Académica
+                    </p>
 
-    <h1 className="text-3xl font-bold text-[#430000] text-center">
-        SACA UES
-    </h1>
+                    <div className="w-16 h-1 bg-[#960000] rounded-full mt-4"></div>
+                </div>
 
-    <p className="text-sm text-[#430000]/60 mt-1">
-        Sistema de Análisis de Carga Académica
-    </p>
-
-    <div className="w-16 h-1 bg-[#960000] rounded-full mt-4"></div>
-
-</div>
-
-                {/* SUBTÍTULO */}
                 <h2 className="text-[#960000] text-center font-semibold mb-6">
-                    {modo === "login"
-                        ? "Iniciar Sesión"
-                        : "Registro"}
+                    {modo === "login" ? "Iniciar Sesión" : "Registro"}
                 </h2>
 
                 <form
-                    onSubmit={
-                        modo === "login"
-                            ? handleLogin
-                            : handleRegistro
-                    }
+                    onSubmit={modo === "login" ? handleLogin : handleRegistro}
                     className="flex flex-col gap-4"
                 >
-
                     {modo === "registro" && (
                         <>
                             <input
@@ -139,30 +126,19 @@ function Login({ onLoginSuccess }) {
                         type="submit"
                         className="bg-[#960000] hover:bg-[#430000] text-[#eeeeee] font-bold p-3 rounded-lg transition-all"
                     >
-                        {modo === "login"
-                            ? "Ingresar"
-                            : "Registrarse"}
+                        {modo === "login" ? "Ingresar" : "Registrarse"}
                     </button>
-
                 </form>
 
                 <button
-                    onClick={() =>
-                        setModo(
-                            modo === "login"
-                                ? "registro"
-                                : "login"
-                        )
-                    }
+                    onClick={() => setModo(modo === "login" ? "registro" : "login")}
                     className="mt-5 text-sm text-[#430000]/70 hover:text-[#960000] w-full transition-colors"
                 >
                     {modo === "login"
                         ? "¿No tienes cuenta? Regístrate"
                         : "¿Ya tienes cuenta? Inicia sesión"}
                 </button>
-
             </div>
-
         </div>
     );
 }
