@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { login, registrar } from "../services/authService";
+import { toast } from "react-toastify";
 
 function Login({ onLoginSuccess }) {
     const [modo, setModo] = useState("login");
@@ -18,49 +19,74 @@ function Login({ onLoginSuccess }) {
         });
     };
 
+
     const handleLogin = async (e) => {
-        e.preventDefault();
+    e.preventDefault();
 
-        try {
-            const respuesta = await login({
-                correoInstitucional: form.correoInstitucional,
-                contrasenia: form.contrasenia
-            });
+    try {
+        const respuesta = await login({
+            correoInstitucional: form.correoInstitucional,
+            contrasenia: form.contrasenia
+        });
 
-            if (respuesta.autenticado) {
-                const estudianteAutenticado = {
-                    id: respuesta.estudianteId,
-                    nombre: respuesta.nombre,
-                    carnet: respuesta.carnet,
-                    correoInstitucional: respuesta.correoInstitucional
-                };
+        if (respuesta.autenticado) {
 
-                localStorage.setItem(
-                    "correoInstitucional",
-                    estudianteAutenticado.correoInstitucional
-                );
+            toast.success("Inicio de sesión exitoso");
 
-                onLoginSuccess(estudianteAutenticado);
-            } else {
-                alert(respuesta.mensaje || "Credenciales incorrectas");
-            }
-        } catch (error) {
-            alert(error.message || "Error al iniciar sesión");
+            const estudianteAutenticado = {
+                id: respuesta.estudianteId,
+                nombre: respuesta.nombre,
+                carnet: respuesta.carnet,
+                correoInstitucional: respuesta.correoInstitucional
+            };
+
+            localStorage.setItem(
+                "correoInstitucional",
+                estudianteAutenticado.correoInstitucional
+            );
+
+            onLoginSuccess(estudianteAutenticado);
+
+        } else {
+
+            toast.error(
+                respuesta.mensaje || "Credenciales incorrectas"
+            );
         }
-    };
+
+    } catch (error) {
+
+        toast.error(
+            error.message || "Error al iniciar sesión"
+        );
+    }
+};
 
     const handleRegistro = async (e) => {
-        e.preventDefault();
+    e.preventDefault();
 
-        try {
-            const respuesta = await registrar(form);
+    try {
 
-            alert(respuesta);
-            setModo("login");
-        } catch (error) {
-            alert(error.message || "Error al registrar");
-        }
-    };
+        const respuesta = await registrar(form);
+
+        toast.success(respuesta);
+
+        setModo("login");
+
+        setForm({
+            nombre: "",
+            carnet: "",
+            correoInstitucional: "",
+            contrasenia: ""
+        });
+
+    } catch (error) {
+
+        toast.error(
+            error.message || "Error al registrar"
+        );
+    }
+};
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#ffffff] p-6">

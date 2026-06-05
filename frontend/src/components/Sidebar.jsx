@@ -99,11 +99,9 @@ function Sidebar({
 
           <button
             onClick={cerrarSesion}
-            className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-red-700 hover:bg-red-50 transition-all"
-          >
+      className="w-full mt-3 py-2.5 px-4 bg-[#F4E5E5] hover:bg-[#960000] text-[#430000] text-xs font-bold rounded-xl transition-all">
             <i className="fa-solid fa-right-from-bracket"></i>
-
-            <span>Cerrar Sesión</span>
+ <span>  Cerrar Sesión</span>
           </button>
 
         </nav>
