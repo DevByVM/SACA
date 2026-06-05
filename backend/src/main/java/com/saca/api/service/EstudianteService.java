@@ -146,16 +146,24 @@ public class EstudianteService {
             return "Correo ya registrado";
         }
 
-        if (!contraseniaValida(request.getContrasenia())) {
-            return "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número";
-        }
+        if (request.getContrasenia() != null
+        && !request.getContrasenia().isBlank()) {
 
+    if (!contraseniaValida(request.getContrasenia())) {
+        return "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número";
+    }
+}
         Estudiante estudiante = estudianteOpt.get();
         estudiante.setNombre(nombre);
         estudiante.setCarnet(carnet);
         estudiante.setCorreoInstitucional(correoInstitucional);
-        estudiante.setContrasenia(passwordEncoder.encode(request.getContrasenia()));
+if (request.getContrasenia() != null
+        && !request.getContrasenia().isBlank()) {
 
+    estudiante.setContrasenia(
+        passwordEncoder.encode(request.getContrasenia())
+    );
+}
         repository.save(estudiante);
 
         return "Perfil actualizado correctamente";

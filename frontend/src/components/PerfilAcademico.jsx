@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {obtenerPerfil,actualizarPerfil} from "../services/perfilService";
-
+import { toast } from "react-toastify";
 function PerfilAcademico() {
 
   const [form, setForm] = useState({
@@ -41,32 +41,67 @@ function PerfilAcademico() {
 
   const handleSubmit = async (e) => {
 
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
+  
+  if (!form.nombre.trim()) {
+    toast.warning("Debe ingresar un nombre");
+    return;
+  }
 
-      const respuesta =
-        await actualizarPerfil(
-          form.id,
-          {
-            nombre: form.nombre,
-            carnet: form.carnet,
-            correoInstitucional:
-              form.correoInstitucional,
-            contrasenia:
-              form.contrasenia
-          }
-        );
+  if (!form.carnet.trim()) {
+    toast.warning("Debe ingresar un carnet");
+    return;
+  }
 
-      alert(respuesta);
+  if (
+    !form.correoInstitucional
+      .endsWith("@ues.edu.sv")
+  ) {
+    toast.warning(
+      "Debe usar un correo institucional UES"
+    );
+    return;
+  }
 
-    } catch {
+  if (
+    form.contrasenia &&
+    !form.contrasenia.match(
+      /^(?=.*[A-Z])(?=.*\d).{8,}$/
+    )
+  ) {
+    toast.warning(
+      "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número"
+    );
+    return;
+  }
 
-      alert(
-        "Error al actualizar perfil"
-      );
-    }
-  };
+  try {
+
+    const respuesta = await actualizarPerfil(
+  form.id,
+  {
+    nombre: form.nombre,
+    carnet: form.carnet,
+    correoInstitucional: form.correoInstitucional,
+    contrasenia: form.contrasenia
+  }
+);
+
+if (respuesta === "Perfil actualizado correctamente") {
+  toast.success(respuesta);
+} else {
+  toast.error(respuesta);
+}
+
+  } catch (error) {
+
+    toast.error(
+      error.message ||
+      "Error al actualizar perfil"
+    );
+  }
+};
 
   return (
 
@@ -118,11 +153,12 @@ function PerfilAcademico() {
         />
 
         <button
-          type="submit"
-          className="bg-[#960000] text-white px-6 py-3 rounded-lg"
-        >
-          Guardar cambios
-        </button>
+  type="submit"
+  className="w-full bg-[#960000] hover:bg-[#430000] text-white px-6 py-3 rounded-lg font-bold transition-all"
+>
+  <i className="fa-solid fa-floppy-disk mr-2"></i>
+  Guardar cambios
+</button>
 
       </form>
 
