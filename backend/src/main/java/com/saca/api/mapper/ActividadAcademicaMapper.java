@@ -5,7 +5,6 @@ import com.saca.api.entity.ActividadAcademica;
 import com.saca.api.entity.Nota;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 import java.util.Optional;
 
 @Component
