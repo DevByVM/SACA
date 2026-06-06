@@ -5,6 +5,8 @@ import Sidebar from "./components/Sidebar.jsx";
 import TableroCargaSemanal from "./components/TableroCargaSemanal.jsx";
 import GestionAcademica from "./components/GestionAcademica.jsx";
 import GestionDisponiblidad from "./components/GestionDisponibilidad.jsx";
+import { jornadaService } from "./services/jornadaLaboralService.js";
+import { RegistroJornada } from "./components/GestionJornadaLaboral.jsx";
 function App() {
 
   const [logueado, setLogueado] = useState(
@@ -93,6 +95,7 @@ function App() {
                 {vistaActiva === "perfil" && "Perfil Académico"}
                 {vistaActiva === "analisis" && "Semáforo Horario"}
                  {vistaActiva === "disponibilidad" && "Gestión disponibilidad"}
+                  {vistaActiva === "jornada" && "Gestión de Jornada Laboral"}
               </span>
 
             </h1>
@@ -114,10 +117,15 @@ function App() {
               {vistaActiva === "analisis" && (
                 <TableroCargaSemanal />
               )}
-          {vistaActiva === "disponibilidad" && <GestionDisponiblidad estudiante={estudiante} />}
-            </div>
+              {vistaActiva === "disponibilidad" && <GestionDisponiblidad estudiante={estudiante} />}
 
-          </div>
+          
+               {vistaActiva === "jornada" && (
+               <RegistroJornada /> 
+               )}
+               </div>
+
+             </div>
 
           {vistaActiva === "dashboard" && (
             <div className="w-full xl:w-3/5 flex flex-col gap-6 relative justify-start">

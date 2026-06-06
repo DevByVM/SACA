@@ -101,6 +101,14 @@ function Sidebar({
             vistaActiva={vistaActiva}
             setVistaActiva={setVistaActiva}
           />
+
+           <SidebarItem
+            id="jornada"
+            label="Horario Laboral"
+            icon="fa-calendar-days"
+            vistaActiva={vistaActiva}
+            setVistaActiva={setVistaActiva}
+          />
           <hr className="my-4 border-[#430000]/20" />
 
           <button
