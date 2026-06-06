@@ -4,7 +4,7 @@ import PerfilAcademico from "./components/PerfilAcademico";
 import Sidebar from "./components/Sidebar.jsx";
 import TableroCargaSemanal from "./components/TableroCargaSemanal.jsx";
 import GestionAcademica from "./components/GestionAcademica.jsx";
-
+import GestionDisponiblidad from "./components/GestionDisponibilidad.jsx";
 function App() {
 
   const [logueado, setLogueado] = useState(
@@ -92,6 +92,7 @@ function App() {
                 {vistaActiva === "academico" && "Gestión Académica"}
                 {vistaActiva === "perfil" && "Perfil Académico"}
                 {vistaActiva === "analisis" && "Semáforo Horario"}
+                 {vistaActiva === "disponibilidad" && "Gestión disponibilidad"}
               </span>
 
             </h1>
@@ -113,7 +114,7 @@ function App() {
               {vistaActiva === "analisis" && (
                 <TableroCargaSemanal />
               )}
-
+          {vistaActiva === "disponibilidad" && <GestionDisponiblidad estudiante={estudiante} />}
             </div>
 
           </div>
