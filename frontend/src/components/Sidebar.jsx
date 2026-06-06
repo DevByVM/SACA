@@ -94,7 +94,13 @@ function Sidebar({
             vistaActiva={vistaActiva}
             setVistaActiva={setVistaActiva}
           />
-
+          <SidebarItem
+            id="disponibilidad"
+            label="Gestión disponibilidad"
+            icon="fa-calendar-days"
+            vistaActiva={vistaActiva}
+            setVistaActiva={setVistaActiva}
+          />
           <hr className="my-4 border-[#430000]/20" />
 
           <button
