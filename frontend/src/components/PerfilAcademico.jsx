@@ -1,166 +1,204 @@
 import { useCallback, useEffect, useState } from "react";
-import {obtenerPerfil,actualizarPerfil} from "../services/perfilService";
 import { toast } from "react-toastify";
-function PerfilAcademico() {
 
-  const [form, setForm] = useState({
-    id: "",
+import { obtenerPerfil, actualizarPerfil } from "../services/perfilService";
+import {
+  obtenerPerfilAcademico,
+  actualizarPerfilAcademico
+} from "../services/perfilAcademicoService";
+
+function PerfilAcademico({ estudiante }) {
+
+  //  DATOS ESTUDIANTE (LOGIN)
+  const [usuario, setUsuario] = useState({
     nombre: "",
     carnet: "",
     correoInstitucional: "",
     contrasenia: ""
   });
 
-  const cargarPerfil = useCallback(async () => {
 
-    const data =
-      await obtenerPerfil();
+  const [academico, setAcademico] = useState({
+    carrera: "",
+    facultad: "",
+    fechaIngreso: "",
+    planEstudio: ""
+  });
 
-    setForm({
-      id: data.id,
-      nombre: data.nombre,
-      carnet: data.carnet,
-      correoInstitucional:
-        data.correoInstitucional,
-      contrasenia: ""
-    });
-  }, []);
+  const cargarDatos = useCallback(async () => {
+    try {
+      const dataUsuario = await obtenerPerfil();
+      setUsuario({
+        nombre: dataUsuario.nombre,
+        carnet: dataUsuario.carnet,
+        correoInstitucional: dataUsuario.correoInstitucional,
+        contrasenia: ""
+      });
+
+      const dataAcademico = await obtenerPerfilAcademico(estudiante.id);
+
+      if (dataAcademico) {
+        setAcademico({
+          carrera: dataAcademico.carrera || "",
+          facultad: dataAcademico.facultad || "",
+          fechaIngreso: dataAcademico.fechaIngreso || "",
+          planEstudio: dataAcademico.planEstudio || ""
+        });
+      }
+
+    } catch (error) {
+      console.log("Error cargando perfil");
+    }
+  }, [estudiante]);
 
   useEffect(() => {
-    cargarPerfil();
-  }, [cargarPerfil]);
+    cargarDatos();
+  }, [cargarDatos]);
 
-  const handleChange = (e) => {
-
-    setForm({
-      ...form,
-      [e.target.name]:
-        e.target.value
+  // =========================
+ 
+  // =========================
+  const handleUserChange = (e) => {
+    setUsuario({
+      ...usuario,
+      [e.target.name]: e.target.value
     });
   };
 
-  const handleSubmit = async (e) => {
+  const guardarUsuario = async (e) => {
+    e.preventDefault();
 
-  e.preventDefault();
+    if (!usuario.nombre.trim()) {
+      toast.warning("Nombre requerido");
+      return;
+    }
 
-  
-  if (!form.nombre.trim()) {
-    toast.warning("Debe ingresar un nombre");
-    return;
-  }
+    if (!usuario.carnet.trim()) {
+      toast.warning("Carnet requerido");
+      return;
+    }
 
-  if (!form.carnet.trim()) {
-    toast.warning("Debe ingresar un carnet");
-    return;
-  }
+    if (!usuario.correoInstitucional.endsWith("@ues.edu.sv")) {
+      toast.warning("Correo institucional inválido");
+      return;
+    }
 
-  if (
-    !form.correoInstitucional
-      .endsWith("@ues.edu.sv")
-  ) {
-    toast.warning(
-      "Debe usar un correo institucional UES"
-    );
-    return;
-  }
+    if (
+      usuario.contrasenia &&
+      !usuario.contrasenia.match(/^(?=.*[A-Z])(?=.*\d).{8,}$/)
+    ) {
+      toast.warning("Contraseña débil");
+      return;
+    }
 
-  if (
-    form.contrasenia &&
-    !form.contrasenia.match(
-      /^(?=.*[A-Z])(?=.*\d).{8,}$/
-    )
-  ) {
-    toast.warning(
-      "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número"
-    );
-    return;
-  }
+    try {
+      const res = await actualizarPerfil(estudiante.id, usuario);
+      toast.success(res);
+    } catch (e) {
+      toast.error("Error al actualizar usuario");
+    }
+  };
 
-  try {
+  // =========================
+  //  PERFIL ACADÉMICO
+  // =========================
+  const handleAcadChange = (e) => {
+    setAcademico({
+      ...academico,
+      [e.target.name]: e.target.value
+    });
+  };
 
-    const respuesta = await actualizarPerfil(
-  form.id,
-  {
-    nombre: form.nombre,
-    carnet: form.carnet,
-    correoInstitucional: form.correoInstitucional,
-    contrasenia: form.contrasenia
-  }
-);
+  const guardarAcademico = async (e) => {
+    e.preventDefault();
 
-if (respuesta === "Perfil actualizado correctamente") {
-  toast.success(respuesta);
-} else {
-  toast.error(respuesta);
-}
+    if (!academico.carrera.trim()) {
+      toast.warning("Carrera requerida");
+      return;
+    }
 
-  } catch (error) {
+    if (!academico.facultad.trim()) {
+      toast.warning("Facultad requerida");
+      return;
+    }
 
-    toast.error(
-      error.message ||
-      "Error al actualizar perfil"
-    );
-  }
-};
+    try {
+      const res = await actualizarPerfilAcademico(
+        estudiante.id,
+        academico
+      );
+
+      toast.success(res);
+
+    } catch (e) {
+      toast.error("Error al actualizar perfil académico");
+    }
+  };
 
   return (
+    <div className="space-y-8">
 
-    <div className="bg-white p-6 rounded-xl shadow">
+      {/* 🟦 PERFIL USUARIO */}
+      <div className="bg-white p-6 rounded-xl shadow">
+        <h2 className="text-xl font-bold mb-4">Datos de Usuario</h2>
 
-      <h2 className="text-2xl font-bold mb-6">
-        Perfil Académico
-      </h2>
+        <form onSubmit={guardarUsuario} className="space-y-4">
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4"
-      >
+          <input name="nombre" value={usuario.nombre} onChange={handleUserChange}
+            className="w-full border p-3 rounded" placeholder="Nombre" />
 
-        <input
-          type="text"
-          name="nombre"
-          value={form.nombre}
-          onChange={handleChange}
-          placeholder="Nombre"
-          className="w-full border p-3 rounded"
-        />
+          <input name="carnet" value={usuario.carnet} onChange={handleUserChange}
+            className="w-full border p-3 rounded" placeholder="Carnet" />
 
-        <input
-          type="text"
-          name="carnet"
-          value={form.carnet}
-          onChange={handleChange}
-          placeholder="Carnet"
-          className="w-full border p-3 rounded"
-        />
+          <input name="correoInstitucional" value={usuario.correoInstitucional}
+            onChange={handleUserChange}
+            className="w-full border p-3 rounded" placeholder="Correo" />
 
-        <input
-          type="email"
-          name="correoInstitucional"
-          value={form.correoInstitucional}
-          onChange={handleChange}
-          placeholder="Correo"
-          className="w-full border p-3 rounded"
-        />
+          <input name="contrasenia" type="password"
+            value={usuario.contrasenia}
+            onChange={handleUserChange}
+            className="w-full border p-3 rounded"
+            placeholder="Nueva contraseña" />
 
-        <input
-          type="password"
-          name="contrasenia"
-          value={form.contrasenia}
-          onChange={handleChange}
-          placeholder="Nueva contraseña"
-          className="w-full border p-3 rounded"
-        />
+          <button className="w-full bg-[#960000] text-white p-3 rounded">
+            Guardar Usuario
+          </button>
 
-        <button
-  type="submit"
-  className="w-full bg-[#960000] hover:bg-[#430000] text-white px-6 py-3 rounded-lg font-bold transition-all"
->
-  <i className="fa-solid fa-floppy-disk mr-2"></i>
-  Guardar cambios
-</button>
+        </form>
+      </div>
 
-      </form>
+      {/*  PERFIL ACADÉMICO */}
+      <div className="bg-white p-6 rounded-xl shadow">
+        <h2 className="text-xl font-bold mb-4">Datos Académicos</h2>
+
+        <form onSubmit={guardarAcademico} className="space-y-4">
+
+          <input name="carrera" value={academico.carrera}
+            onChange={handleAcadChange}
+            className="w-full border p-3 rounded"
+            placeholder="Carrera" />
+
+          <input name="facultad" value={academico.facultad}
+            onChange={handleAcadChange}
+            className="w-full border p-3 rounded"
+            placeholder="Facultad" />
+
+          <input type="date" name="fechaIngreso"
+            value={academico.fechaIngreso}
+            onChange={handleAcadChange}
+            className="w-full border p-3 rounded" />
+
+          <input name="planEstudio" value={academico.planEstudio}
+            onChange={handleAcadChange}
+            className="w-full border p-3 rounded"
+            placeholder="Plan de estudio" />
+
+          <button className="w-full bg-[#430000] text-white p-3 rounded">
+            Guardar Perfil Académico
+          </button>
+
+        </form>
+      </div>
 
     </div>
   );
