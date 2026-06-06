@@ -69,6 +69,11 @@ function Login({ onLoginSuccess }) {
 
         const respuesta = await registrar(form);
 
+        if (respuesta !== "Usuario registrado correctamente") {
+            toast.error(respuesta || "No se pudo registrar el usuario");
+            return;
+        }
+
         toast.success(respuesta);
 
         setModo("login");

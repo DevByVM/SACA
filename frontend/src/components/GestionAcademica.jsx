@@ -275,7 +275,7 @@ function FormularioCiclo({ form, setForm, onSubmit }) {
     <Panel titulo="Ciclo academico">
       <form className="space-y-3" onSubmit={onSubmit}>
         <Campo label="Nombre" value={form.nombre} onChange={(nombre) => setForm({ ...form, nombre })} />
-        <Campo label="Anio" type="number" value={form.anio} onChange={(anio) => setForm({ ...form, anio })} />
+        <Campo label="Año" type="number" value={form.anio} onChange={(anio) => setForm({ ...form, anio })} />
         <Campo label="Fecha inicio" type="date" value={form.fechaInicio} onChange={(fechaInicio) => setForm({ ...form, fechaInicio })} />
         <Campo label="Fecha fin" type="date" value={form.fechaFin} onChange={(fechaFin) => setForm({ ...form, fechaFin })} />
         <Select label="Estado" value={form.estado} onChange={(estado) => setForm({ ...form, estado })} options={["PLANIFICADO", "ACTIVO", "FINALIZADO"]} />
@@ -328,7 +328,7 @@ function FormularioHorario({ materias, form, setForm, onSubmit }) {
 function TablaCiclos({ ciclos, onEdit, onDelete }) {
   return (
     <Tabla
-      columnas={["Nombre", "Anio", "Periodo", "Estado"]}
+      columnas={["Nombre", "Año", "Periodo", "Estado"]}
       filas={ciclos.map((ciclo) => ({
         id: ciclo.id,
         celdas: [ciclo.nombre, ciclo.anio, `${ciclo.fechaInicio} a ${ciclo.fechaFin}`, ciclo.estado],

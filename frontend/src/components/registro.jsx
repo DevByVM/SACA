@@ -22,6 +22,12 @@ function Registro() {
 
         try {
             const respuesta = await registrar(form);
+
+            if (respuesta !== "Usuario registrado correctamente") {
+                alert(respuesta || "No se pudo registrar el usuario");
+                return;
+            }
+
             alert(respuesta);
 
             setForm({
