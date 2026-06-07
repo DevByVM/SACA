@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
+
 @Service
 public class ActividadAcademicaService {
 
@@ -71,9 +73,9 @@ public class ActividadAcademicaService {
         }
     }
 
-    private void validarFechas(java.time.LocalDate fechaEntrega, java.time.LocalDate fechaCompletada) {
-        if (fechaEntrega.isAfter(fechaCompletada)) {
-            throw new ValidacionNegocioException("La fecha de Entrega no puede ser posterior a la fecha de Completada");
+    private void validarFechas(LocalDateTime fechaInicio, LocalDateTime fechaEntrega) {
+        if (fechaInicio.isAfter(fechaEntrega)) {
+            throw new ValidacionNegocioException("La fecha de inicio no puede ser posterior a la fecha de entrega");
         }
     }
 }

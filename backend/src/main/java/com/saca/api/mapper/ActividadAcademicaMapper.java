@@ -16,6 +16,7 @@ public class ActividadAcademicaMapper {
         return new ActividadAcademicaResponse(
                 actividadAcademica.getIdActividad(),
                 actividadAcademica.getNombre(),
+                actividadAcademica.getFechaInicio(),
                 actividadAcademica.getFechaEntrega(),
                 actividadAcademica.getPorcentajeEvaluacion(),
                 actividadAcademica.getTiempoEstimadoHoras(),
@@ -30,6 +31,7 @@ public class ActividadAcademicaMapper {
     public ActividadAcademica toEntity(CrearActividadAcademicaRequest crearActividad, TipoActividad tipo, MateriaInscrita materiaInscrita){
         ActividadAcademica actividad = new ActividadAcademica();
         actividad.setNombre(crearActividad.nombre());
+        actividad.setFechaInicio(crearActividad.fechaInicio());
         actividad.setFechaEntrega(crearActividad.fechaEntrega());
         actividad.setPorcentajeEvaluacion(crearActividad.porcentajeEvaluacion());
         actividad.setTiempoEstimadoHoras(crearActividad.tiempoEstimadoHoras());

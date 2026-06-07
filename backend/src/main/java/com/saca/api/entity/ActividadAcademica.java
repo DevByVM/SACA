@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Setter
 @Getter
@@ -15,11 +15,12 @@ public class ActividadAcademica {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long idActividad;
     private String nombre;
-    private LocalDate fechaEntrega;
+    private LocalDateTime fechaInicio;
+    private LocalDateTime fechaEntrega;
     private double porcentajeEvaluacion;
     private double tiempoEstimadoHoras;
     private String estado;
-    private LocalDate fechaCompletada;
+    private LocalDateTime fechaCompletada;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "tipo_actividad_id", nullable = false)

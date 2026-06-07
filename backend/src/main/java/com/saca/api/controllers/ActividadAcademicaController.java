@@ -34,6 +34,12 @@ public class ActividadAcademicaController {
         service.eliminar(actividadId);
         return ResponseEntity.noContent().build();
     }
+/*
+    @PutMapping("/{actividadId}")
+    public ActividadAcademicaResponse actualizar(@Valid @RequestBody updateActividadAcademicaRequest request) {
+        ActividadAcademicaResponse response = service.crear(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }*/
 
 
 }

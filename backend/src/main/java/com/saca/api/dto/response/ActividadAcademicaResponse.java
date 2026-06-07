@@ -1,15 +1,16 @@
 package com.saca.api.dto.response;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public record ActividadAcademicaResponse(
         Long idActividad,
         String nombre,
-        LocalDate fechaEntrega,
+        LocalDateTime fechaInicio,
+        LocalDateTime fechaEntrega,
         Double porcentajeEvaluacion,
         Double tiempoEstimadoHoras,
         String estado,
-        LocalDate fechaCompletada,
+        LocalDateTime fechaCompletada,
         Integer tipoActividadId,
         Long materiaInscritaId,
         Integer notaId
