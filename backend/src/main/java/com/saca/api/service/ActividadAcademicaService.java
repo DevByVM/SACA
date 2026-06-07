@@ -3,6 +3,7 @@ package com.saca.api.service;
 import com.saca.api.dto.request.CrearActividadAcademicaRequest;
 import com.saca.api.dto.response.ActividadAcademicaResponse;
 import com.saca.api.entity.*;
+import com.saca.api.exception.RecursoNoEncontradoException;
 import com.saca.api.exception.ValidacionNegocioException;
 import com.saca.api.mapper.ActividadAcademicaMapper;
 import com.saca.api.repository.ActividadAcademicaRepository;
@@ -59,6 +60,15 @@ public class ActividadAcademicaService {
         }
         ActividadAcademica itemGuardado = actividadRepository.save(actividad);
         return mapper.toResponse(itemGuardado);
+    }
+
+    @Transactional
+    public void eliminar(Long actividadId){
+        if(actividadRepository.existsById(actividadId)){
+            actividadRepository.deleteById(actividadId);
+        }else{
+            throw new RecursoNoEncontradoException("Actividad académica no encontrada");
+        }
     }
 
     private void validarFechas(java.time.LocalDate fechaEntrega, java.time.LocalDate fechaCompletada) {

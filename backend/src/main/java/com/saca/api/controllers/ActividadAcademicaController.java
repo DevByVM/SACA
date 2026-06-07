@@ -29,5 +29,11 @@ public class ActividadAcademicaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @DeleteMapping("/{actividadId}")
+    public ResponseEntity<Void> eliminar(@PathVariable Long actividadId){
+        service.eliminar(actividadId);
+        return ResponseEntity.noContent().build();
+    }
+
 
 }
