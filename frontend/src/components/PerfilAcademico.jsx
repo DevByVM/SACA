@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
-
 import { obtenerPerfil, actualizarPerfil } from "../services/perfilService";
 import {
   obtenerPerfilAcademico,

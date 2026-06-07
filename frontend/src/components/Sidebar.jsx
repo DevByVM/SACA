@@ -1,5 +1,4 @@
 import React from 'react';
-
 function SidebarItem({
   id,
   label,
@@ -74,7 +73,7 @@ function Sidebar({
           <SidebarItem
             id="academico"
             label="Gestión Académica"
-            icon="fa-calendar-days"
+            icon="fa-book-open"
             vistaActiva={vistaActiva}
             setVistaActiva={setVistaActiva}
           />
@@ -97,7 +96,7 @@ function Sidebar({
           <SidebarItem
             id="disponibilidad"
             label="Gestión disponibilidad"
-            icon="fa-calendar-days"
+            icon="fa-clock"
             vistaActiva={vistaActiva}
             setVistaActiva={setVistaActiva}
           />
@@ -105,26 +104,36 @@ function Sidebar({
            <SidebarItem
             id="jornada"
             label="Horario Laboral"
-            icon="fa-calendar-days"
+             icon="fa-briefcase"
             vistaActiva={vistaActiva}
             setVistaActiva={setVistaActiva}
           />
 
           <SidebarItem
-  id="calendario"
-  label="Calendario Académico"
-  icon="fa-table"
-  vistaActiva={vistaActiva}
-  setVistaActiva={setVistaActiva}
-/>
+           id="calendario"
+           label="Calendario Académico"
+           icon="fa-calendar-week"
+           vistaActiva={vistaActiva}
+          setVistaActiva={setVistaActiva}
+          />
           <hr className="my-4 border-[#430000]/20" />
 
           <button
-            onClick={cerrarSesion}
-      className="w-full mt-3 py-2.5 px-4 bg-[#F4E5E5] hover:bg-[#960000] text-[#430000] text-xs font-bold rounded-xl transition-all">
-            <i className="fa-solid fa-right-from-bracket"></i>
- <span>  Cerrar Sesión</span>
-          </button>
+           onClick={cerrarSesion}
+           className="
+    w-full mt-3 py-2.5 px-4
+         bg-[#960000]
+    text-[#F4E5E5]
+    border border-[#960000]
+    hover:bg-[#F4E5E5]
+    hover:text-[#960000]
+    transition-all duration-300
+    text-xs font-bold rounded-xl
+  "
+>
+  <i className="fa-solid fa-power-off"></i>
+  <span> Cerrar Sesión</span>
+</button>
 
         </nav>
 
@@ -153,5 +162,4 @@ function Sidebar({
     </aside>
   );
 }
-
 export default Sidebar;
