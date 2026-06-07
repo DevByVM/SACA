@@ -1,6 +1,6 @@
 package com.saca.api.service;
 
-import com.saca.api.dto.request.CrearActividadAcademicaRequest;
+import com.saca.api.dto.request.ActividadAcademicaRequest;
 import com.saca.api.dto.response.ActividadAcademicaResponse;
 import com.saca.api.entity.*;
 import com.saca.api.exception.RecursoNoEncontradoException;
@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Service
 public class ActividadAcademicaService {
@@ -46,13 +47,9 @@ public class ActividadAcademicaService {
     }
 
     @Transactional
-    public ActividadAcademicaResponse crear(CrearActividadAcademicaRequest request) {
-        //validando fechas de entrga y terminada
-        if(request.fechaCompletada() != null){
-            validarFechas(request.fechaEntrega(), request.fechaCompletada());
-        }
-
-
+    public ActividadAcademicaResponse crear(ActividadAcademicaRequest request) {
+        //validando fechas de inicio y entrega
+        validarFechas(request.fechaInicio(), request.fechaEntrega());
         TipoActividad tipo = tipoActividadRepository.getReferenceById(request.tipoActividadId());
         MateriaInscrita materia = materiaInscritaRepository.getReferenceById(request.materiaInscritaId());
         ActividadAcademica actividad = mapper.toEntity(request, tipo, materia);
@@ -62,6 +59,42 @@ public class ActividadAcademicaService {
         }
         ActividadAcademica itemGuardado = actividadRepository.save(actividad);
         return mapper.toResponse(itemGuardado);
+    }
+
+    @Transactional
+    public ActividadAcademicaResponse actualizar(ActividadAcademicaRequest request, Long actividadId) {
+
+        //se valida la existencia de la actividad
+        ActividadAcademica actividadExistente = actividadRepository.findById(actividadId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Actividad Academica no encontrada"
+                ));
+
+        //validando fechas de inicio y entrega
+        validarFechas(request.fechaInicio(), request.fechaEntrega());
+
+        //se mapea el objeto
+        ActividadAcademica actividadActualizada = mapper.updateEntity(actividadExistente, request);
+
+        //se verifica que hubo cambio de tipo
+        if (actividadExistente.getTipoActividad().getIdTipoActividad() != request.tipoActividadId()){
+            TipoActividad tipo = tipoActividadRepository.getReferenceById(request.tipoActividadId());
+            actividadActualizada.setTipoActividad(tipo);
+        }
+        //se verifica si hubo cambio de materia
+        if(actividadExistente.getMateriaInscrita().getId() != request.materiaInscritaId()){
+            MateriaInscrita materia = materiaInscritaRepository.getReferenceById(request.materiaInscritaId());
+            actividadActualizada.setMateriaInscrita(materia);
+
+        }
+        //se verifica si hay nota
+        if(actividadExistente.getNota()!=null && actividadExistente.getNota().getId()!=request.notaId()){
+            Nota nota = notaRepository.getReferenceById(request.notaId());
+            actividadActualizada.setNota(nota);
+        }
+
+        ActividadAcademica itemActualizado = actividadRepository.save(actividadActualizada);
+        return mapper.toResponse(itemActualizado);
     }
 
     @Transactional

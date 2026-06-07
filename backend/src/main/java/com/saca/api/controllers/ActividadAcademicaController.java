@@ -1,6 +1,6 @@
 package com.saca.api.controllers;
 
-import com.saca.api.dto.request.CrearActividadAcademicaRequest;
+import com.saca.api.dto.request.ActividadAcademicaRequest;
 import com.saca.api.dto.response.ActividadAcademicaResponse;
 import com.saca.api.service.ActividadAcademicaService;
 import jakarta.validation.Valid;
@@ -24,7 +24,7 @@ public class ActividadAcademicaController {
     }
 
     @PostMapping
-    public ResponseEntity<ActividadAcademicaResponse> crear(@Valid @RequestBody CrearActividadAcademicaRequest request) {
+    public ResponseEntity<ActividadAcademicaResponse> crear(@Valid @RequestBody ActividadAcademicaRequest request) {
         ActividadAcademicaResponse response = service.crear(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -34,12 +34,12 @@ public class ActividadAcademicaController {
         service.eliminar(actividadId);
         return ResponseEntity.noContent().build();
     }
-/*
+
     @PutMapping("/{actividadId}")
-    public ActividadAcademicaResponse actualizar(@Valid @RequestBody updateActividadAcademicaRequest request) {
-        ActividadAcademicaResponse response = service.crear(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }*/
+    public ResponseEntity<ActividadAcademicaResponse> actualizar(@Valid @RequestBody ActividadAcademicaRequest request, @PathVariable Long actividadId) {
+        ActividadAcademicaResponse response = service.actualizar(request,actividadId);
+        return ResponseEntity.ok(response);
+    }
 
 
 }

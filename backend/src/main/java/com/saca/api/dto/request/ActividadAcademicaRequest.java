@@ -5,7 +5,7 @@ import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;
 
-public record CrearActividadAcademicaRequest(
+public record ActividadAcademicaRequest(
         @NotBlank(message = "El nombre de la actividad no debe estar vacio")
         @Size(max = 80, message = "El nombre debe tener máximo 80 caracteres")
         String nombre,
@@ -23,7 +23,7 @@ public record CrearActividadAcademicaRequest(
         @Max(value = 100, message = "El maximo de porcentaje es 2")
         Double porcentajeEvaluacion,
 
-        @NotNull(message = "El estimado de horas es obligatorio")
+        @Min(value = 1, message = "La cantidad de horas no puede ser menor a 1")
         Double tiempoEstimadoHoras,
 
         @NotNull(message = "El estado es obligatorio")

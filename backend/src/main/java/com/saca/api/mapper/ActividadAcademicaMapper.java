@@ -1,6 +1,6 @@
 package com.saca.api.mapper;
 
-import com.saca.api.dto.request.CrearActividadAcademicaRequest;
+import com.saca.api.dto.request.ActividadAcademicaRequest;
 import com.saca.api.dto.response.ActividadAcademicaResponse;
 import com.saca.api.entity.ActividadAcademica;
 import com.saca.api.entity.MateriaInscrita;
@@ -28,8 +28,20 @@ public class ActividadAcademicaMapper {
         );
     }
 
-    public ActividadAcademica toEntity(CrearActividadAcademicaRequest crearActividad, TipoActividad tipo, MateriaInscrita materiaInscrita){
+    public ActividadAcademica toEntity(ActividadAcademicaRequest crearActividad, TipoActividad tipo, MateriaInscrita materiaInscrita){
         ActividadAcademica actividad = new ActividadAcademica();
+        setCampos(crearActividad, actividad);
+        actividad.setTipoActividad(tipo);
+        actividad.setMateriaInscrita(materiaInscrita);
+        return actividad;
+    }
+
+    public ActividadAcademica updateEntity(ActividadAcademica actividad, ActividadAcademicaRequest updateActividad){
+        setCampos(updateActividad, actividad);
+        return actividad;
+    }
+
+    private void setCampos(ActividadAcademicaRequest crearActividad, ActividadAcademica actividad) {
         actividad.setNombre(crearActividad.nombre());
         actividad.setFechaInicio(crearActividad.fechaInicio());
         actividad.setFechaEntrega(crearActividad.fechaEntrega());
@@ -37,8 +49,5 @@ public class ActividadAcademicaMapper {
         actividad.setTiempoEstimadoHoras(crearActividad.tiempoEstimadoHoras());
         actividad.setEstado(crearActividad.estado());
         actividad.setFechaCompletada(crearActividad.fechaCompletada());
-        actividad.setTipoActividad(tipo);
-        actividad.setMateriaInscrita(materiaInscrita);
-        return actividad;
     }
 }
