@@ -11,7 +11,7 @@ public record ActividadAcademicaResponse(
         String estado,
         LocalDate fechaCompletada,
         Integer tipoActividadId,
-        Long materiaInscrita,
-        Integer nota
+        Long materiaInscritaId,
+        Integer notaId
 ) {
 }
