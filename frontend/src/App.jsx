@@ -7,6 +7,7 @@ import GestionAcademica from "./components/GestionAcademica.jsx";
 import GestionDisponiblidad from "./components/GestionDisponibilidad.jsx";
 import { jornadaService } from "./services/jornadaLaboralService.js";
 import { RegistroJornada } from "./components/GestionJornadaLaboral.jsx";
+import CalendarioAcademico from "./components/CalendarioAcademico.jsx";
 function App() {
 
   const [logueado, setLogueado] = useState(
@@ -96,6 +97,7 @@ function App() {
                 {vistaActiva === "analisis" && "Semáforo Horario"}
                  {vistaActiva === "disponibilidad" && "Gestión disponibilidad"}
                   {vistaActiva === "jornada" && "Gestión de Jornada Laboral"}
+                  {vistaActiva === "calendario" && "Calendario Académico"}
               </span>
 
             </h1>
@@ -123,6 +125,12 @@ function App() {
                {vistaActiva === "jornada" && (
                <RegistroJornada /> 
                )}
+
+               {vistaActiva === "calendario" && (
+  <CalendarioAcademico
+    estudiante={estudiante}
+  />
+)}
                </div>
 
              </div>

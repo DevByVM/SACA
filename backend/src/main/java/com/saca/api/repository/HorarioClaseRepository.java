@@ -13,6 +13,9 @@ public interface HorarioClaseRepository extends JpaRepository<HorarioClase, Long
 
 	List<HorarioClase> findByMateriaInscritaIdOrderByDiaSemanaAscHoraInicioAsc(Long materiaInscritaId);
 
+	List<HorarioClase> findByMateriaInscrita_CicloAcademico_Estudiante_Id(Long estudianteId);
+
+	
 	List<HorarioClase> findByMateriaInscritaCicloAcademicoIdOrderByDiaSemanaAscHoraInicioAsc(Long cicloAcademicoId);
 
 	List<HorarioClase> findByMateriaInscritaCicloAcademicoEstudianteIdOrderByDiaSemanaAscHoraInicioAsc(
