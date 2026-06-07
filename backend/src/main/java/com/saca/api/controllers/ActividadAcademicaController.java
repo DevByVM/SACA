@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/actividades")
@@ -21,6 +23,11 @@ public class ActividadAcademicaController {
     @GetMapping("/{actividadId}")
     public ActividadAcademicaResponse obtenerActividadById(@PathVariable Long actividadId){
         return  service.getById(actividadId);
+    }
+
+    @GetMapping("/estudiante/{estudianteId}/activo")
+    public List<ActividadAcademicaResponse> listarPorCicloActivoYEstdiante(@PathVariable Long estudianteId){
+        return service.obtenerPorCicloActivoYEstdiante(estudianteId);
     }
 
     @PostMapping

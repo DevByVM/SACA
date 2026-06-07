@@ -6,16 +6,14 @@ import com.saca.api.entity.*;
 import com.saca.api.exception.RecursoNoEncontradoException;
 import com.saca.api.exception.ValidacionNegocioException;
 import com.saca.api.mapper.ActividadAcademicaMapper;
-import com.saca.api.repository.ActividadAcademicaRepository;
-import com.saca.api.repository.MateriaInscritaRepository;
-import com.saca.api.repository.NotaRepository;
-import com.saca.api.repository.TipoActividadRepository;
+import com.saca.api.repository.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -26,14 +24,16 @@ public class ActividadAcademicaService {
     private final NotaRepository notaRepository;
     private final TipoActividadRepository tipoActividadRepository;
     private final MateriaInscritaRepository materiaInscritaRepository;
+    private final EstudianteRepository estudianteRepository;
 
     public ActividadAcademicaService(ActividadAcademicaRepository actividadRepository, ActividadAcademicaMapper mapper,
-                                     NotaRepository notaRepository, TipoActividadRepository tipoActividadRepository, MateriaInscritaRepository materiaInscritaRepository) {
+                                     NotaRepository notaRepository, TipoActividadRepository tipoActividadRepository, MateriaInscritaRepository materiaInscritaRepository, EstudianteRepository estudianteRepository) {
         this.actividadRepository = actividadRepository;
         this.mapper = mapper;
         this.notaRepository = notaRepository;
         this.tipoActividadRepository = tipoActividadRepository;
         this.materiaInscritaRepository = materiaInscritaRepository;
+        this.estudianteRepository = estudianteRepository;
     }
 
     @Transactional(readOnly = true)
@@ -103,6 +103,18 @@ public class ActividadAcademicaService {
             actividadRepository.deleteById(actividadId);
         }else{
             throw new RecursoNoEncontradoException("Actividad académica no encontrada");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<ActividadAcademicaResponse> obtenerPorCicloActivoYEstdiante(Long estudianteId){
+        if(estudianteRepository.existsById(estudianteId)){
+            return actividadRepository.findActividadesCicloActivoPorEstudiante(estudianteId)
+                    .stream()
+                    .map(mapper::toResponse)
+                    .toList();
+        }else{
+            throw new RecursoNoEncontradoException("No se encontró el estudiante solicitado");
         }
     }
 
