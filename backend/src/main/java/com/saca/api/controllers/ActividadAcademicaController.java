@@ -30,6 +30,12 @@ public class ActividadAcademicaController {
         return service.obtenerPorCicloActivoYEstdiante(estudianteId);
     }
 
+    //se solicita desde una ruta tipo: /api/actividades?cicloId=1&estudianteId=1
+    @GetMapping()
+    public List<ActividadAcademicaResponse> listarPorCiclo(@RequestParam Long estudianteId,@RequestParam Long cicloId){
+        return service.obtenerPorCicloYEstdiante(cicloId,estudianteId);
+    }
+
     @PostMapping
     public ResponseEntity<ActividadAcademicaResponse> crear(@Valid @RequestBody ActividadAcademicaRequest request) {
         ActividadAcademicaResponse response = service.crear(request);

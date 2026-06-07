@@ -118,6 +118,18 @@ public class ActividadAcademicaService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public List<ActividadAcademicaResponse> obtenerPorCicloYEstdiante(Long cicloId, Long estudianteId){
+        if(estudianteRepository.existsById(estudianteId)){
+            return actividadRepository.findActividadesPorCicloYEstudiante(cicloId,estudianteId)
+                    .stream()
+                    .map(mapper::toResponse)
+                    .toList();
+        }else{
+            throw new RecursoNoEncontradoException("No se encontró el estudiante solicitado");
+        }
+    }
+
     private void validarFechas(LocalDateTime fechaInicio, LocalDateTime fechaEntrega) {
         if (fechaInicio.isAfter(fechaEntrega)) {
             throw new ValidacionNegocioException("La fecha de inicio no puede ser posterior a la fecha de entrega");
