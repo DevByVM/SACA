@@ -61,10 +61,12 @@ const actividadInicial = {
 
 function formatFechaLocalDateTime(value) {
   if (!value) return value;
+  
   const fecha = value.replace("T", " ");
-  // datetime-local puede incluir segundos; el backend espera yyyy-MM-dd HH:mm
-  return fecha.replace(/:\d{2}$/, "");
+  
+  return fecha.substring(0, 16);
 }
+
 
 function GestionAcademica({ estudiante }) {
   const estudianteId = estudiante?.id ? String(estudiante.id) : "";

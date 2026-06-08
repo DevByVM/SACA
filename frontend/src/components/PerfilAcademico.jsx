@@ -60,39 +60,48 @@ function PerfilAcademico({ estudiante }) {
     });
   };
 
-  const guardarUsuario = async (e) => {
-    e.preventDefault();
+const guardarUsuario = async (e) => {
+  e.preventDefault();
 
-    if (!usuario.nombre.trim()) {
-      toast.warning("Nombre requerido");
-      return;
-    }
+  if (!usuario.nombre.trim()) {
+    toast.warning("Nombre requerido");
+    return;
+  }
 
-    if (!usuario.carnet.trim()) {
-      toast.warning("Carnet requerido");
-      return;
-    }
+  if (!usuario.carnet.trim()) {
+    toast.warning("Carnet requerido");
+    return;
+  }
 
-    if (!usuario.correoInstitucional.endsWith("@ues.edu.sv")) {
-      toast.warning("Correo institucional inválido");
-      return;
-    }
+  if (!usuario.correoInstitucional.endsWith("@ues.edu.sv")) {
+    toast.warning("Correo institucional inválido");
+    return;
+  }
 
-    if (
-      usuario.contrasenia &&
-      !usuario.contrasenia.match(/^(?=.*[A-Z])(?=.*\d).{8,}$/)
-    ) {
-      toast.warning("Contraseña débil");
-      return;
-    }
+  if (
+    usuario.contrasenia &&
+    !usuario.contrasenia.match(/^(?=.*[A-Z])(?=.*\d).{8,}$/)
+  ) {
+    toast.warning("Contraseña débil");
+    return;
+  }
 
-    try {
-      const res = await actualizarPerfil(estudiante.id, usuario);
+  try {
+    const res = await actualizarPerfil(
+      estudiante.id,
+      usuario
+    );
+
+    if (res === "Perfil actualizado correctamente") {
       toast.success(res);
-    } catch (e) {
-      toast.error("Error al actualizar usuario");
+    } else {
+      toast.warning(res);
     }
-  };
+
+  } catch (e) {
+    toast.error("Error al actualizar usuario");
+  }
+};
 
   //  PERFIL ACADÉMICO
   const handleAcadChange = (e) => {
@@ -102,31 +111,37 @@ function PerfilAcademico({ estudiante }) {
     });
   };
 
-  const guardarAcademico = async (e) => {
-    e.preventDefault();
+const guardarAcademico = async (e) => {
+  e.preventDefault();
 
-    if (!academico.carrera.trim()) {
-      toast.warning("Carrera requerida");
-      return;
-    }
+  if (!academico.carrera.trim()) {
+    toast.warning("Carrera requerida");
+    return;
+  }
 
-    if (!academico.facultad.trim()) {
-      toast.warning("Facultad requerida");
-      return;
-    }
+  if (!academico.facultad.trim()) {
+    toast.warning("Facultad requerida");
+    return;
+  }
 
-    try {
-      const res = await actualizarPerfilAcademico(
-        estudiante.id,
-        academico
-      );
+  try {
+    const res = await actualizarPerfilAcademico(
+      estudiante.id,
+      academico
+    );
 
+    if (
+      res === "Perfil académico actualizado correctamente"
+    ) {
       toast.success(res);
-
-    } catch (e) {
-      toast.error("Error al actualizar perfil académico");
+    } else {
+      toast.warning(res);
     }
-  };
+
+  } catch (e) {
+    toast.error("Error al actualizar perfil académico");
+  }
+};
 
   return (
   <div className="space-y-8">

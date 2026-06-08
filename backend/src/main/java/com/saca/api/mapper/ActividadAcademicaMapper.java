@@ -24,7 +24,7 @@ public class ActividadAcademicaMapper {
                 actividadAcademica.getTipoActividad(),
                 actividadAcademica.getMateriaInscrita().getId(),
                 Optional.ofNullable(actividadAcademica.getNota()).map(Nota::getId).orElse(null),
-                actividadAcademica.getTipoActividad().getNombre(),
+                actividadAcademica.getTipoActividad().name(), // ¡Corregido aquí! (.name() en lugar de .getNombre())
                 actividadAcademica.getMateriaInscrita().getCodigo()
         );
     }
