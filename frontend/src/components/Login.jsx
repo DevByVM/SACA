@@ -14,6 +14,7 @@ import { toast } from "react-toastify";
  * - onLoginSuccess: función que se ejecuta cuando el usuario
  *   inicia sesión correctamente.
  */
+
 function Login({ onLoginSuccess }) {
 
     // Determina si se muestra el formulario de login o registro
@@ -176,6 +177,7 @@ function Login({ onLoginSuccess }) {
                         <>
                             <input
                                 name="nombre"
+                                value={form.nombre}
                                 placeholder="Nombre"
                                 className="p-3 rounded-lg bg-[#eeeeee] border border-[#430000]/20 text-[#430000] outline-none focus:border-[#960000]"
                                 onChange={handleChange}
@@ -183,6 +185,7 @@ function Login({ onLoginSuccess }) {
 
                             <input
                                 name="carnet"
+                                value={form.carnet}
                                 placeholder="Carnet"
                                 className="p-3 rounded-lg bg-[#eeeeee] border border-[#430000]/20 text-[#430000] outline-none focus:border-[#960000]"
                                 onChange={handleChange}
@@ -193,20 +196,24 @@ function Login({ onLoginSuccess }) {
                     {/* Correo institucional */}
                     <input
                         name="correoInstitucional"
+                        value={form.correoInstitucional}
+                        autoComplete="off"
                         placeholder="Correo institucional"
                         className="p-3 rounded-lg bg-[#eeeeee] border border-[#430000]/20 text-[#430000] outline-none focus:border-[#960000]"
                         onChange={handleChange}
                     />
 
+
                     {/* Contraseña */}
                     <input
                         name="contrasenia"
                         type="password"
+                        value={form.contrasenia}
+                        autoComplete="new-password"
                         placeholder="Contraseña"
                         className="p-3 rounded-lg bg-[#eeeeee] border border-[#430000]/20 text-[#430000] outline-none focus:border-[#960000]"
                         onChange={handleChange}
                     />
-
                     {/* Botón principal */}
                     <button
                         type="submit"
@@ -217,17 +224,26 @@ function Login({ onLoginSuccess }) {
                             : "Registrarse"}
                     </button>
 
+
                 </form>
 
                 {/* Botón para cambiar entre login y registro */}
                 <button
-                    onClick={() =>
+                    onClick={() => {
+
+                        setForm({
+                            nombre: "",
+                            carnet: "",
+                            correoInstitucional: "",
+                            contrasenia: ""
+                        });
+
                         setModo(
                             modo === "login"
                                 ? "registro"
                                 : "login"
-                        )
-                    }
+                        );
+                    }}
                     className="mt-5 text-sm text-[#430000]/70 hover:text-[#960000] w-full transition-colors"
                 >
                     {modo === "login"
