@@ -5,7 +5,6 @@ import com.saca.api.dto.response.ActividadAcademicaResponse;
 import com.saca.api.entity.ActividadAcademica;
 import com.saca.api.entity.MateriaInscrita;
 import com.saca.api.entity.Nota;
-import com.saca.api.entity.TipoActividad;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
