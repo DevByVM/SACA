@@ -18,6 +18,13 @@ import {
   listarMaterias,
 } from "../api/materiasApi";
 
+import {
+  getActividadesByEstudianteIdAndCicloActivo,
+  crearActividad,
+  eliminarActividad,
+  actualizarActividad
+} from "../api/actividadesApi";
+
 const cicloInicial = {
   nombre: "",
   anio: new Date().getFullYear(),
@@ -42,6 +49,25 @@ const horarioInicial = {
   docenteTutor: "",
 };
 
+const actividadInicial = {
+  nombre: "",
+  fechaInicio: "",
+  fechaEntrega: "",
+  tiempoEstimadoHoras: "",
+  tipoActividad: "",
+  materiaInscritaId: "",
+  porcentajeEvaluacion: "5"
+};
+
+function formatFechaLocalDateTime(value) {
+  if (!value) return value;
+  
+  const fecha = value.replace("T", " ");
+  
+  return fecha.substring(0, 16);
+}
+
+
 function GestionAcademica({ estudiante }) {
   const estudianteId = estudiante?.id ? String(estudiante.id) : "";
   const [vista, setVista] = useState("ciclos");
@@ -55,20 +81,26 @@ function GestionAcademica({ estudiante }) {
   const [horarioForm, setHorarioForm] = useState(horarioInicial);
   const [editando, setEditando] = useState({ tipo: null, id: null });
 
+  //agregado erick
+  const [actividades, setActividades] = useState([]);
+  const [actividadForm, setActividadForm] = useState(actividadInicial);
+
   const cargarDatos = useCallback(async () => {
     if (!estudianteId.trim()) return;
 
     try {
       setCargando(true);
       setMensaje(null);
-      const [ciclosData, materiasData, horariosData] = await Promise.all([
+      const [ciclosData, materiasData, horariosData, actividadesData] = await Promise.all([
         listarCiclos(estudianteId),
         listarMaterias(estudianteId),
         listarHorarios(estudianteId),
+        getActividadesByEstudianteIdAndCicloActivo(estudianteId)
       ]);
       setCiclos(ciclosData);
       setMaterias(materiasData);
       setHorarios(horariosData);
+      setActividades(actividadesData);
     } catch (error) {
       setMensaje({ tipo: "error", texto: error.message });
     } finally {
@@ -132,6 +164,28 @@ function GestionAcademica({ estudiante }) {
     }, "Horario guardado");
   }
 
+  async function guardarActividad(event) {
+    event.preventDefault();
+    const payload = {
+      ...actividadForm,
+      fechaInicio: formatFechaLocalDateTime(actividadForm.fechaInicio),
+      fechaEntrega: formatFechaLocalDateTime(actividadForm.fechaEntrega),
+      tiempoEstimadoHoras: actividadForm.tiempoEstimadoHoras ? Number(actividadForm.tiempoEstimadoHoras) : null,
+      materiaInscritaId: Number(actividadForm.materiaInscritaId),
+      fechaCompletada: null,
+      estado: "ACTIVO"
+    };
+
+    await guardar(async () => {
+      if (editando.tipo === "actividad") {
+        await actualizarActividad(editando.id, payload);
+      } else {
+        await crearActividad(payload);
+      }
+      setActividadForm(actividadInicial);
+    }, "Actividad academica guardada");
+  }
+
   async function guardar(accion, texto) {
     try {
       setMensaje(null);
@@ -149,6 +203,7 @@ function GestionAcademica({ estudiante }) {
       if (tipo === "ciclo") await eliminarCiclo(id, estudianteId);
       if (tipo === "materia") await eliminarMateria(id, estudianteId);
       if (tipo === "horario") await eliminarHorario(id, estudianteId);
+      if (tipo === "actividad") await eliminarActividad(id);
     }, "Registro eliminado");
   }
 
@@ -188,6 +243,21 @@ function GestionAcademica({ estudiante }) {
     });
   }
 
+  function editarActividad(actividad) {
+    setVista("actividades");
+    setEditando({ tipo: "actividad", id: actividad.idActividad });
+    setActividadForm({
+      nombre: actividad.nombre,
+      fechaInicio: actividad.fechaInicio,
+      fechaEntrega: actividad.fechaEntrega,
+      tiempoEstimadoHoras: actividad.tiempoEstimadoHoras,
+      tipoActividad: actividad.tipoActividad,
+      materiaInscritaId: actividad.materiaInscritaId,
+      porcentajeEvaluacion: actividad.porcentajeEvaluacion
+    });
+  }
+
+
   return (
     <section className="space-y-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -200,7 +270,7 @@ function GestionAcademica({ estudiante }) {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {["ciclos", "materias", "horarios"].map((item) => (
+        {["ciclos", "materias", "horarios", "actividades"].map((item) => (
           <button
             key={item}
             className={`rounded-lg px-4 py-2 text-sm font-bold ${
@@ -266,6 +336,22 @@ function GestionAcademica({ estudiante }) {
           />
         </div>
       )}
+
+      {vista === "actividades" && (
+        <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
+          <FormularioActividades
+            materias={materias}
+            form={actividadForm}
+            setForm={setActividadForm}
+            onSubmit={guardarActividad}
+          />
+          <TablaActividades 
+            materias={materias} actividades={actividades} 
+            onEdit={editarActividad} 
+            onDelete={(id) => eliminar("actividad", id)} 
+          />
+        </div>
+      )}
     </section>
   );
 }
@@ -325,6 +411,29 @@ function FormularioHorario({ materias, form, setForm, onSubmit }) {
   );
 }
 
+//form de actividades
+function FormularioActividades({ materias, form, setForm, onSubmit }) {
+  return (
+    <Panel titulo="Actividades Academicas">
+      <form className="space-y-3" onSubmit={onSubmit}>
+        <Select
+          label="Materia inscrita"
+          value={form.materiaInscritaId}
+          onChange={(materiaInscritaId) => setForm({ ...form, materiaInscritaId })}
+          options={materias.map((materia) => ({ value: materia.id, label: `${materia.codigo} - ${materia.nombre}` }))}
+        />
+        <Select label="Tipo de Actividad" value={form.tipoActividad} onChange={(tipoActividad) => setForm({ ...form, tipoActividad })} options={["PARCIAL", "LABORATORIO", "PROYECTO", "INVESTIGACION"]} />
+        <Campo label="Nombre" value={form.nombre} onChange={(nombre) => setForm({ ...form, nombre })} />
+        <Campo label="Porcentaje de evaluacion (ej. 10%)" type="number" value={form.porcentajeEvaluacion} onChange={(porcentajeEvaluacion) => setForm({ ...form, porcentajeEvaluacion })} />
+        <Campo label="Fecha inicio" type="datetime-local" value={form.fechaInicio} onChange={(fechaInicio) => setForm({ ...form, fechaInicio })} />
+        <Campo label="Fecha Entrega" type="datetime-local" value={form.fechaEntrega} onChange={(fechaEntrega) => setForm({ ...form, fechaEntrega })} />
+        <Campo label="Tiempo estimado (horas)" type="number" value={form.tiempoEstimadoHoras} onChange={(tiempoEstimadoHoras) => setForm({ ...form, tiempoEstimadoHoras })} />
+        <BotonGuardar />
+      </form>
+    </Panel>
+  );
+}
+
 function TablaCiclos({ ciclos, onEdit, onDelete }) {
   return (
     <Tabla
@@ -363,6 +472,32 @@ function TablaHorarios({ horarios, onEdit, onDelete }) {
         id: horario.id,
         celdas: [horario.diaSemana, `${horario.horaInicio} - ${horario.horaFin}`, horario.materiaNombre, horario.modalidad],
         item: horario,
+      }))}
+      onEdit={onEdit}
+      onDelete={onDelete}
+    />
+  );
+}
+
+function TablaActividades({ actividades, materias, onEdit, onDelete }) {
+  const obtenerNombreMateria = (materiaId) => {
+    const materiaSeleccionada = materias.find((materia) => String(materia.id) === String(materiaId));
+    return materiaSeleccionada ? materiaSeleccionada.codigo : "Sin materia";
+  };
+
+  return (
+    <Tabla
+      columnas={["Tipo Actividad", "Materia", "Porcentaje", "Nombre", "Fecha Entrega"]}
+      filas={actividades.map((actividad) => ({
+        id: actividad.id ?? actividad.idActividad,
+        celdas: [
+          actividad.tipoActividad,
+          obtenerNombreMateria(actividad.materiaInscritaId),
+          `${actividad.porcentajeEvaluacion}%`,
+          actividad.nombre,
+          actividad.fechaEntrega,
+        ],
+        item: actividad,
       }))}
       onEdit={onEdit}
       onDelete={onDelete}

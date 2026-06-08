@@ -1,0 +1,39 @@
+package com.saca.api.entity;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+
+@Setter
+@Getter
+@Entity
+@Table(name = "actividades_academicas")
+public class ActividadAcademica {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long idActividad;
+    private String nombre;
+    private LocalDateTime fechaInicio;
+    private LocalDateTime fechaEntrega;
+    private double porcentajeEvaluacion;
+    private double tiempoEstimadoHoras;
+    private String estado;
+    private LocalDateTime fechaCompletada;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_actividad", nullable = false, length = 20)
+    private TipoActividadAcademica tipoActividad;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "materia_inscrita_id", nullable = false)
+    private MateriaInscrita materiaInscrita;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "nota_id")
+    private Nota nota;
+
+    public ActividadAcademica() {}
+
+}

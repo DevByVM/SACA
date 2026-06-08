@@ -72,7 +72,11 @@ function GestionDisponibilidad({ estudiante }) {
       setMensaje({ tipo: "exito", texto: "Disponibilidad guardada correctamente" });
       await cargarDatos();
     } catch (error) {
-      setMensaje({ tipo: "error", texto: error.message });
+      const mensajeBackend = error.response?.data?.message || error.message || "Error al procesar la solicitud";
+      setMensaje({ 
+        tipo: "error", 
+        texto: mensajeBackend 
+      });
     }
   }
 
@@ -83,7 +87,7 @@ function GestionDisponibilidad({ estudiante }) {
       setMensaje({ tipo: "exito", texto: "Registro eliminado" });
       await cargarDatos();
     } catch (error) {
-      setMensaje({ tipo: "error", texto: error.message });
+      setMensaje({ tipo: "error", texto: mensajeBackend });
     }
   }
 
@@ -145,7 +149,7 @@ function GestionDisponibilidad({ estudiante }) {
               label="Tipo de Bloque"
               value={form.tipoBloque}
               onChange={(tipoBloque) => setForm({ ...form, tipoBloque })}
-              options={["CLASE", "ESTUDIO", "TRABAJO", "LIBRE"]}
+              options={["CLASE", "ESTUDIO", "LIBRE"]}
             />
             <Campo
               label="Hora Inicio"
