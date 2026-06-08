@@ -16,7 +16,6 @@ function PerfilAcademico({ estudiante }) {
     contrasenia: ""
   });
 
-
   const [academico, setAcademico] = useState({
     carrera: "",
     facultad: "",

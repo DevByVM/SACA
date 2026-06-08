@@ -123,8 +123,8 @@ function App() {
 
           
                {vistaActiva === "jornada" && (
-               <RegistroJornada /> 
-               )}
+   <RegistroJornada estudiante={estudiante} />
+)}
 
                {vistaActiva === "calendario" && (
   <CalendarioAcademico

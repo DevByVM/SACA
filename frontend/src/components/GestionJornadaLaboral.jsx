@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { jornadaService } from '../services/jornadaLaboralService.js';
 
 export const RegistroJornada = ({ estudiante }) => {
-  const estudianteId = estudiante?.id || 1;
+  const estudianteId = estudiante?.id;
   
   const [jornadas, setJornadas] = useState([]);
   const [loading, setLoading] = useState(false);
