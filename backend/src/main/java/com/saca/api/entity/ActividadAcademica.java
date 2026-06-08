@@ -22,9 +22,9 @@ public class ActividadAcademica {
     private String estado;
     private LocalDateTime fechaCompletada;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "tipo_actividad_id", nullable = false)
-    private TipoActividad tipoActividad;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_actividad", nullable = false, length = 20)
+    private TipoActividadAcademica tipoActividad;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "materia_inscrita_id", nullable = false)

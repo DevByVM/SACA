@@ -5,7 +5,6 @@ import com.saca.api.dto.response.ActividadAcademicaResponse;
 import com.saca.api.entity.ActividadAcademica;
 import com.saca.api.entity.MateriaInscrita;
 import com.saca.api.entity.Nota;
-import com.saca.api.entity.TipoActividad;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -22,7 +21,7 @@ public class ActividadAcademicaMapper {
                 actividadAcademica.getTiempoEstimadoHoras(),
                 actividadAcademica.getEstado(),
                 actividadAcademica.getFechaCompletada(),
-                actividadAcademica.getTipoActividad().getIdTipoActividad(),
+                actividadAcademica.getTipoActividad(),
                 actividadAcademica.getMateriaInscrita().getId(),
                 Optional.ofNullable(actividadAcademica.getNota()).map(Nota::getId).orElse(null),
                 actividadAcademica.getTipoActividad().getNombre(),
@@ -30,10 +29,9 @@ public class ActividadAcademicaMapper {
         );
     }
 
-    public ActividadAcademica toEntity(ActividadAcademicaRequest crearActividad, TipoActividad tipo, MateriaInscrita materiaInscrita){
+    public ActividadAcademica toEntity(ActividadAcademicaRequest crearActividad, MateriaInscrita materiaInscrita){
         ActividadAcademica actividad = new ActividadAcademica();
         setCampos(crearActividad, actividad);
-        actividad.setTipoActividad(tipo);
         actividad.setMateriaInscrita(materiaInscrita);
         return actividad;
     }
@@ -51,5 +49,6 @@ public class ActividadAcademicaMapper {
         actividad.setTiempoEstimadoHoras(crearActividad.tiempoEstimadoHoras());
         actividad.setEstado(crearActividad.estado());
         actividad.setFechaCompletada(crearActividad.fechaCompletada());
+        actividad.setTipoActividad(crearActividad.tipoActividad());
     }
 }

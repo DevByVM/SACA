@@ -1,6 +1,7 @@
 package com.saca.api.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.saca.api.entity.TipoActividadAcademica;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;
@@ -26,7 +27,6 @@ public record ActividadAcademicaRequest(
         @Min(value = 1, message = "La cantidad de horas no puede ser menor a 1")
         Double tiempoEstimadoHoras,
 
-        @NotNull(message = "El estado es obligatorio")
         String estado,
 
         @PastOrPresent(message = "La fecha no debe ser mayor a hoy")
@@ -34,7 +34,7 @@ public record ActividadAcademicaRequest(
         LocalDateTime fechaCompletada,
 
         @NotNull(message = "El tipo de Actividad es obligatorio")
-        Integer tipoActividadId,
+        TipoActividadAcademica tipoActividad,
         @NotNull(message = "La materia es obligatoria")
         Long materiaInscritaId,
         @Min(value = 1)
