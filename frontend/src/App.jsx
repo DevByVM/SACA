@@ -117,13 +117,13 @@ function App() {
               )}
 
               {vistaActiva === "analisis" && (
-                <TableroCargaSemanal />
+                <TableroCargaSemanal estudiante={estudiante}/>
               )}
               {vistaActiva === "disponibilidad" && <GestionDisponiblidad estudiante={estudiante} />}
 
           
                {vistaActiva === "jornada" && (
-               <RegistroJornada /> 
+               <RegistroJornada estudiante={estudiante} /> 
                )}
 
                {vistaActiva === "calendario" && (

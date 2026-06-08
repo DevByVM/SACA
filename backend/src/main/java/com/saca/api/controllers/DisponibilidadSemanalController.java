@@ -22,9 +22,7 @@ private DisponibilidadSemanalService service;
     @GetMapping
     public ResponseEntity<List<DisponibilidadSemanal>> listarTodo() {
         List<DisponibilidadSemanal> lista = service.listarTodo();
-        if (lista.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
+
         return ResponseEntity.ok(lista);
     }
 
