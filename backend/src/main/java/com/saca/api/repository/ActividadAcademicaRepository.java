@@ -23,6 +23,7 @@ public interface ActividadAcademicaRepository extends JpaRepository<ActividadAca
             "JOIN materia.cicloAcademico ciclo " +
             "JOIN ciclo.estudiante estudiante " +
             "WHERE estudiante.id = :idEstudiante " +
-            "AND ciclo.id = :idCiclo")
+            "AND ciclo.id = :idCiclo ")
+
     List<ActividadAcademica> findActividadesPorCicloYEstudiante(@Param("idEstudiante") Long idEstudiante,@Param("idCiclo") Long idCiclo);
 }

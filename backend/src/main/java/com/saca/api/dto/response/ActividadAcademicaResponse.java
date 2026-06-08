@@ -15,6 +15,10 @@ public record ActividadAcademicaResponse(
         LocalDateTime fechaCompletada,
         TipoActividadAcademica tipoActividad,
         Long materiaInscritaId,
-        Integer notaId
+        Integer notaId,
+        String tipoActividadNombre,
+        String materiaInscritaCodigo
+
+
 ) {
 }

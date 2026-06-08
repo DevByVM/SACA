@@ -73,4 +73,21 @@ export async function actualizarActividad(id, actividad) {
   }
 
   return respuesta.json();
+  
+}
+
+/**
+ * Obtiene las actividades académicas del ciclo activo de un estudiante específico.
+ * Conectado con /api/actividades/estudiante/{id}/activo
+ * @param {number} estudianteId - ID del estudiante logueado
+ * @returns {Promise<Array>} Lista de actividades del ciclo activo
+ */
+export async function obtenerPorCicloActivoYEstdiante(estudianteId) {
+
+  const respuesta = await fetch(`${BASE_URL}/estudiante/${estudianteId}/activo`);
+  
+  if (!respuesta.ok) {
+    throw new Error(`Error al obtener actividades del ciclo activo: ${respuesta.status}`);
+  }
+  return respuesta.json();
 }

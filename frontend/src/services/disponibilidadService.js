@@ -38,6 +38,6 @@ export async function eliminarDisponibilidad(id, estudianteId) {
 // Consumo de Ciclos (necesario para el selector)
 export async function listarCiclos(estudianteId) {
     const response = await fetch(`${API_BASE_URL}/ciclos?estudianteId=${estudianteId}`);
-    if (!response.ok) throw new Error("Error al cargar los ciclos académicos.");
+    if (!response.ok) throw new Error("Error al cargar los ciclos académicos.");  
     return await response.json();
 }
