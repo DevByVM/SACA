@@ -13,8 +13,36 @@ import java.util.List;
     @Autowired
     private DisponibilidadSemanalRepository repository;
 
-    // 1. Agregar/Guardar bloque
+
+    // / 1. Agregar/Guardar bloque con validación para evitar duplicados
     public DisponibilidadSemanal guardarBloque(DisponibilidadSemanal bloque) {
+        // 1. Traemos la lista de bloques que el estudiante YA TIENE en este ciclo
+        List<DisponibilidadSemanal> horarioExistente = obtenerHorarioEstudiante(
+                bloque.getEstudianteId(),
+                bloque.getCicloId()
+        );
+
+        // 2. Evaluamos el bloque nuevo contra cada uno de los que ya existen
+        for (DisponibilidadSemanal existente : horarioExistente) {
+
+            // Primero filtramos que estemos comparando el mismo día de la semana
+            if (existente.getDiaSemana().equalsIgnoreCase(bloque.getDiaSemana())) {
+
+                if (existente.getHoraInicio().equals(bloque.getHoraInicio()) &&
+                        existente.getHoraFin().equals(bloque.getHoraFin())) {
+                    throw new RuntimeException("¡Error! Ya registraste exactamente el mismo bloque de horario para este día.");
+                }
+
+                boolean seCruzan = (bloque.getHoraInicio().isBefore(existente.getHoraFin()) &&
+                        bloque.getHoraFin().isAfter(existente.getHoraInicio()));
+
+                if (seCruzan) {
+                    throw new RuntimeException("¡Conflicto de Horario! El bloque que intentas agregar se cruza con las horas de un registro existente.");
+                }
+            }
+        }
+
+        // Si el ciclo (for) termina sin lanzar excepciones, significa que el horario está limpio y se puede guardar
         return repository.save(bloque);
     }
 

@@ -117,7 +117,7 @@ function App() {
               )}
 
               {vistaActiva === "analisis" && (
-                <TableroCargaSemanal />
+                <TableroCargaSemanal estudiante={estudiante}/>
               )}
               {vistaActiva === "disponibilidad" && <GestionDisponiblidad estudiante={estudiante} />}
 

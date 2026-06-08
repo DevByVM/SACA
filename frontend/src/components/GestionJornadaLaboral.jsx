@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { jornadaService } from '../services/jornadaLaboralService.js';
 
+
 export const RegistroJornada = ({ estudiante }) => {
   const estudianteId = estudiante?.id;
   
@@ -23,7 +24,8 @@ export const RegistroJornada = ({ estudiante }) => {
   const [formData, setFormData] = useState({
     diaSemana: 'Lunes',
     horaInicio: '',
-    horaFin: ''
+    horaFin: '',
+    estudianteId: estudianteId
   });
 
   const diasDeLaSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -68,7 +70,7 @@ export const RegistroJornada = ({ estudiante }) => {
       estudianteId: estudianteId,
       diaSemana: formData.diaSemana,
       horaInicio: formatearHora(formData.horaInicio),
-      horaFin: formData.horaFin
+      horaFin: formatearHora(formData.horaFin)
     };
 
     try {
@@ -81,6 +83,7 @@ export const RegistroJornada = ({ estudiante }) => {
       cargarJornadas(); 
     } catch (err) {
       setError(idEdicion ? 'No se pudo actualizar la jornada.' : 'No se pudo guardar la jornada.');
+      console.error(err);
     }
   };
 
