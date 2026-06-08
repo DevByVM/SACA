@@ -14,7 +14,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class ActividadAcademicaService {
@@ -22,16 +21,14 @@ public class ActividadAcademicaService {
     private final ActividadAcademicaRepository actividadRepository;
     private final ActividadAcademicaMapper mapper;
     private final NotaRepository notaRepository;
-    private final TipoActividadRepository tipoActividadRepository;
     private final MateriaInscritaRepository materiaInscritaRepository;
     private final EstudianteRepository estudianteRepository;
 
     public ActividadAcademicaService(ActividadAcademicaRepository actividadRepository, ActividadAcademicaMapper mapper,
-                                     NotaRepository notaRepository, TipoActividadRepository tipoActividadRepository, MateriaInscritaRepository materiaInscritaRepository, EstudianteRepository estudianteRepository) {
+                                     NotaRepository notaRepository, MateriaInscritaRepository materiaInscritaRepository, EstudianteRepository estudianteRepository) {
         this.actividadRepository = actividadRepository;
         this.mapper = mapper;
         this.notaRepository = notaRepository;
-        this.tipoActividadRepository = tipoActividadRepository;
         this.materiaInscritaRepository = materiaInscritaRepository;
         this.estudianteRepository = estudianteRepository;
     }
@@ -50,9 +47,9 @@ public class ActividadAcademicaService {
     public ActividadAcademicaResponse crear(ActividadAcademicaRequest request) {
         //validando fechas de inicio y entrega
         validarFechas(request.fechaInicio(), request.fechaEntrega());
-        TipoActividad tipo = tipoActividadRepository.getReferenceById(request.tipoActividadId());
+
         MateriaInscrita materia = materiaInscritaRepository.getReferenceById(request.materiaInscritaId());
-        ActividadAcademica actividad = mapper.toEntity(request, tipo, materia);
+        ActividadAcademica actividad = mapper.toEntity(request, materia);
         if(request.notaId() != null){
             Nota nota = notaRepository.getReferenceById(request.notaId());
             actividad.setNota(nota);
@@ -75,12 +72,8 @@ public class ActividadAcademicaService {
 
         //se mapea el objeto
         ActividadAcademica actividadActualizada = mapper.updateEntity(actividadExistente, request);
+        actividadActualizada.setTipoActividad(request.tipoActividad());
 
-        //se verifica que hubo cambio de tipo
-        if (actividadExistente.getTipoActividad().getIdTipoActividad() != request.tipoActividadId()){
-            TipoActividad tipo = tipoActividadRepository.getReferenceById(request.tipoActividadId());
-            actividadActualizada.setTipoActividad(tipo);
-        }
         //se verifica si hubo cambio de materia
         if(actividadExistente.getMateriaInscrita().getId() != request.materiaInscritaId()){
             MateriaInscrita materia = materiaInscritaRepository.getReferenceById(request.materiaInscritaId());

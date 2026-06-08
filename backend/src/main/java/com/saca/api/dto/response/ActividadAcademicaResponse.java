@@ -1,5 +1,7 @@
 package com.saca.api.dto.response;
 
+import com.saca.api.entity.TipoActividadAcademica;
+
 import java.time.LocalDateTime;
 
 public record ActividadAcademicaResponse(
@@ -11,7 +13,7 @@ public record ActividadAcademicaResponse(
         Double tiempoEstimadoHoras,
         String estado,
         LocalDateTime fechaCompletada,
-        Integer tipoActividadId,
+        TipoActividadAcademica tipoActividad,
         Long materiaInscritaId,
         Integer notaId
 ) {
