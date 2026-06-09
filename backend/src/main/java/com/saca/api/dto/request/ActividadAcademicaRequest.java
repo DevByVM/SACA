@@ -16,12 +16,12 @@ public record ActividadAcademicaRequest(
         LocalDateTime fechaInicio,
 
         @NotNull(message = "La Fecha de entrega es obligatoria")
-        @FutureOrPresent(message = "La fecha de entrega no debe ser menor a hoy")
+        //@FutureOrPresent(message = "La fecha de entrega no debe ser menor a hoy")
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
         LocalDateTime fechaEntrega,
 
         @Min(value = 0, message = "El minimo de porcentaje es 1")
-        @Max(value = 100, message = "El maximo de porcentaje es 2")
+        @Max(value = 100, message = "El maximo de porcentaje es 100")
         Double porcentajeEvaluacion,
 
         @Min(value = 1, message = "La cantidad de horas no puede ser menor a 1")

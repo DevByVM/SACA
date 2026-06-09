@@ -20,6 +20,6 @@ public record ActividadAcademicaResponse(
         String tipoActividadNombre,
         String materiaInscritaCodigo
 
-        
+
 ) {
 }

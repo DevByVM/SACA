@@ -181,12 +181,41 @@ function GestionAcademica({ estudiante }) {
 
   async function guardarActividad(event) {
     event.preventDefault();
+    //se obtienen los datos a validar por cliente
+    const materiaSeleccionadaId = Number(actividadForm.materiaInscritaId);
+    const porcentajeNuevo = Number(actividadForm.porcentajeEvaluacion);
+    //se extraen las actividades de la materia seleccionada
+    const actividadesPorMateria = actividades.filter(
+      (actividad) => Number(actividad.materiaInscritaId) === materiaSeleccionadaId
+    );
+    //se estima si esta en edicion exlcuir de la lista de actividades la actual
+    const actividadesConsideradas =
+      editando.tipo === "actividad"
+        ? actividadesPorMateria.filter((actividad) => actividad.idActividad !== editando.id)
+        : actividadesPorMateria;
+    //se obtiene el porcentaje de los registros validos
+    const porcentajeRegistrado = actividadesConsideradas.reduce(
+      (suma, actividad) => suma + Number(actividad.porcentajeEvaluacion), 0
+    );
+
+    const porcentajeDisponible = 100 - porcentajeRegistrado;
+    //se detiene el guardado si no hay disponibilidad de porcentaje
+    if (porcentajeNuevo > porcentajeDisponible) {
+      setMensaje({
+        tipo: "error",
+        texto: `Solo cuenta con ${porcentajeDisponible}% disponible para esta materia.`,
+      });
+      return;
+    }
+
+    setMensaje(null);
     const payload = {
       ...actividadForm,
       fechaInicio: formatFechaLocalDateTime(actividadForm.fechaInicio),
       fechaEntrega: formatFechaLocalDateTime(actividadForm.fechaEntrega),
       tiempoEstimadoHoras: actividadForm.tiempoEstimadoHoras ? Number(actividadForm.tiempoEstimadoHoras) : null,
       materiaInscritaId: Number(actividadForm.materiaInscritaId),
+      porcentajeEvaluacion: porcentajeNuevo,
       fechaCompletada:
         editando.tipo === "actividad" && actividadForm.fechaCompletada
           ? formatFechaLocalDateTime(actividadForm.fechaCompletada)
@@ -228,6 +257,14 @@ function GestionAcademica({ estudiante }) {
   }
 
   async function eliminar(tipo, id) {
+    const confirmado = window.confirm(
+      "¿Estás seguro de que deseas eliminar este registro?"
+    );
+
+    if (!confirmado) {
+      return;
+    }
+
     await guardar(async () => {
       if (tipo === "ciclo") await eliminarCiclo(id, estudianteId);
       if (tipo === "materia") await eliminarMateria(id, estudianteId);
@@ -436,10 +473,10 @@ function GestionAcademica({ estudiante }) {
             />
 
             <div className="min-w-0">
-              <TablaActividades 
+              <TablaActividades
                 materias={materias}
-                actividades={actividades} 
-                onEdit={editarActividad} 
+                actividades={actividades}
+                onEdit={editarActividad}
                 onDelete={(id) => eliminar("actividad", id)}
                 onComplete={completarActividad}
                 onReactivate={reactivarActividad}
