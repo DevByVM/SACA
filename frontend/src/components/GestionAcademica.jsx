@@ -57,14 +57,16 @@ const actividadInicial = {
   tipoActividad: "",
   materiaInscritaId: "",
   porcentajeEvaluacion: "5",
-  notaObtenida: ""
+  notaObtenida: "",
+  estado: "ACTIVO",
+  fechaCompletada: null,
 };
 
 function formatFechaLocalDateTime(value) {
-  if (!value) return value;
-  
-  const fecha = value.replace("T", " ");
-  
+  if (!value) return null;
+
+  const fecha = String(value).replace("T", " ");
+
   return fecha.substring(0, 16);
 }
 
@@ -173,9 +175,22 @@ function GestionAcademica({ estudiante }) {
       fechaEntrega: formatFechaLocalDateTime(actividadForm.fechaEntrega),
       tiempoEstimadoHoras: actividadForm.tiempoEstimadoHoras ? Number(actividadForm.tiempoEstimadoHoras) : null,
       materiaInscritaId: Number(actividadForm.materiaInscritaId),
-      fechaCompletada: null,
-      estado: "ACTIVO",
-      notaObtenida: actividadForm.notaObtenida ? Number(actividadForm.notaObtenida) : null,
+      fechaCompletada:
+        editando.tipo === "actividad" && actividadForm.fechaCompletada
+          ? formatFechaLocalDateTime(actividadForm.fechaCompletada)
+          : null,
+
+      estado:
+        editando.tipo === "actividad"
+          ? actividadForm.estado || "ACTIVO"
+          : "ACTIVO",
+
+      notaObtenida:
+        actividadForm.notaObtenida !== "" &&
+        actividadForm.notaObtenida !== null &&
+        actividadForm.notaObtenida !== undefined
+          ? Number(actividadForm.notaObtenida)
+          : null,
     };
 
     await guardar(async () => {
@@ -224,11 +239,45 @@ function GestionAcademica({ estudiante }) {
       porcentajeEvaluacion: Number(actividad.porcentajeEvaluacion || 0),
       estado: "COMPLETADA",
       fechaCompletada: new Date().toISOString().slice(0, 16).replace("T", " "),
+      notaObtenida:
+        actividad.notaObtenida !== null &&
+        actividad.notaObtenida !== undefined &&
+        actividad.notaObtenida !== ""
+          ? Number(actividad.notaObtenida)
+          : null,
     };
 
     await guardar(async () => {
       await actualizarActividad(actividadId, payload);
     }, "Actividad marcada como completada");
+  }
+
+  async function reactivarActividad(actividad) {
+    const actividadId = actividad.id ?? actividad.idActividad;
+
+    const payload = {
+      nombre: actividad.nombre,
+      fechaInicio: formatFechaLocalDateTime(actividad.fechaInicio),
+      fechaEntrega: formatFechaLocalDateTime(actividad.fechaEntrega),
+      tiempoEstimadoHoras: actividad.tiempoEstimadoHoras
+        ? Number(actividad.tiempoEstimadoHoras)
+        : null,
+      tipoActividad: actividad.tipoActividad,
+      materiaInscritaId: Number(actividad.materiaInscritaId),
+      porcentajeEvaluacion: Number(actividad.porcentajeEvaluacion || 0),
+      estado: "ACTIVO",
+      fechaCompletada: null,
+      notaObtenida:
+        actividad.notaObtenida !== null &&
+        actividad.notaObtenida !== undefined &&
+        actividad.notaObtenida !== ""
+          ? Number(actividad.notaObtenida)
+          : null,
+    };
+
+    await guardar(async () => {
+      await actualizarActividad(actividadId, payload);
+    }, "Actividad reactivada");
   }
 
   function editarCiclo(ciclo) {
@@ -278,7 +327,9 @@ function GestionAcademica({ estudiante }) {
       tipoActividad: actividad.tipoActividad,
       materiaInscritaId: actividad.materiaInscritaId,
       porcentajeEvaluacion: actividad.porcentajeEvaluacion,
-      notaObtenida: actividad.notaObtenida ?? ""
+      notaObtenida: actividad.notaObtenida ?? "",
+      estado: actividad.estado || "ACTIVO",
+      fechaCompletada: actividad.fechaCompletada || null,
     });
   }
 
@@ -379,6 +430,7 @@ function GestionAcademica({ estudiante }) {
                 onEdit={editarActividad} 
                 onDelete={(id) => eliminar("actividad", id)}
                 onComplete={completarActividad}
+                onReactivate={reactivarActividad}
               />
             </div>
           </div>
@@ -517,7 +569,7 @@ function TablaHorarios({ horarios, onEdit, onDelete }) {
   );
 }
 
-function TablaActividades({ actividades, materias, onEdit, onDelete, onComplete }) {
+function TablaActividades({ actividades, materias, onEdit, onDelete, onComplete, onReactivate }) {
   const obtenerNombreMateria = (materiaId) => {
     const materiaSeleccionada = materias.find((materia) => String(materia.id) === String(materiaId));
     return materiaSeleccionada ? materiaSeleccionada.codigo : "Sin materia";
@@ -590,6 +642,7 @@ function TablaActividades({ actividades, materias, onEdit, onDelete, onComplete 
       onEdit={onEdit}
       onDelete={onDelete}
       onComplete={onComplete}
+      onReactivate={onReactivate}
     />
   );
 }
@@ -679,7 +732,7 @@ function ReporteRendimientoPorMateria({ actividades, materias }) {
   );
 }
 
-function Tabla({ columnas, filas, onEdit, onDelete, onComplete }) {
+function Tabla({ columnas, filas, onEdit, onDelete, onComplete, onReactivate }) {
   return (
     <Panel titulo="Registros">
       <div className="w-full max-w-full overflow-x-auto">
@@ -715,6 +768,16 @@ function Tabla({ columnas, filas, onEdit, onDelete, onComplete }) {
                         onClick={() => onComplete(fila.item)}
                       >
                         Completar
+                      </button>
+                    )}
+
+                    {onReactivate && (fila.item.estado || "ACTIVO") === "COMPLETADA" && (
+                      <button
+                        className="rounded bg-amber-600 px-3 py-1 font-semibold text-white"
+                        type="button"
+                        onClick={() => onReactivate(fila.item)}
+                      >
+                        Reactivar
                       </button>
                     )}
 
