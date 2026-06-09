@@ -139,7 +139,7 @@ function App() {
             <div className="w-full xl:w-3/5 flex flex-col gap-6 relative justify-start">
 
               <div className="bg-[#ffffff] p-6 rounded-2xl border border-[#430000]/20 shadow-sm">
-                <TableroCargaSemanal />
+                <TableroCargaSemanal estudiante={estudiante} />
               </div>
 
             </div>

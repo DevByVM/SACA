@@ -16,7 +16,10 @@ public record ActividadAcademicaResponse(
         TipoActividadAcademica tipoActividad,
         Long materiaInscritaId,
         Integer notaId,
+        Double notaObtenida,
+        String tipoActividadNombre,
         String materiaInscritaCodigo
+
 
 ) {
 }

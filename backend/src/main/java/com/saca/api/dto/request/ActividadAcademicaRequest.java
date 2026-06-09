@@ -34,7 +34,11 @@ public record ActividadAcademicaRequest(
         @NotNull(message = "La materia es obligatoria")
         Long materiaInscritaId,
         @Min(value = 1)
-        Integer notaId
+        Integer notaId,
+
+        @DecimalMin(value = "0.0", message = "La nota no puede ser menor a 0")
+        @DecimalMax(value = "10.0", message = "La nota no puede ser mayor a 10")
+        Double notaObtenida
 ) {
 
 }

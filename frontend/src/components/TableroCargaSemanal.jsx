@@ -27,20 +27,48 @@ function TableroCargaSemanal({ estudiante }) {
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
 
-        // Solamente dejamos pasar las actividades que sean de HOY en adelante
-        const actividadesFuturas = datosActividades.filter(act => {
-          return act.fechaInicio ? new Date(act.fechaInicio) >= hoy : true;
+        // Se consideran solo actividades pendientes del ciclo activo
+        // Para carga académica usamos la fecha de entrega
+        const actividadesPendientes = datosActividades.filter((act) => {
+          const estado = act.estado || "ACTIVO";
+          const fechaEntrega = act.fechaEntrega ? new Date(act.fechaEntrega) : null;
+
+          const noEstaCompletada = estado !== "COMPLETADA";
+          const aunNoVence = fechaEntrega ? fechaEntrega >= hoy : true;
+
+          return noEstaCompletada && aunNoVence;
         });
 
-        // CRITERIO JIRA 3: Ordenar cronológicamente (las más cercanas primero)
-        const actividadesOrdenadas = actividadesFuturas.sort((a, b) => {
-          return new Date(a.fechaInicio) - new Date(b.fechaInicio);
+        // Se ordenan por prioridad: entrega más cercana, mayor porcentaje y más horas estimadas
+        const actividadesOrdenadas = [...actividadesPendientes].sort((a, b) => {
+          const fechaA = a.fechaEntrega ? new Date(a.fechaEntrega).getTime() : Infinity;
+          const fechaB = b.fechaEntrega ? new Date(b.fechaEntrega).getTime() : Infinity;
+
+          if (fechaA !== fechaB) {
+            return fechaA - fechaB;
+          }
+
+          const porcentajeA = Number(a.porcentajeEvaluacion || 0);
+          const porcentajeB = Number(b.porcentajeEvaluacion || 0);
+
+          if (porcentajeA !== porcentajeB) {
+            return porcentajeB - porcentajeA;
+          }
+
+          const horasA = Number(a.tiempoEstimadoHoras || 0);
+          const horasB = Number(b.tiempoEstimadoHoras || 0);
+
+          return horasB - horasA;
         });
-        
+
         setActividades(actividadesOrdenadas);
 
-        //  Calculamos la suma de las horas estimadas SOLO una vez
-        const totalHrs = actividadesOrdenadas.reduce((sum, act) => sum + (act.tiempoEstimatedHoras || act.tiempoEstimadoHoras || 0), 0);
+        // Suma total de horas pendientes del ciclo activo
+        const totalHrs = actividadesOrdenadas.reduce(
+          (sum, act) => sum + Number(act.tiempoEstimadoHoras || 0),
+          0
+        );
+
         setHorasPendientes(totalHrs);
 
       } catch (error) {
@@ -181,7 +209,7 @@ function TableroCargaSemanal({ estudiante }) {
             <p className="text-xs text-gray-500 bg-white p-4 rounded-xl border text-center">No hay evaluaciones programadas para este ciclo.</p>
           ) : (
             actividades.map((act) => {
-              const tieneConflicto = verificarChoqueHorario(act.fechaInicio);
+              const tieneConflicto = verificarChoqueHorario(act.fechaEntrega || act.fechaInicio);
               
               const formateadorFecha = new Intl.DateTimeFormat('es-SV', {
                 weekday: 'long',
@@ -192,7 +220,8 @@ function TableroCargaSemanal({ estudiante }) {
                 hour12: true
               });
 
-              const fechaTextoRaw = act.fechaInicio ? formateadorFecha.format(new Date(act.fechaInicio)) : '';
+              const fechaBase = act.fechaEntrega || act.fechaInicio;
+              const fechaTextoRaw = fechaBase ? formateadorFecha.format(new Date(fechaBase)) : '';
               const fechaCompleta = fechaTextoRaw ? fechaTextoRaw.charAt(0).toUpperCase() + fechaTextoRaw.slice(1) : 'Fecha no asignada';
 
               return (
