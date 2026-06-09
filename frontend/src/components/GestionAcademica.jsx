@@ -62,6 +62,18 @@ const actividadInicial = {
   fechaCompletada: null,
 };
 
+function obtenerFechaHoraLocalActual() {
+  const ahora = new Date();
+
+  const anio = ahora.getFullYear();
+  const mes = String(ahora.getMonth() + 1).padStart(2, "0");
+  const dia = String(ahora.getDate()).padStart(2, "0");
+  const horas = String(ahora.getHours()).padStart(2, "0");
+  const minutos = String(ahora.getMinutes()).padStart(2, "0");
+
+  return `${anio}-${mes}-${dia} ${horas}:${minutos}`;
+}
+
 function formatFechaLocalDateTime(value) {
   if (!value) return null;
 
@@ -238,7 +250,7 @@ function GestionAcademica({ estudiante }) {
       materiaInscritaId: Number(actividad.materiaInscritaId),
       porcentajeEvaluacion: Number(actividad.porcentajeEvaluacion || 0),
       estado: "COMPLETADA",
-      fechaCompletada: new Date().toISOString().slice(0, 16).replace("T", " "),
+      fechaCompletada: obtenerFechaHoraLocalActual(),
       notaObtenida:
         actividad.notaObtenida !== null &&
         actividad.notaObtenida !== undefined &&
