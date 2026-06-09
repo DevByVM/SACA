@@ -1,6 +1,5 @@
 package com.saca.api.dto.request;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.saca.api.entity.TipoActividadAcademica;
 import jakarta.validation.constraints.*;
 
@@ -19,7 +18,7 @@ public record ActividadAcademicaRequest(
         LocalDateTime fechaEntrega,
 
         @Min(value = 0, message = "El minimo de porcentaje es 1")
-        @Max(value = 100, message = "El maximo de porcentaje es 2")
+        @Max(value = 100, message = "El maximo de porcentaje es 100")
         Double porcentajeEvaluacion,
 
         @Min(value = 1, message = "La cantidad de horas no puede ser menor a 1")
