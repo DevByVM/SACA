@@ -9,6 +9,7 @@ export function getActividadesByEstudianteIdAndCicloActivo(estudianteId) {
 }
 
 export function crearActividad(payload) {
+  console.log(JSON.stringify(payload));
   return apiRequest('/actividades', {
     method: 'POST',
     body: JSON.stringify(payload),

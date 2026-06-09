@@ -16,9 +16,7 @@ public record ActividadAcademicaResponse(
         TipoActividadAcademica tipoActividad,
         Long materiaInscritaId,
         Integer notaId,
-        String tipoActividadNombre,
         String materiaInscritaCodigo
-
 
 ) {
 }

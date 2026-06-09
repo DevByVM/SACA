@@ -59,13 +59,6 @@ const actividadInicial = {
   porcentajeEvaluacion: "5"
 };
 
-function formatFechaLocalDateTime(value) {
-  if (!value) return value;
-  const fecha = value.replace("T", " ");
-  // datetime-local puede incluir segundos; el backend espera yyyy-MM-dd HH:mm
-  return fecha.replace(/:\d{2}$/, "");
-}
-
 function GestionAcademica({ estudiante }) {
   const estudianteId = estudiante?.id ? String(estudiante.id) : "";
   const [vista, setVista] = useState("ciclos");
@@ -164,12 +157,39 @@ function GestionAcademica({ estudiante }) {
 
   async function guardarActividad(event) {
     event.preventDefault();
+    //se obtienen los datos a validar por cliente
+    const materiaSeleccionadaId = Number(actividadForm.materiaInscritaId);
+    const porcentajeNuevo = Number(actividadForm.porcentajeEvaluacion);
+    //se extraen las actividades de la materia seleccionada
+    const actividadesPorMateria = actividades.filter(
+      (actividad) => Number(actividad.materiaInscritaId) === materiaSeleccionadaId
+    );
+    //se estima si esta en edicion exlcuir de la lista de actividades la actual
+    const actividadesConsideradas =
+      editando.tipo === "actividad"
+        ? actividadesPorMateria.filter((actividad) => actividad.idActividad !== editando.id)
+        : actividadesPorMateria;
+    //se obtiene el porcentaje de los registros validos
+    const porcentajeRegistrado = actividadesConsideradas.reduce(
+      (suma, actividad) => suma + Number(actividad.porcentajeEvaluacion), 0
+    );
+
+    const porcentajeDisponible = 100 - porcentajeRegistrado;
+    //se detiene el guardado si no hay disponibilidad de porcentaje
+    if (porcentajeNuevo > porcentajeDisponible) {
+      setMensaje({
+        tipo: "error",
+        texto: `Solo cuenta con ${porcentajeDisponible}% disponible para esta materia.`,
+      });
+      return;
+    }
+
+    setMensaje(null);
     const payload = {
       ...actividadForm,
-      fechaInicio: formatFechaLocalDateTime(actividadForm.fechaInicio),
-      fechaEntrega: formatFechaLocalDateTime(actividadForm.fechaEntrega),
       tiempoEstimadoHoras: actividadForm.tiempoEstimadoHoras ? Number(actividadForm.tiempoEstimadoHoras) : null,
-      materiaInscritaId: Number(actividadForm.materiaInscritaId),
+      materiaInscritaId: materiaSeleccionadaId,
+      porcentajeEvaluacion: porcentajeNuevo,
       fechaCompletada: null,
       estado: "ACTIVO"
     };
@@ -197,6 +217,14 @@ function GestionAcademica({ estudiante }) {
   }
 
   async function eliminar(tipo, id) {
+    const confirmado = window.confirm(
+      "¿Estás seguro de que deseas eliminar este registro?"
+    );
+
+    if (!confirmado) {
+      return;
+    }
+    
     await guardar(async () => {
       if (tipo === "ciclo") await eliminarCiclo(id, estudianteId);
       if (tipo === "materia") await eliminarMateria(id, estudianteId);
