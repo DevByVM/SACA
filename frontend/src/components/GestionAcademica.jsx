@@ -56,7 +56,8 @@ const actividadInicial = {
   tiempoEstimadoHoras: "",
   tipoActividad: "",
   materiaInscritaId: "",
-  porcentajeEvaluacion: "5"
+  porcentajeEvaluacion: "5",
+  notaObtenida: ""
 };
 
 function formatFechaLocalDateTime(value) {
@@ -173,7 +174,8 @@ function GestionAcademica({ estudiante }) {
       tiempoEstimadoHoras: actividadForm.tiempoEstimadoHoras ? Number(actividadForm.tiempoEstimadoHoras) : null,
       materiaInscritaId: Number(actividadForm.materiaInscritaId),
       fechaCompletada: null,
-      estado: "ACTIVO"
+      estado: "ACTIVO",
+      notaObtenida: actividadForm.notaObtenida ? Number(actividadForm.notaObtenida) : null,
     };
 
     await guardar(async () => {
@@ -205,6 +207,28 @@ function GestionAcademica({ estudiante }) {
       if (tipo === "horario") await eliminarHorario(id, estudianteId);
       if (tipo === "actividad") await eliminarActividad(id);
     }, "Registro eliminado");
+  }
+
+  async function completarActividad(actividad) {
+    const actividadId = actividad.id ?? actividad.idActividad;
+
+    const payload = {
+      nombre: actividad.nombre,
+      fechaInicio: formatFechaLocalDateTime(actividad.fechaInicio),
+      fechaEntrega: formatFechaLocalDateTime(actividad.fechaEntrega),
+      tiempoEstimadoHoras: actividad.tiempoEstimadoHoras
+        ? Number(actividad.tiempoEstimadoHoras)
+        : null,
+      tipoActividad: actividad.tipoActividad,
+      materiaInscritaId: Number(actividad.materiaInscritaId),
+      porcentajeEvaluacion: Number(actividad.porcentajeEvaluacion || 0),
+      estado: "COMPLETADA",
+      fechaCompletada: new Date().toISOString().slice(0, 16).replace("T", " "),
+    };
+
+    await guardar(async () => {
+      await actualizarActividad(actividadId, payload);
+    }, "Actividad marcada como completada");
   }
 
   function editarCiclo(ciclo) {
@@ -253,7 +277,8 @@ function GestionAcademica({ estudiante }) {
       tiempoEstimadoHoras: actividad.tiempoEstimadoHoras,
       tipoActividad: actividad.tipoActividad,
       materiaInscritaId: actividad.materiaInscritaId,
-      porcentajeEvaluacion: actividad.porcentajeEvaluacion
+      porcentajeEvaluacion: actividad.porcentajeEvaluacion,
+      notaObtenida: actividad.notaObtenida ?? ""
     });
   }
 
@@ -338,17 +363,29 @@ function GestionAcademica({ estudiante }) {
       )}
 
       {vista === "actividades" && (
-        <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
-          <FormularioActividades
+        <div className="space-y-5">
+          <div className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+            <FormularioActividades
+              materias={materias}
+              form={actividadForm}
+              setForm={setActividadForm}
+              onSubmit={guardarActividad}
+            />
+
+            <div className="min-w-0">
+              <TablaActividades 
+                materias={materias}
+                actividades={actividades} 
+                onEdit={editarActividad} 
+                onDelete={(id) => eliminar("actividad", id)}
+                onComplete={completarActividad}
+              />
+            </div>
+          </div>
+
+          <ReporteRendimientoPorMateria
+            actividades={actividades}
             materias={materias}
-            form={actividadForm}
-            setForm={setActividadForm}
-            onSubmit={guardarActividad}
-          />
-          <TablaActividades 
-            materias={materias} actividades={actividades} 
-            onEdit={editarActividad} 
-            onDelete={(id) => eliminar("actividad", id)} 
           />
         </div>
       )}
@@ -428,6 +465,7 @@ function FormularioActividades({ materias, form, setForm, onSubmit }) {
         <Campo label="Fecha inicio" type="datetime-local" value={form.fechaInicio} onChange={(fechaInicio) => setForm({ ...form, fechaInicio })} />
         <Campo label="Fecha Entrega" type="datetime-local" value={form.fechaEntrega} onChange={(fechaEntrega) => setForm({ ...form, fechaEntrega })} />
         <Campo label="Tiempo estimado (horas)" type="number" value={form.tiempoEstimadoHoras} onChange={(tiempoEstimadoHoras) => setForm({ ...form, tiempoEstimadoHoras })} />
+        <Campo label="Nota obtenida" type="number" required={false} value={form.notaObtenida} onChange={(notaObtenida) => setForm({ ...form, notaObtenida })} />
         <BotonGuardar />
       </form>
     </Panel>
@@ -479,54 +517,215 @@ function TablaHorarios({ horarios, onEdit, onDelete }) {
   );
 }
 
-function TablaActividades({ actividades, materias, onEdit, onDelete }) {
+function TablaActividades({ actividades, materias, onEdit, onDelete, onComplete }) {
   const obtenerNombreMateria = (materiaId) => {
     const materiaSeleccionada = materias.find((materia) => String(materia.id) === String(materiaId));
     return materiaSeleccionada ? materiaSeleccionada.codigo : "Sin materia";
   };
 
+  const obtenerPrioridad = (actividad) => {
+    const fechaEntrega = actividad.fechaEntrega ? new Date(actividad.fechaEntrega) : null;
+    const hoy = new Date();
+
+    if (!fechaEntrega || Number.isNaN(fechaEntrega.getTime())) {
+      return "Sin fecha";
+    }
+
+    const diferenciaMs = fechaEntrega.getTime() - hoy.getTime();
+    const diasRestantes = Math.ceil(diferenciaMs / (1000 * 60 * 60 * 24));
+    const porcentaje = Number(actividad.porcentajeEvaluacion || 0);
+
+    if (diasRestantes <= 2 || porcentaje >= 30) {
+      return "Alta";
+    }
+
+    if (diasRestantes <= 7 || porcentaje >= 15) {
+      return "Media";
+    }
+
+    return "Baja";
+  };
+
+  const actividadesPriorizadas = [...actividades].sort((a, b) => {
+    const fechaA = a.fechaEntrega ? new Date(a.fechaEntrega).getTime() : Infinity;
+    const fechaB = b.fechaEntrega ? new Date(b.fechaEntrega).getTime() : Infinity;
+
+    if (fechaA !== fechaB) {
+      return fechaA - fechaB;
+    }
+
+    const porcentajeA = Number(a.porcentajeEvaluacion || 0);
+    const porcentajeB = Number(b.porcentajeEvaluacion || 0);
+
+    if (porcentajeA !== porcentajeB) {
+      return porcentajeB - porcentajeA;
+    }
+
+    const tiempoA = Number(a.tiempoEstimadoHoras || 0);
+    const tiempoB = Number(b.tiempoEstimadoHoras || 0);
+
+    return tiempoB - tiempoA;
+  });
+
   return (
     <Tabla
-      columnas={["Tipo Actividad", "Materia", "Porcentaje", "Nombre", "Fecha Entrega"]}
-      filas={actividades.map((actividad) => ({
+      columnas={["Prioridad", "Tipo", "Materia", "%", "Nombre", "Entrega", "Horas", "Nota", "Estado"]}
+      filas={actividadesPriorizadas.map((actividad) => ({
         id: actividad.id ?? actividad.idActividad,
         celdas: [
+          obtenerPrioridad(actividad),
           actividad.tipoActividad,
           obtenerNombreMateria(actividad.materiaInscritaId),
           `${actividad.porcentajeEvaluacion}%`,
           actividad.nombre,
           actividad.fechaEntrega,
+          actividad.tiempoEstimadoHoras ? `${actividad.tiempoEstimadoHoras} hrs` : "Sin dato",
+          actividad.notaObtenida !== null && actividad.notaObtenida !== undefined
+            ? actividad.notaObtenida
+            : "Sin nota",
+          actividad.estado || "ACTIVO",
         ],
         item: actividad,
       }))}
       onEdit={onEdit}
       onDelete={onDelete}
+      onComplete={onComplete}
     />
   );
 }
 
-function Tabla({ columnas, filas, onEdit, onDelete }) {
+function ReporteRendimientoPorMateria({ actividades, materias }) {
+  const reportes = materias.map((materia) => {
+    const actividadesMateria = actividades.filter(
+      (actividad) => String(actividad.materiaInscritaId) === String(materia.id)
+    );
+
+    const porcentajeEvaluado = actividadesMateria.reduce(
+      (total, actividad) => total + Number(actividad.porcentajeEvaluacion || 0),
+      0
+    );
+
+    const notasRegistradas = actividadesMateria
+      .map((actividad) => actividad.notaObtenida)
+      .filter((nota) => nota !== null && nota !== undefined && nota !== "");
+
+    const promedioNotas =
+      notasRegistradas.length > 0
+        ? notasRegistradas.reduce((total, nota) => total + Number(nota), 0) / notasRegistradas.length
+        : null;
+
+    const actividadesCompletadas = actividadesMateria.filter(
+      (actividad) => actividad.estado === "COMPLETADA"
+    ).length;
+
+    return {
+      id: materia.id,
+      codigo: materia.codigo,
+      nombre: materia.nombre,
+      totalActividades: actividadesMateria.length,
+      actividadesCompletadas,
+      porcentajeEvaluado,
+      promedioNotas,
+    };
+  });
+
   return (
-    <Panel titulo="Registros">
+    <Panel titulo="Reporte de rendimiento por materia">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[680px] text-left text-sm">
           <thead className="bg-[#430000]/10 text-[#430000]">
             <tr>
+              <th className="px-3 py-2">Materia</th>
+              <th className="px-3 py-2">Actividades</th>
+              <th className="px-3 py-2">Completadas</th>
+              <th className="px-3 py-2">Porcentaje evaluado</th>
+              <th className="px-3 py-2">Promedio de notas</th>
+              <th className="px-3 py-2">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {reportes.map((reporte) => (
+              <tr key={reporte.id} className="border-b border-[#430000]/10">
+                <td className="px-3 py-2">
+                  {reporte.codigo} - {reporte.nombre}
+                </td>
+                <td className="px-3 py-2">{reporte.totalActividades}</td>
+                <td className="px-3 py-2">{reporte.actividadesCompletadas}</td>
+                <td className="px-3 py-2">{reporte.porcentajeEvaluado}%</td>
+                <td className="px-3 py-2">
+                  {reporte.promedioNotas !== null
+                    ? reporte.promedioNotas.toFixed(2)
+                    : "Sin notas"}
+                </td>
+                <td className="px-3 py-2">
+                  {reporte.totalActividades === 0
+                    ? "Sin actividades"
+                    : reporte.promedioNotas !== null
+                    ? "Con rendimiento registrado"
+                    : "Pendiente de notas"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {reportes.length === 0 && (
+          <p className="p-4 text-sm text-[#430000]/60">
+            No hay materias registradas para generar el reporte.
+          </p>
+        )}
+      </div>
+    </Panel>
+  );
+}
+
+function Tabla({ columnas, filas, onEdit, onDelete, onComplete }) {
+  return (
+    <Panel titulo="Registros">
+      <div className="w-full max-w-full overflow-x-auto">
+        <table className="w-max min-w-full text-left text-xs">
+          <thead className="bg-[#430000]/10 text-[#430000]">
+            <tr>
               {columnas.map((columna) => (
-                <th key={columna} className="px-3 py-2">{columna}</th>
+                <th key={columna} className="px-2 py-2">{columna}</th>
               ))}
-              <th className="px-3 py-2">Acciones</th>
+              <th className="px-2 py-2">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filas.map((fila) => (
               <tr key={fila.id} className="border-b border-[#430000]/10">
                 {fila.celdas.map((celda, index) => (
-                  <td key={`${fila.id}-${index}`} className="px-3 py-2">{celda || "Sin dato"}</td>
+                  <td key={`${fila.id}-${index}`} className="px-2 py-2">{celda || "Sin dato"}</td>
                 ))}
-                <td className="flex gap-2 px-3 py-2">
-                  <button className="rounded bg-[#430000]/10 px-3 py-1 font-semibold" type="button" onClick={() => onEdit(fila.item)}>Editar</button>
-                  <button className="rounded bg-[#960000] px-3 py-1 font-semibold text-white" type="button" onClick={() => onDelete(fila.id)}>Eliminar</button>
+                <td className="whitespace-nowrap px-3 py-2">
+                  <div className="flex gap-2">
+                    <button
+                      className="rounded bg-[#430000]/10 px-3 py-1 font-semibold"
+                      type="button"
+                      onClick={() => onEdit(fila.item)}
+                    >
+                      Editar
+                    </button>
+
+                    {onComplete && (fila.item.estado || "ACTIVO") !== "COMPLETADA" && (
+                      <button
+                        className="rounded bg-green-700 px-3 py-1 font-semibold text-white"
+                        type="button"
+                        onClick={() => onComplete(fila.item)}
+                      >
+                        Completar
+                      </button>
+                    )}
+
+                    <button
+                      className="rounded bg-[#960000] px-3 py-1 font-semibold text-white"
+                      type="button"
+                      onClick={() => onDelete(fila.id)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

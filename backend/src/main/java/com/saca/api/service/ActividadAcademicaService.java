@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.time.LocalDate;
 
 @Service
 public class ActividadAcademicaService {
@@ -54,6 +55,13 @@ public class ActividadAcademicaService {
             Nota nota = notaRepository.getReferenceById(request.notaId());
             actividad.setNota(nota);
         }
+        if (request.notaObtenida() != null) {
+            Nota nota = new Nota();
+            nota.setValorObtenido(request.notaObtenida());
+            nota.setFechaRegistro(LocalDate.now());
+            Nota notaGuardada = notaRepository.save(nota);
+            actividad.setNota(notaGuardada);
+        }
         ActividadAcademica itemGuardado = actividadRepository.save(actividad);
         return mapper.toResponse(itemGuardado);
     }
@@ -80,10 +88,27 @@ public class ActividadAcademicaService {
             actividadActualizada.setMateriaInscrita(materia);
 
         }
-        //se verifica si hay nota
-        if(actividadExistente.getNota()!=null && actividadExistente.getNota().getId()!=request.notaId()){
+
+        // se verifica si se registró, actualizó o eliminó una nota obtenida
+        if (request.notaObtenida() != null) {
+            Nota nota = actividadExistente.getNota();
+
+            if (nota == null) {
+                nota = new Nota();
+            }
+
+            nota.setValorObtenido(request.notaObtenida());
+            nota.setFechaRegistro(LocalDate.now());
+
+            Nota notaGuardada = notaRepository.save(nota);
+            actividadActualizada.setNota(notaGuardada);
+
+        } else if (request.notaId() != null) {
             Nota nota = notaRepository.getReferenceById(request.notaId());
             actividadActualizada.setNota(nota);
+
+        } else {
+            actividadActualizada.setNota(null);
         }
 
         ActividadAcademica itemActualizado = actividadRepository.save(actividadActualizada);
