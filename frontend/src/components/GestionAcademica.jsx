@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 import {
   actualizarCiclo,
   crearCiclo,
@@ -86,7 +87,6 @@ function formatFechaLocalDateTime(value) {
 function GestionAcademica({ estudiante }) {
   const estudianteId = estudiante?.id ? String(estudiante.id) : "";
   const [vista, setVista] = useState("ciclos");
-  const [mensaje, setMensaje] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [ciclos, setCiclos] = useState([]);
   const [materias, setMaterias] = useState([]);
@@ -129,7 +129,6 @@ function GestionAcademica({ estudiante }) {
 
     try {
       setCargando(true);
-      setMensaje(null);
 
       if (vistaObjetivo === "ciclos") {
         await cargarColeccion("ciclos", () => listarCiclos(estudianteId), setCiclos);
@@ -154,7 +153,7 @@ function GestionAcademica({ estudiante }) {
         );
       }
     } catch (error) {
-      setMensaje({ tipo: "error", texto: error.message });
+      toast.error(error.message || "No se pudo cargar la información académica.");
     } finally {
       setCargando(false);
     }
@@ -268,14 +267,10 @@ function GestionAcademica({ estudiante }) {
     const porcentajeDisponible = 100 - porcentajeRegistrado;
     //se detiene el guardado si no hay disponibilidad de porcentaje
     if (porcentajeNuevo > porcentajeDisponible) {
-      setMensaje({
-        tipo: "error",
-        texto: `Solo cuenta con ${porcentajeDisponible}% disponible para esta materia.`,
-      });
+      toast.warning(`Solo cuenta con ${porcentajeDisponible}% disponible para esta materia.`);
       return;
     }
 
-    setMensaje(null);
     const payload = {
       ...actividadForm,
       fechaInicio: formatFechaLocalDateTime(actividadForm.fechaInicio),
@@ -316,12 +311,11 @@ function GestionAcademica({ estudiante }) {
 
   async function guardar(accion, texto) {
     try {
-      setMensaje(null);
       await accion();
       setEditando({ tipo: null, id: null });
-      setMensaje({ tipo: "exito", texto });
+      toast.success(texto);
     } catch (error) {
-      setMensaje({ tipo: "error", texto: error.message });
+      toast.error(error.message || "No se pudo completar la operación.");
     }
   }
 
@@ -500,18 +494,6 @@ function GestionAcademica({ estudiante }) {
           </button>
         ))}
       </div>
-
-      {mensaje && (
-        <div
-          className={`rounded-lg border px-4 py-3 text-sm font-semibold ${
-            mensaje.tipo === "error"
-              ? "border-red-200 bg-red-50 text-red-800"
-              : "border-green-200 bg-green-50 text-green-800"
-          }`}
-        >
-          {mensaje.texto}
-        </div>
-      )}
 
       {cargando && <p className="text-sm text-[#430000]/70">Cargando informacion...</p>}
 
