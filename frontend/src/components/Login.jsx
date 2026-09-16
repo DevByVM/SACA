@@ -110,7 +110,10 @@ function Login({ onLoginSuccess }) {
             // Envía todos los datos del formulario al backend
             const respuesta = await registrar(form);
 
-            // Mensaje de éxito
+            if (respuesta !== "Usuario registrado correctamente") {
+                throw new Error(respuesta || "No se pudo completar el registro");
+            }
+
             toast.success(respuesta);
 
             // Regresa automáticamente al formulario de login
