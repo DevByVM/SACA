@@ -14,7 +14,12 @@ import axios from "axios";
  * Producción:
  * https://midominio.com/api/auth
  */
-const API_URL = "http://localhost:8080/api/auth";
+const API_URL = `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api"}/auth`;
+
+function normalizarError(error, fallback) {
+    const mensajeBackend = error.response?.data?.message;
+    return new Error(mensajeBackend || error.message || fallback);
+}
 
 /**
  * Registra un nuevo estudiante.
@@ -34,15 +39,16 @@ const API_URL = "http://localhost:8080/api/auth";
  * La respuesta enviada por el backend.
  */
 export const registrar = async (datos) => {
+    try {
+        const response = await axios.post(
+            `${API_URL}/registro`,
+            datos
+        );
 
-    // Envía una petición POST al endpoint de registro
-    const response = await axios.post(
-        `${API_URL}/registro`,
-        datos
-    );
-
-    // Devuelve únicamente los datos de la respuesta
-    return response.data;
+        return response.data;
+    } catch (error) {
+        throw normalizarError(error, "No se pudo completar el registro");
+    }
 };
 
 /**
@@ -69,13 +75,14 @@ export const registrar = async (datos) => {
  * }
  */
 export const login = async (datos) => {
+    try {
+        const response = await axios.post(
+            `${API_URL}/login`,
+            datos
+        );
 
-    // Envía una petición POST al endpoint de login
-    const response = await axios.post(
-        `${API_URL}/login`,
-        datos
-    );
-
-    // Devuelve únicamente los datos de la respuesta
-    return response.data;
+        return response.data;
+    } catch (error) {
+        throw normalizarError(error, "No se pudo iniciar sesión");
+    }
 };

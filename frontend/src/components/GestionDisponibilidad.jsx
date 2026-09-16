@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 // Importación de las funciones del archivo de servicio independiente
 import {
   listarDisponibilidades,
@@ -18,7 +19,6 @@ const disponibilidadInicial = {
 
 function GestionDisponibilidad({ estudiante }) {
   const estudianteId = estudiante?.id ? String(estudiante.id) : "";
-  const [mensaje, setMensaje] = useState(null);
   const [cargando, setCargando] = useState(false);
 
   const [disponibilidades, setDisponibilidades] = useState([]);
@@ -32,7 +32,6 @@ function GestionDisponibilidad({ estudiante }) {
 
     try {
       setCargando(true);
-      setMensaje(null);
       const [disponibilidadesData, ciclosData] = await Promise.all([
         listarDisponibilidades(estudianteId),
         listarCiclos(estudianteId),
@@ -40,7 +39,7 @@ function GestionDisponibilidad({ estudiante }) {
       setDisponibilidades(disponibilidadesData);
       setCiclos(ciclosData);
     } catch (error) {
-      setMensaje({ tipo: "error", texto: error.message });
+      toast.error(error.message || "No se pudo cargar la disponibilidad.");
     } finally {
       setCargando(false);
     }
@@ -60,7 +59,6 @@ function GestionDisponibilidad({ estudiante }) {
     };
 
     try {
-      setMensaje(null);
       if (editando.tipo === "disponibilidad") {
         await actualizarDisponibilidad(editando.id, estudianteId, payload);
       } else {
@@ -69,25 +67,22 @@ function GestionDisponibilidad({ estudiante }) {
 
       setForm(disponibilidadInicial);
       setEditando({ tipo: null, id: null });
-      setMensaje({ tipo: "exito", texto: "Disponibilidad guardada correctamente" });
+      toast.success("Disponibilidad guardada correctamente");
       await cargarDatos();
     } catch (error) {
       const mensajeBackend = error.response?.data?.message || error.message || "Error al procesar la solicitud";
-      setMensaje({ 
-        tipo: "error", 
-        texto: mensajeBackend 
-      });
+      toast.error(mensajeBackend);
     }
   }
 
   async function eliminar(id) {
     try {
-      setMensaje(null);
       await eliminarDisponibilidad(id, estudianteId);
-      setMensaje({ tipo: "exito", texto: "Registro eliminado" });
+      toast.success("Registro eliminado");
       await cargarDatos();
     } catch (error) {
-      setMensaje({ tipo: "error", texto: mensajeBackend });
+      const mensajeBackend = error.response?.data?.message || error.message || "No se pudo eliminar el registro";
+      toast.error(mensajeBackend);
     }
   }
 
@@ -112,17 +107,6 @@ function GestionDisponibilidad({ estudiante }) {
           </p>
         </div>
       </div>
-
-      {mensaje && (
-        <div
-          className={`rounded-lg border px-4 py-3 text-sm font-semibold ${mensaje.tipo === "error"
-            ? "border-red-200 bg-red-50 text-red-800"
-            : "border-green-200 bg-green-50 text-green-800"
-            }`}
-        >
-          {mensaje.texto}
-        </div>
-      )}
 
       {cargando && <p className="text-sm text-[#430000]/70">Cargando información...</p>}
 

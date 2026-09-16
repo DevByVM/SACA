@@ -13,6 +13,7 @@ import com.saca.api.dto.LoginRequest;
 import com.saca.api.dto.LoginResponse;
 import com.saca.api.dto.RegistroRequest;
 import com.saca.api.entity.Estudiante;
+import com.saca.api.exception.ValidacionNegocioException;
 import com.saca.api.repository.EstudianteRepository;
 
 @Service
@@ -35,27 +36,28 @@ public class EstudianteService {
         String carnet = normalizarTexto(request.getCarnet());
 
         if (nombre.isBlank()) {
-            return "Nombre obligatorio";
+            throw new ValidacionNegocioException("Nombre obligatorio");
         }
 
         if (!nombreValido(nombre)) {
-            return "El nombre solo puede contener letras y espacios";
+            throw new ValidacionNegocioException("El nombre solo puede contener letras y espacios");
         }
 
         if (!correoInstitucional.endsWith("@ues.edu.sv")) {
-            return "Correo institucional inválido";
+            throw new ValidacionNegocioException("Correo institucional inválido");
         }
 
         if (repository.existsByCarnet(carnet)) {
-            return "Carnet ya registrado";
+            throw new ValidacionNegocioException("Carnet ya registrado");
         }
 
         if (repository.existsByCorreoInstitucional(correoInstitucional)) {
-            return "Correo ya registrado";
+            throw new ValidacionNegocioException("Correo ya registrado");
         }
 
         if (!contraseniaValida(request.getContrasenia())) {
-            return "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número";
+            throw new ValidacionNegocioException(
+                    "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número");
         }
 
         Estudiante estudiante = new Estudiante();

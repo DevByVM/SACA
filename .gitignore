@@ -5,6 +5,7 @@
 
 AGENTS.md
 agents.md
+.agents
 docs/
 
 # =========================
@@ -106,6 +107,7 @@ backend/coverage/
 # =========================
 tmp/
 temp/
+output/playwright/
 *.tmp
 *.bak
 *.swp
