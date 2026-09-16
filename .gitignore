@@ -107,6 +107,7 @@ backend/coverage/
 # =========================
 tmp/
 temp/
+output/playwright/
 *.tmp
 *.bak
 *.swp

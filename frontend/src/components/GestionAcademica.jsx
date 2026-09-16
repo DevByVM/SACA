@@ -100,32 +100,82 @@ function GestionAcademica({ estudiante }) {
   const [actividades, setActividades] = useState([]);
   const [actividadForm, setActividadForm] = useState(actividadInicial);
 
-  const cargarDatos = useCallback(async () => {
+  const coleccionesCargadas = useRef(new Set());
+  const solicitudesEnCurso = useRef(new Map());
+  const estudianteAnterior = useRef(estudianteId);
+
+  const cargarColeccion = useCallback(async (clave, cargar, actualizar) => {
+    if (coleccionesCargadas.current.has(clave)) return;
+
+    const solicitudExistente = solicitudesEnCurso.current.get(clave);
+    if (solicitudExistente) return solicitudExistente;
+
+    const solicitud = cargar()
+      .then((datos) => {
+        actualizar(datos);
+        coleccionesCargadas.current.add(clave);
+        return datos;
+      })
+      .finally(() => {
+        solicitudesEnCurso.current.delete(clave);
+      });
+
+    solicitudesEnCurso.current.set(clave, solicitud);
+    return solicitud;
+  }, []);
+
+  const cargarVista = useCallback(async (vistaObjetivo) => {
     if (!estudianteId.trim()) return;
 
     try {
       setCargando(true);
       setMensaje(null);
-      const [ciclosData, materiasData, horariosData, actividadesData] = await Promise.all([
-        listarCiclos(estudianteId),
-        listarMaterias(estudianteId),
-        listarHorarios(estudianteId),
-        getActividadesByEstudianteIdAndCicloActivo(estudianteId)
-      ]);
-      setCiclos(ciclosData);
-      setMaterias(materiasData);
-      setHorarios(horariosData);
-      setActividades(actividadesData);
+
+      if (vistaObjetivo === "ciclos") {
+        await cargarColeccion("ciclos", () => listarCiclos(estudianteId), setCiclos);
+      }
+
+      if (vistaObjetivo === "materias") {
+        await cargarColeccion("ciclos", () => listarCiclos(estudianteId), setCiclos);
+        await cargarColeccion("materias", () => listarMaterias(estudianteId), setMaterias);
+      }
+
+      if (vistaObjetivo === "horarios") {
+        await cargarColeccion("materias", () => listarMaterias(estudianteId), setMaterias);
+        await cargarColeccion("horarios", () => listarHorarios(estudianteId), setHorarios);
+      }
+
+      if (vistaObjetivo === "actividades") {
+        await cargarColeccion("materias", () => listarMaterias(estudianteId), setMaterias);
+        await cargarColeccion(
+          "actividades",
+          () => getActividadesByEstudianteIdAndCicloActivo(estudianteId),
+          setActividades
+        );
+      }
     } catch (error) {
       setMensaje({ tipo: "error", texto: error.message });
     } finally {
       setCargando(false);
     }
-  }, [estudianteId]);
+  }, [cargarColeccion, estudianteId]);
 
   useEffect(() => {
-    cargarDatos();
-  }, [cargarDatos]);
+    if (estudianteAnterior.current !== estudianteId) {
+      coleccionesCargadas.current.clear();
+      solicitudesEnCurso.current.clear();
+      setCiclos([]);
+      setMaterias([]);
+      setHorarios([]);
+      setActividades([]);
+      estudianteAnterior.current = estudianteId;
+    }
+    cargarVista("ciclos");
+  }, [cargarVista, estudianteId]);
+
+  useEffect(() => {
+    cargarVista(vista);
+  }, [cargarVista, vista]);
 
   async function guardarCiclo(event) {
     event.preventDefault();
@@ -136,11 +186,18 @@ function GestionAcademica({ estudiante }) {
     };
 
     await guardar(async () => {
-      if (editando.tipo === "ciclo") {
-        await actualizarCiclo(editando.id, estudianteId, payload);
-      } else {
-        await crearCiclo(payload);
-      }
+      const cicloGuardado = editando.tipo === "ciclo"
+        ? await actualizarCiclo(editando.id, estudianteId, payload)
+        : await crearCiclo(payload);
+
+      setCiclos((actuales) => editando.tipo === "ciclo"
+        ? actuales.map((ciclo) => ciclo.id === editando.id ? cicloGuardado : ciclo)
+        : [cicloGuardado, ...actuales]);
+      coleccionesCargadas.current.add("ciclos");
+      coleccionesCargadas.current.delete("materias");
+      coleccionesCargadas.current.delete("actividades");
+      setMaterias([]);
+      setActividades([]);
       setCicloForm(cicloInicial);
     }, "Ciclo academico guardado");
   }
@@ -153,11 +210,18 @@ function GestionAcademica({ estudiante }) {
     };
 
     await guardar(async () => {
-      if (editando.tipo === "materia") {
-        await actualizarMateria(editando.id, estudianteId, payload);
-      } else {
-        await crearMateria(estudianteId, payload);
-      }
+      const materiaGuardada = editando.tipo === "materia"
+        ? await actualizarMateria(editando.id, estudianteId, payload)
+        : await crearMateria(estudianteId, payload);
+
+      setMaterias((actuales) => editando.tipo === "materia"
+        ? actuales.map((materia) => materia.id === editando.id ? materiaGuardada : materia)
+        : [materiaGuardada, ...actuales]);
+      coleccionesCargadas.current.add("materias");
+      coleccionesCargadas.current.delete("horarios");
+      coleccionesCargadas.current.delete("actividades");
+      setHorarios([]);
+      setActividades([]);
       setMateriaForm(materiaInicial);
     }, "Materia guardada");
   }
@@ -170,11 +234,14 @@ function GestionAcademica({ estudiante }) {
     };
 
     await guardar(async () => {
-      if (editando.tipo === "horario") {
-        await actualizarHorario(editando.id, estudianteId, payload);
-      } else {
-        await crearHorario(estudianteId, payload);
-      }
+      const horarioGuardado = editando.tipo === "horario"
+        ? await actualizarHorario(editando.id, estudianteId, payload)
+        : await crearHorario(estudianteId, payload);
+
+      setHorarios((actuales) => editando.tipo === "horario"
+        ? actuales.map((horario) => horario.id === editando.id ? horarioGuardado : horario)
+        : [horarioGuardado, ...actuales]);
+      coleccionesCargadas.current.add("horarios");
       setHorarioForm(horarioInicial);
     }, "Horario guardado");
   }
@@ -235,11 +302,14 @@ function GestionAcademica({ estudiante }) {
     };
 
     await guardar(async () => {
-      if (editando.tipo === "actividad") {
-        await actualizarActividad(editando.id, payload);
-      } else {
-        await crearActividad(payload);
-      }
+      const actividadGuardada = editando.tipo === "actividad"
+        ? await actualizarActividad(editando.id, payload)
+        : await crearActividad(payload);
+
+      setActividades((actuales) => editando.tipo === "actividad"
+        ? actuales.map((actividad) => actividad.idActividad === editando.id ? actividadGuardada : actividad)
+        : [actividadGuardada, ...actuales]);
+      coleccionesCargadas.current.add("actividades");
       setActividadForm(actividadInicial);
     }, "Actividad academica guardada");
   }
@@ -250,7 +320,6 @@ function GestionAcademica({ estudiante }) {
       await accion();
       setEditando({ tipo: null, id: null });
       setMensaje({ tipo: "exito", texto });
-      await cargarDatos();
     } catch (error) {
       setMensaje({ tipo: "error", texto: error.message });
     }
@@ -270,6 +339,29 @@ function GestionAcademica({ estudiante }) {
       if (tipo === "materia") await eliminarMateria(id, estudianteId);
       if (tipo === "horario") await eliminarHorario(id, estudianteId);
       if (tipo === "actividad") await eliminarActividad(id);
+
+      if (tipo === "ciclo") {
+        setCiclos((actuales) => actuales.filter((ciclo) => ciclo.id !== id));
+        coleccionesCargadas.current.delete("materias");
+        coleccionesCargadas.current.delete("horarios");
+        coleccionesCargadas.current.delete("actividades");
+        setMaterias([]);
+        setHorarios([]);
+        setActividades([]);
+      }
+      if (tipo === "materia") {
+        setMaterias((actuales) => actuales.filter((materia) => materia.id !== id));
+        coleccionesCargadas.current.delete("horarios");
+        coleccionesCargadas.current.delete("actividades");
+        setHorarios([]);
+        setActividades([]);
+      }
+      if (tipo === "horario") {
+        setHorarios((actuales) => actuales.filter((horario) => horario.id !== id));
+      }
+      if (tipo === "actividad") {
+        setActividades((actuales) => actuales.filter((actividad) => actividad.idActividad !== id));
+      }
     }, "Registro eliminado");
   }
 

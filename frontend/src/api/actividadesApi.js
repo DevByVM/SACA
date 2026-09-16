@@ -9,7 +9,6 @@ export function getActividadesByEstudianteIdAndCicloActivo(estudianteId) {
 }
 
 export function crearActividad(payload) {
-  console.log(JSON.stringify(payload));
   return apiRequest('/actividades', {
     method: 'POST',
     body: JSON.stringify(payload),
@@ -22,7 +21,6 @@ export function eliminarActividad(actividadId) {
   })
 }
 export function actualizarActividad(actividadId, payload) {
-    console.log(payload)
   return apiRequest(`/actividades/${actividadId}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
