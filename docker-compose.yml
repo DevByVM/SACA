@@ -4,10 +4,8 @@ services:
     container_name: saca_mysql
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: saca_db
-      MYSQL_ROOT_PASSWORD: root_password
-    ports:
-      - "3306:3306"
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-saca_db}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Debes configurar MYSQL_ROOT_PASSWORD}
     volumes:
       - saca_mysql_data:/var/lib/mysql
       - ./database/saca_schema.sql:/docker-entrypoint-initdb.d/01-saca-schema.sql:ro
@@ -30,9 +28,9 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/saca_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/El_Salvador
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root_password
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Debes configurar MYSQL_ROOT_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_SHOW_SQL: "true"
+      SPRING_JPA_SHOW_SQL: ${SPRING_JPA_SHOW_SQL:-false}
     ports:
       - "8080:8080"
 
