@@ -1,4 +1,6 @@
-const API_BASE_URL = 'http://localhost:8080/api/jornadas'; 
+const API_BASE_URL = `${
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api"
+}/jornadas`;
 
 export const jornadaService = {
   // 1. POST /api/jornadas

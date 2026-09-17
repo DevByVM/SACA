@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api";
+
 function CalendarioSemanal({ estudianteId }) {
 
   const [horarios, setHorarios] = useState([]);
@@ -12,7 +15,7 @@ function CalendarioSemanal({ estudianteId }) {
   const cargar = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:8080/api/calendario/semanal/${estudianteId}`
+        `${API_BASE_URL}/calendario/semanal/${estudianteId}`
       );
       setHorarios(res.data);
     } catch (error) {

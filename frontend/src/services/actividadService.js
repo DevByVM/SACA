@@ -2,7 +2,9 @@
 // Módulo de red para el recurso ActividadAcademica.
 // Centraliza todas las llamadas al backend para que los componentes no manejen fetch directamente.
 
-const BASE_URL = "http://localhost:8080/api/actividades";
+const BASE_URL = `${
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api"
+}/actividades`;
 
 /**
  * Obtiene todas las actividades académicas del backend.
