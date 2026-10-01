@@ -58,6 +58,7 @@ public class NotificacionService {
 
         LocalDate hoy = LocalDate.now(relojAplicacion);
         LocalDateTime inicio = hoy.atStartOfDay();
+        // Incluye hoy y los siete días siguientes; el límite superior es exclusivo.
         LocalDateTime fin = hoy.plusDays(8).atStartOfDay();
 
         return actividadRepository.findNotificacionesProximasPorEstudiante(
