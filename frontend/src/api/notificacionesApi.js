@@ -10,3 +10,7 @@ export function guardarPreferenciasNotificacion(estudianteId, tiposActividadHabi
     body: JSON.stringify({ tiposActividadHabilitados }),
   });
 }
+
+export function obtenerNotificacionesProximas(estudianteId) {
+  return apiRequest(`/notificaciones/estudiante/${estudianteId}/proximas`);
+}
