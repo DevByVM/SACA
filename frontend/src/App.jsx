@@ -142,7 +142,7 @@ function App() {
              </div>
 
           {vistaActiva === "dashboard" && (
-            <div className="w-full xl:w-3/5 flex flex-col gap-6 relative justify-start">
+            <div className="w-full xl:w-3/5 flex flex-col gap-6 relative justify-start xl:pt-16">
 
               <NotificacionesProximas
                 estudiante={estudiante}
