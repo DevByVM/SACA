@@ -5,9 +5,9 @@ import Sidebar from "./components/Sidebar.jsx";
 import TableroCargaSemanal from "./components/TableroCargaSemanal.jsx";
 import GestionAcademica from "./components/GestionAcademica.jsx";
 import GestionDisponiblidad from "./components/GestionDisponibilidad.jsx";
-import { jornadaService } from "./services/jornadaLaboralService.js";
 import { RegistroJornada } from "./components/GestionJornadaLaboral.jsx";
 import CalendarioAcademico from "./components/CalendarioAcademico.jsx";
+import ConfiguracionNotificaciones from "./components/ConfiguracionNotificaciones.jsx";
 function App() {
 
   const [logueado, setLogueado] = useState(
@@ -98,6 +98,7 @@ function App() {
                  {vistaActiva === "disponibilidad" && "Gestión disponibilidad"}
                   {vistaActiva === "jornada" && "Gestión de Jornada Laboral"}
                   {vistaActiva === "calendario" && "Calendario Académico"}
+                  {vistaActiva === "notificaciones" && "Notificaciones"}
               </span>
 
             </h1>
@@ -131,6 +132,10 @@ function App() {
     estudiante={estudiante}
   />
 )}
+
+              {vistaActiva === "notificaciones" && (
+                <ConfiguracionNotificaciones estudiante={estudiante} />
+              )}
                </div>
 
              </div>

@@ -116,6 +116,14 @@ function Sidebar({
            vistaActiva={vistaActiva}
           setVistaActiva={setVistaActiva}
           />
+
+          <SidebarItem
+            id="notificaciones"
+            label="Notificaciones"
+            icon="fa-bell"
+            vistaActiva={vistaActiva}
+            setVistaActiva={setVistaActiva}
+          />
           <hr className="my-4 border-[#430000]/20" />
 
           <button
