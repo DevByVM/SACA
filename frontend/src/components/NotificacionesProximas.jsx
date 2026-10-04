@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { obtenerNotificacionesProximas } from "../api/notificacionesApi";
 
 function formatearTipoActividad(tipoActividad) {
-  return (tipoActividad || "ACTIVIDAD")
+  return String(tipoActividad || "ACTIVIDAD")
+    .trim()
     .toLowerCase()
     .replace(/_/g, " ")
     .replace(/\b\w/g, (letra) => letra.toUpperCase());
@@ -139,7 +140,7 @@ function NotificacionesProximas({ estudiante, onConfigurar, actualizacion }) {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <span className="rounded-md bg-[#960000]/10 px-2 py-1 text-[10px] font-bold text-[#430000]">
+                        <span className="inline-flex min-h-6 items-center whitespace-nowrap rounded-md bg-[#960000]/10 px-2 py-1 text-[10px] font-bold leading-none text-[#430000]">
                           {formatearTipoActividad(actividad.tipoActividadNombre || actividad.tipoActividad)}
                         </span>
                         <h3 className="mt-2 text-sm font-bold text-[#430000]">
