@@ -5,9 +5,10 @@ import Sidebar from "./components/Sidebar.jsx";
 import TableroCargaSemanal from "./components/TableroCargaSemanal.jsx";
 import GestionAcademica from "./components/GestionAcademica.jsx";
 import GestionDisponiblidad from "./components/GestionDisponibilidad.jsx";
-import { jornadaService } from "./services/jornadaLaboralService.js";
 import { RegistroJornada } from "./components/GestionJornadaLaboral.jsx";
 import CalendarioAcademico from "./components/CalendarioAcademico.jsx";
+import ConfiguracionNotificaciones from "./components/ConfiguracionNotificaciones.jsx";
+import NotificacionesProximas from "./components/NotificacionesProximas.jsx";
 function App() {
 
   const [logueado, setLogueado] = useState(
@@ -98,6 +99,7 @@ function App() {
                  {vistaActiva === "disponibilidad" && "Gestión disponibilidad"}
                   {vistaActiva === "jornada" && "Gestión de Jornada Laboral"}
                   {vistaActiva === "calendario" && "Calendario Académico"}
+                  {vistaActiva === "notificaciones" && "Notificaciones"}
               </span>
 
             </h1>
@@ -131,12 +133,21 @@ function App() {
     estudiante={estudiante}
   />
 )}
+
+              {vistaActiva === "notificaciones" && (
+                <ConfiguracionNotificaciones estudiante={estudiante} />
+              )}
                </div>
 
              </div>
 
           {vistaActiva === "dashboard" && (
-            <div className="w-full xl:w-3/5 flex flex-col gap-6 relative justify-start">
+            <div className="w-full xl:w-3/5 flex flex-col gap-6 relative justify-start xl:pt-16">
+
+              <NotificacionesProximas
+                estudiante={estudiante}
+                onConfigurar={() => setVistaActiva("notificaciones")}
+              />
 
               <div className="bg-[#ffffff] p-6 rounded-2xl border border-[#430000]/20 shadow-sm">
                 <TableroCargaSemanal estudiante={estudiante} />
