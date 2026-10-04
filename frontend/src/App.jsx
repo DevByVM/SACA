@@ -106,10 +106,16 @@ function App() {
             <div className="w-full flex-1">
 
               {vistaActiva === "dashboard" && (
-                <PanelControlAcademico
-                  estudiante={estudiante}
-                  onNavegar={setVistaActiva}
-                />
+                <div className="space-y-6">
+                  <NotificacionesProximas
+                    estudiante={estudiante}
+                    onConfigurar={() => setVistaActiva("notificaciones")}
+                  />
+                  <PanelControlAcademico
+                    estudiante={estudiante}
+                    onNavegar={setVistaActiva}
+                  />
+                </div>
               )}
 
               {vistaActiva === "academico" && (
