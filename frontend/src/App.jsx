@@ -3,6 +3,7 @@ import Login from "./components/Login";
 import PerfilAcademico from "./components/PerfilAcademico";
 import Sidebar from "./components/Sidebar.jsx";
 import TableroCargaSemanal from "./components/TableroCargaSemanal.jsx";
+import PanelControlAcademico from "./components/PanelControlAcademico.jsx";
 import GestionAcademica from "./components/GestionAcademica.jsx";
 import GestionDisponiblidad from "./components/GestionDisponibilidad.jsx";
 import { jornadaService } from "./services/jornadaLaboralService.js";
@@ -76,13 +77,7 @@ function App() {
 
           </div>
 
-          <div
-            className={`w-full pt-16 sm:pt-12 ${
-              vistaActiva === "dashboard"
-                ? "xl:w-2/5"
-                : "w-full"
-            } flex flex-col justify-start`}
-          >
+          <div className="w-full min-w-0 pt-16 sm:pt-12 flex flex-col justify-start">
 
             <span className="w-20 h-2 bg-[#960000] mb-6 block rounded-full"></span>
 
@@ -91,10 +86,10 @@ function App() {
               SACA UES
 
               <span className="text-3xl sm:text-4xl text-[#960000] font-black mt-1">
-                {vistaActiva === "dashboard" && "Control Global"}
+                {vistaActiva === "dashboard" && "Panel de Control"}
                 {vistaActiva === "academico" && "Gestión Académica"}
                 {vistaActiva === "perfil" && "Perfil Académico"}
-                {vistaActiva === "analisis" && "Semáforo Horario"}
+                {vistaActiva === "analisis" && "Análisis de Carga"}
                  {vistaActiva === "disponibilidad" && "Gestión disponibilidad"}
                   {vistaActiva === "jornada" && "Gestión de Jornada Laboral"}
                   {vistaActiva === "calendario" && "Calendario Académico"}
@@ -108,6 +103,13 @@ function App() {
 
             <div className="w-full flex-1">
 
+              {vistaActiva === "dashboard" && (
+                <PanelControlAcademico
+                  estudiante={estudiante}
+                  onNavegar={setVistaActiva}
+                />
+              )}
+
               {vistaActiva === "academico" && (
                 <GestionAcademica estudiante={estudiante} />
               )}
@@ -117,7 +119,7 @@ function App() {
               )}
 
               {vistaActiva === "analisis" && (
-                <TableroCargaSemanal estudiante={estudiante}/>
+                <TableroCargaSemanal estudiante={estudiante} onNavegar={setVistaActiva} />
               )}
               {vistaActiva === "disponibilidad" && <GestionDisponiblidad estudiante={estudiante} />}
 
@@ -134,16 +136,6 @@ function App() {
                </div>
 
              </div>
-
-          {vistaActiva === "dashboard" && (
-            <div className="w-full xl:w-3/5 flex flex-col gap-6 relative justify-start">
-
-              <div className="bg-[#ffffff] p-6 rounded-2xl border border-[#430000]/20 shadow-sm">
-                <TableroCargaSemanal estudiante={estudiante} />
-              </div>
-
-            </div>
-          )}
 
         </div>
 
