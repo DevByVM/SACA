@@ -52,7 +52,7 @@ function NotificacionesProximas({ estudiante, onConfigurar, actualizacion }) {
   }, [actualizacion, cargarNotificaciones]);
 
   return (
-    <div className="relative flex justify-end">
+    <div className="relative flex justify-end text-left">
       <button
         type="button"
         onClick={() => setAbierto((estadoActual) => !estadoActual)}
