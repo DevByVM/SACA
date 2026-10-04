@@ -22,6 +22,7 @@ function App() {
 
   const [vistaActiva, setVistaActiva] =
     useState("dashboard");
+  const [actualizacionNotificaciones, setActualizacionNotificaciones] = useState(0);
 
   const cerrarSesion = () => {
 
@@ -75,6 +76,12 @@ function App() {
                 {estudiante?.nombre || "Sin estudiante"}
               </p>
             </div>
+
+            <NotificacionesProximas
+              estudiante={estudiante}
+              onConfigurar={() => setVistaActiva("notificaciones")}
+              actualizacion={actualizacionNotificaciones}
+            />
 
           </div>
 
@@ -137,7 +144,10 @@ function App() {
 )}
 
               {vistaActiva === "notificaciones" && (
-                <ConfiguracionNotificaciones estudiante={estudiante} />
+                <ConfiguracionNotificaciones
+                  estudiante={estudiante}
+                  onPreferenciasGuardadas={() => setActualizacionNotificaciones((actual) => actual + 1)}
+                />
               )}
                </div>
 
