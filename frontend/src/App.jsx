@@ -22,6 +22,7 @@ function App() {
 
   const [vistaActiva, setVistaActiva] =
     useState("dashboard");
+  const [actualizacionNotificaciones, setActualizacionNotificaciones] = useState(0);
 
   const cerrarSesion = () => {
 
@@ -76,6 +77,12 @@ function App() {
               </p>
             </div>
 
+            <NotificacionesProximas
+              estudiante={estudiante}
+              onConfigurar={() => setVistaActiva("notificaciones")}
+              actualizacion={actualizacionNotificaciones}
+            />
+
           </div>
 
           <div className="w-full min-w-0 pt-16 sm:pt-12 flex flex-col justify-start">
@@ -106,16 +113,10 @@ function App() {
             <div className="w-full flex-1">
 
               {vistaActiva === "dashboard" && (
-                <div className="space-y-6">
-                  <NotificacionesProximas
-                    estudiante={estudiante}
-                    onConfigurar={() => setVistaActiva("notificaciones")}
-                  />
-                  <PanelControlAcademico
-                    estudiante={estudiante}
-                    onNavegar={setVistaActiva}
-                  />
-                </div>
+                <PanelControlAcademico
+                  estudiante={estudiante}
+                  onNavegar={setVistaActiva}
+                />
               )}
 
               {vistaActiva === "academico" && (
@@ -143,7 +144,10 @@ function App() {
 )}
 
               {vistaActiva === "notificaciones" && (
-                <ConfiguracionNotificaciones estudiante={estudiante} />
+                <ConfiguracionNotificaciones
+                  estudiante={estudiante}
+                  onPreferenciasGuardadas={() => setActualizacionNotificaciones((actual) => actual + 1)}
+                />
               )}
                </div>
 

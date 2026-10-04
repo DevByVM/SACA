@@ -12,7 +12,7 @@ function formatearTipoActividad(tipoActividad) {
     .replace(/\b\w/g, (letra) => letra.toUpperCase());
 }
 
-function ConfiguracionNotificaciones({ estudiante }) {
+function ConfiguracionNotificaciones({ estudiante, onPreferenciasGuardadas }) {
   const estudianteId = estudiante?.id;
   const [tiposDisponibles, setTiposDisponibles] = useState([]);
   const [tiposHabilitados, setTiposHabilitados] = useState([]);
@@ -65,6 +65,7 @@ function ConfiguracionNotificaciones({ estudiante }) {
       setError("");
       const preferencias = await guardarPreferenciasNotificacion(estudianteId, tiposHabilitados);
       setTiposHabilitados(preferencias.tiposActividadHabilitados || []);
+      onPreferenciasGuardadas?.();
       toast.success("Preferencias de notificaciones guardadas.");
     } catch (guardadoError) {
       const mensaje = guardadoError.message || "No se pudieron guardar las preferencias.";

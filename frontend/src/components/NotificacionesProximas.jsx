@@ -20,7 +20,7 @@ function formatearFechaEntrega(fechaEntrega) {
   }).format(new Date(fechaEntrega));
 }
 
-function NotificacionesProximas({ estudiante, onConfigurar }) {
+function NotificacionesProximas({ estudiante, onConfigurar, actualizacion }) {
   const estudianteId = estudiante?.id;
   const [notificaciones, setNotificaciones] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -48,7 +48,7 @@ function NotificacionesProximas({ estudiante, onConfigurar }) {
 
   useEffect(() => {
     cargarNotificaciones();
-  }, [cargarNotificaciones]);
+  }, [actualizacion, cargarNotificaciones]);
 
   return (
     <div className="relative flex justify-end">
