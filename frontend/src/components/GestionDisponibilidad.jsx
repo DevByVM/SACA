@@ -26,6 +26,7 @@ function GestionDisponibilidad({ estudiante }) {
 
   const [form, setForm] = useState(disponibilidadInicial);
   const [editando, setEditando] = useState({ tipo: null, id: null });
+  const [formularioAbierto, setFormularioAbierto] = useState(false);
 
   const cargarDatos = useCallback(async () => {
     if (!estudianteId.trim()) return;
@@ -67,6 +68,7 @@ function GestionDisponibilidad({ estudiante }) {
 
       setForm(disponibilidadInicial);
       setEditando({ tipo: null, id: null });
+      setFormularioAbierto(false);
       toast.success("Disponibilidad guardada correctamente");
       await cargarDatos();
     } catch (error) {
@@ -95,7 +97,31 @@ function GestionDisponibilidad({ estudiante }) {
       tipoBloque: disponibilidad.tipoBloque,
       cicloId: disponibilidad.cicloId,
     });
+    setFormularioAbierto(true);
   }
+
+  function nuevoRegistro() {
+    setEditando({ tipo: null, id: null });
+    setForm(disponibilidadInicial);
+    setFormularioAbierto(true);
+  }
+
+  function cerrarFormulario() {
+    setFormularioAbierto(false);
+    setEditando({ tipo: null, id: null });
+    setForm(disponibilidadInicial);
+  }
+
+  useEffect(() => {
+    if (!formularioAbierto) return undefined;
+
+    function cerrarConEscape(event) {
+      if (event.key === "Escape") cerrarFormulario();
+    }
+
+    window.addEventListener("keydown", cerrarConEscape);
+    return () => window.removeEventListener("keydown", cerrarConEscape);
+  }, [formularioAbierto]);
 
   return (
     <section className="space-y-5">
@@ -106,14 +132,69 @@ function GestionDisponibilidad({ estudiante }) {
             Gestiona tus bloques de tiempo disponibles por cada ciclo académico.
           </p>
         </div>
+        <button
+          className="inline-flex items-center justify-center gap-2 self-start rounded-lg bg-[#960000] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#750000] md:self-auto"
+          type="button"
+          onClick={nuevoRegistro}
+        >
+          <i className="fa-solid fa-plus" aria-hidden="true"></i>
+          Nueva disponibilidad
+        </button>
       </div>
 
       {cargando && <p className="text-sm text-[#430000]/70">Cargando información...</p>}
 
-      <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
-        {/* Formulario */}
-        <Panel titulo={editando.tipo ? "Editar Disponibilidad" : "Nueva Disponibilidad"}>
-          <form className="space-y-3" onSubmit={guardarDisponibilidad}>
+      <Tabla
+        columnas={["Día", "Horario", "Tipo de Bloque", "Ciclo"]}
+        filas={disponibilidades.map((disp) => {
+          const cicloAsociado = ciclos.find((c) => Number(c.id) === Number(disp.cicloId));
+          const cicloLabel = cicloAsociado ? `${cicloAsociado.nombre} (${cicloAsociado.anio})` : "No asignado";
+
+          return {
+            id: disp.id,
+            celdas: [
+              disp.diaSemana,
+              `${disp.horaInicio} - ${disp.horaFin}`,
+              disp.tipoBloque,
+              cicloLabel,
+            ],
+            item: disp,
+          };
+        })}
+        onEdit={editarDisponibilidad}
+        onDelete={eliminar}
+      />
+
+      {formularioAbierto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) cerrarFormulario();
+          }}
+        >
+          <div
+            aria-labelledby="titulo-formulario-disponibilidad"
+            aria-modal="true"
+            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-7"
+            role="dialog"
+          >
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h3 id="titulo-formulario-disponibilidad" className="text-xl font-black text-[#430000]">
+                  {editando.tipo ? "Editar disponibilidad" : "Nueva disponibilidad"}
+                </h3>
+                <p className="mt-1 text-sm text-[#430000]/60">Completa los datos del bloque.</p>
+              </div>
+              <button
+                aria-label="Cerrar formulario"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#430000]/70 transition hover:bg-[#430000]/10"
+                type="button"
+                onClick={cerrarFormulario}
+              >
+                <i className="fa-solid fa-xmark" aria-hidden="true"></i>
+              </button>
+            </div>
+            <form className="space-y-3" onSubmit={guardarDisponibilidad}>
             <Select
               label="Ciclo Académico"
               value={form.cicloId}
@@ -147,44 +228,22 @@ function GestionDisponibilidad({ estudiante }) {
               value={form.horaFin}
               onChange={(horaFin) => setForm({ ...form, horaFin })}
             />
-            <BotonGuardar />
-            {editando.tipo && (
+            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
               <button
+                className="rounded-lg border border-[#430000]/20 px-4 py-2 font-bold text-[#430000] transition hover:bg-[#430000]/5"
                 type="button"
-                className="w-full text-sm font-semibold text-[#430000]/70 hover:underline mt-2"
-                onClick={() => {
-                  setEditando({ tipo: null, id: null });
-                  setForm(disponibilidadInicial);
-                }}
+                onClick={cerrarFormulario}
               >
-                Cancelar Edición
+                Cancelar
               </button>
-            )}
+              <button className="rounded-lg bg-[#960000] px-4 py-2 font-bold text-white transition hover:bg-[#750000]" type="submit">
+                Guardar disponibilidad
+              </button>
+            </div>
           </form>
-        </Panel>
-
-        {/* Tabla de Registros */}
-        <Tabla
-          columnas={["Día", "Horario", "Tipo de Bloque", "Ciclo"]}
-          filas={disponibilidades.map((disp) => {
-            const cicloAsociado = ciclos.find((c) => Number(c.id) === Number(disp.cicloId));
-            const cicloLabel = cicloAsociado ? `${cicloAsociado.nombre} (${cicloAsociado.anio})` : "No asignado";
-
-            return {
-              id: disp.id,
-              celdas: [
-                disp.diaSemana,
-                `${disp.horaInicio} - ${disp.horaFin}`,
-                disp.tipoBloque,
-                cicloLabel,
-              ],
-              item: disp,
-            };
-          })}
-          onEdit={editarDisponibilidad}
-          onDelete={eliminar}
-        />
-      </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -307,14 +366,6 @@ function Select({ label, value, onChange, options }) {
         })}
       </select>
     </label>
-  );
-}
-
-function BotonGuardar() {
-  return (
-    <button className="w-full rounded-lg bg-[#960000] px-4 py-2 font-bold text-white hover:bg-[#7a0000] transition" type="submit">
-      Guardar Disponibilidad
-    </button>
   );
 }
 
