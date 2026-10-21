@@ -10,6 +10,7 @@ export const RegistroJornada = ({ estudiante }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [idEdicion, setIdEdicion] = useState(null);
+  const [formularioAbierto, setFormularioAbierto] = useState(false);
 
   // Estado para la barra de búsqueda
   const [busqueda, setBusqueda] = useState('');
@@ -58,7 +59,24 @@ export const RegistroJornada = ({ estudiante }) => {
   const resetFormulario = () => {
     setFormData({ diaSemana: 'Lunes', horaInicio: '', horaFin: '' });
     setIdEdicion(null);
+    setFormularioAbierto(false);
   };
+
+  const abrirFormularioNuevo = () => {
+    resetFormulario();
+    setFormularioAbierto(true);
+  };
+
+  useEffect(() => {
+    if (!formularioAbierto) return undefined;
+
+    const cerrarConEscape = (event) => {
+      if (event.key === 'Escape') resetFormulario();
+    };
+
+    window.addEventListener('keydown', cerrarConEscape);
+    return () => window.removeEventListener('keydown', cerrarConEscape);
+  }, [formularioAbierto]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -102,7 +120,7 @@ export const RegistroJornada = ({ estudiante }) => {
       if (idEdicion === modalEliminar.id) resetFormulario();
       cerrarModalEliminar();
       cargarJornadas();     
-    } catch (err) {
+    } catch {
       setError('No se pudo eliminar la jornada de la base de datos.');
       cerrarModalEliminar();
     }
@@ -116,6 +134,7 @@ export const RegistroJornada = ({ estudiante }) => {
       horaInicio: limpiarSegundos(jornada.horaInicio),
       horaFin: limpiarSegundos(jornada.horaFin)
     });
+    setFormularioAbierto(true);
   };
 
   // Filtrar jornadas según la búsqueda por día de la semana
@@ -126,93 +145,35 @@ export const RegistroJornada = ({ estudiante }) => {
   return (
     
     <div className="w-full animate-fade-in">
-    
-
-      {/* */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* COLUMNA 1: Formulario Izquierdo */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm h-fit">
-          <h2 className="text-lg font-bold text-[#430000] mb-4 border-b border-gray-100 pb-2">
-            {idEdicion ? 'Editar Jornada' : 'Nueva Jornada'}
-          </h2>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-1 tracking-wider">
-                Día de la Semana
-              </label>
-              <select 
-                name="diaSemana" 
-                value={formData.diaSemana} 
-                onChange={handleInputChange} 
-                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#430000]/20 focus:border-[#430000] transition-all"
-              >
-                {diasDeLaSemana.map(dia => (
-                  <option key={dia} value={dia}>{dia}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-1 tracking-wider">
-                Hora Inicio
-              </label>
-              <input 
-                type="time" 
-                name="horaInicio" 
-                value={formData.horaInicio} 
-                onChange={handleInputChange} 
-                required 
-                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#430000]/20 focus:border-[#430000] transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-1 tracking-wider">
-                Hora Fin
-              </label>
-              <input 
-                type="time" 
-                name="horaFin" 
-                value={formData.horaFin} 
-                onChange={handleInputChange} 
-                required 
-                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#430000]/20 focus:border-[#430000] transition-all"
-              />
-            </div>
-
-            <div className="space-y-2 pt-2">
-              <button 
-                type="submit" 
-                className={`w-full py-2.5 text-white rounded-lg font-bold text-sm tracking-wide shadow-sm transition-colors uppercase ${
-                  idEdicion ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#430000] hover:bg-[#5a0000]'
-                }`}
-              >
-                {idEdicion ? 'Actualizar Jornada' : 'Guardar Jornada'}
-              </button>
-
-              {idEdicion && (
-                <button 
-                  type="button"
-                  onClick={resetFormulario}
-                  className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold text-xs tracking-wide transition-colors uppercase"
-                >
-                  Cancelar Edición
-                </button>
-              )}
-            </div>
-          </form>
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-black text-[#430000]">Jornada laboral</h2>
+          <p className="text-sm text-[#430000]/70">Administra tus horarios de trabajo por día.</p>
         </div>
+        <button
+          type="button"
+          onClick={abrirFormularioNuevo}
+          className="inline-flex items-center justify-center gap-2 self-start rounded-lg bg-[#960000] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#750000] sm:self-auto"
+        >
+          <i className="fa-solid fa-plus" aria-hidden="true"></i>
+          Nueva jornada
+        </button>
+      </div>
 
-        {/* COLUMNA 2 y 3: Contenedor Derecho de la Tabla */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm lg:col-span-2">
-          
+      {error && (
+        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">
+          {error}
+        </p>
+      )}
+
+      {/* Contenedor de la tabla */}
+      <div className="grid grid-cols-1 gap-6">
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           {/* Cabecera Interna de la Tabla con el Buscador */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 border-b border-gray-100 pb-3">
-            <h2 className="text-lg font-bold text-[#430000]">
+            <h3 className="text-lg font-bold text-[#430000]">
               Jornadas Laborales Registradas
-            </h2>
+            </h3>
             
             <input 
               type="text"
@@ -222,8 +183,8 @@ export const RegistroJornada = ({ estudiante }) => {
               className="p-2 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm w-full sm:w-60 focus:outline-none focus:ring-2 focus:ring-[#430000]/20 focus:border-[#430000] transition-all"
             />
           </div>
-          
-          {/* Tabla  */}
+
+          {/* Tabla */}
           <div className="overflow-x-auto rounded-xl border border-gray-100">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -251,12 +212,14 @@ export const RegistroJornada = ({ estudiante }) => {
                       </td>
                       <td className="p-3.5 text-center">
                         <button 
+                          type="button"
                           onClick={() => handleCargarParaEditar(j)}
                           className="px-3 py-1 text-xs font-semibold border border-gray-200 rounded-md text-gray-600 hover:bg-gray-50 transition-colors mr-2"
                         >
                           Editar
                         </button>
                         <button 
+                          type="button"
                           onClick={() => abrirModalEliminar(j.id, j.diaSemana)}
                           className="px-3 py-1 text-xs font-semibold bg-red-700 hover:bg-red-800 text-white rounded-md transition-colors"
                         >
@@ -270,8 +233,108 @@ export const RegistroJornada = ({ estudiante }) => {
             </table>
           </div>
         </div>
-
       </div>
+
+      {formularioAbierto && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) resetFormulario();
+          }}
+        >
+          <div
+            aria-labelledby="titulo-formulario-jornada"
+            aria-modal="true"
+            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-gray-100 bg-white p-5 shadow-2xl sm:p-7"
+            role="dialog"
+          >
+            <div className="mb-5 flex items-start justify-between gap-4 border-b border-gray-100 pb-3">
+              <div>
+                <h3 id="titulo-formulario-jornada" className="text-xl font-black text-[#430000]">
+                  {idEdicion ? 'Editar jornada laboral' : 'Nueva jornada laboral'}
+                </h3>
+                <p className="mt-1 text-sm text-[#430000]/60">Completa el día y las horas de tu jornada.</p>
+              </div>
+              <button
+                type="button"
+                aria-label="Cerrar formulario"
+                onClick={resetFormulario}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#430000]/70 transition hover:bg-[#430000]/10"
+              >
+                <i className="fa-solid fa-xmark" aria-hidden="true"></i>
+              </button>
+            </div>
+            {error && (
+              <p className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">
+                {error}
+              </p>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1 tracking-wider">
+                  Día de la Semana
+                </label>
+                <select
+                  name="diaSemana"
+                  value={formData.diaSemana}
+                  onChange={handleInputChange}
+                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#430000]/20 focus:border-[#430000] transition-all"
+                >
+                  {diasDeLaSemana.map(dia => (
+                    <option key={dia} value={dia}>{dia}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1 tracking-wider">
+                  Hora Inicio
+                </label>
+                <input
+                  type="time"
+                  name="horaInicio"
+                  value={formData.horaInicio}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#430000]/20 focus:border-[#430000] transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1 tracking-wider">
+                  Hora Fin
+                </label>
+                <input
+                  type="time"
+                  name="horaFin"
+                  value={formData.horaFin}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#430000]/20 focus:border-[#430000] transition-all"
+                />
+              </div>
+
+              <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={resetFormulario}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className={`px-4 py-2 text-white rounded-lg font-bold shadow-sm transition-colors ${
+                    idEdicion ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#430000] hover:bg-[#5a0000]'
+                  }`}
+                >
+                  {idEdicion ? 'Actualizar Jornada' : 'Guardar Jornada'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* MODAL DE CONFIRMACIÓN */}
       {modalEliminar.isOpen && (
