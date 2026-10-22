@@ -16,6 +16,8 @@ const TONOS_ICONO = {
 // quitar su propio useEffect de Escape para no cerrar dos veces.
 // El fondo cierra con mousedown (no click) para que una selección de texto que
 // empieza dentro del diálogo y termina fuera no lo cierre.
+// !m-0 en el fondo: dentro de un contenedor space-y-* el margen superior que
+// reciben los hermanos desplazaría el fondo fijo y dejaría una franja sin cubrir.
 function Modal({
   abierto,
   titulo,
@@ -50,7 +52,7 @@ function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 !m-0 flex items-center justify-center bg-black/50 p-4"
       onMouseDown={(event) => {
         if (cerrarAlPulsarFondo && event.target === event.currentTarget) onCerrar?.();
       }}
@@ -87,7 +89,7 @@ function Modal({
             {mostrarCerrar && (
               <button
                 aria-label={etiquetaCerrar}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-600 transition hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700/30"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-600 transition hover:bg-surface-muted hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2"
                 type="button"
                 onClick={onCerrar}
               >

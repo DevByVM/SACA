@@ -2,7 +2,7 @@ import { unirClases } from "./unirClases";
 
 const VARIANTES = {
   primario: "bg-brand-700 text-white hover:bg-brand-800",
-  secundario: "border border-line bg-surface text-ink-900 hover:bg-surface-muted",
+  secundario: "border border-ink-500 bg-surface text-ink-900 hover:bg-surface-muted",
   peligro: "border border-danger-200 bg-surface text-danger-700 hover:bg-danger-50",
   texto: "text-brand-700 hover:underline",
 };
@@ -30,7 +30,7 @@ function Boton({
 }) {
   const clases = unirClases(
     "inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700/30",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2",
     "disabled:cursor-not-allowed disabled:opacity-60",
     VARIANTES[variante] || VARIANTES.primario,
     TAMANOS[tamano] || TAMANOS.md,

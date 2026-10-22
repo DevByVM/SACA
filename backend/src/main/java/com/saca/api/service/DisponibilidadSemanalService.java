@@ -2,10 +2,12 @@ package com.saca.api.service;
 
 
 import com.saca.api.entity.DisponibilidadSemanal;
+import com.saca.api.exception.ValidacionNegocioException;
 import com.saca.api.repository.DisponibilidadSemanalRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
 import java.util.List;
 
  @Service
@@ -16,6 +18,8 @@ import java.util.List;
 
     // / 1. Agregar/Guardar bloque con validación para evitar duplicados
     public DisponibilidadSemanal guardarBloque(DisponibilidadSemanal bloque) {
+        validarRangoHoras(bloque.getHoraInicio(), bloque.getHoraFin());
+
         // 1. Traemos la lista de bloques que el estudiante YA TIENE en este ciclo
         List<DisponibilidadSemanal> horarioExistente = obtenerHorarioEstudiante(
                 bloque.getEstudianteId(),
@@ -69,6 +73,8 @@ import java.util.List;
 
     // 6. Actualizar un bloque existente (Mapeado con tus getters y setters reales)
     public DisponibilidadSemanal actualizarBloque(Long id, DisponibilidadSemanal detalles) {
+        validarRangoHoras(detalles.getHoraInicio(), detalles.getHoraFin());
+
         // Buscamos el registro actual en la base de datos
         DisponibilidadSemanal existente = obtenerPorId(id);
 
@@ -82,5 +88,12 @@ import java.util.List;
 
         // Guardamos los cambios en la base de datos
         return repository.save(existente);
+    }
+
+    // Misma regla que los horarios de clase: no se admiten bloques vacíos ni que crucen la medianoche
+    private void validarRangoHoras(LocalTime horaInicio, LocalTime horaFin) {
+        if (!horaInicio.isBefore(horaFin)) {
+            throw new ValidacionNegocioException("La hora de inicio debe ser menor que la hora de fin");
+        }
     }
 }

@@ -5,7 +5,7 @@ const CLASES_CONTROL =
   "block w-full rounded-lg border bg-surface px-3 py-2 text-sm text-ink-900 outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-surface-muted";
 
 const CLASES_ESTADO = {
-  normal: "border-line focus:border-brand-700 focus:ring-brand-700/20",
+  normal: "border-ink-500 focus:border-brand-700 focus:ring-brand-700/20",
   error: "border-danger-700 focus:border-danger-700 focus:ring-danger-700/20",
 };
 
