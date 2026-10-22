@@ -2,6 +2,7 @@ package com.saca.api.service;
 
 
 import com.saca.api.entity.DisponibilidadSemanal;
+import com.saca.api.exception.ConflictoHorarioException;
 import com.saca.api.exception.ValidacionNegocioException;
 import com.saca.api.repository.DisponibilidadSemanalRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Objects;
 
  @Service
  public class DisponibilidadSemanalService {
@@ -19,34 +21,9 @@ import java.util.List;
     // / 1. Agregar/Guardar bloque con validación para evitar duplicados
     public DisponibilidadSemanal guardarBloque(DisponibilidadSemanal bloque) {
         validarRangoHoras(bloque.getHoraInicio(), bloque.getHoraFin());
+        validarSinConflicto(bloque, null);
 
-        // 1. Traemos la lista de bloques que el estudiante YA TIENE en este ciclo
-        List<DisponibilidadSemanal> horarioExistente = obtenerHorarioEstudiante(
-                bloque.getEstudianteId(),
-                bloque.getCicloId()
-        );
-
-        // 2. Evaluamos el bloque nuevo contra cada uno de los que ya existen
-        for (DisponibilidadSemanal existente : horarioExistente) {
-
-            // Primero filtramos que estemos comparando el mismo día de la semana
-            if (existente.getDiaSemana().equalsIgnoreCase(bloque.getDiaSemana())) {
-
-                if (existente.getHoraInicio().equals(bloque.getHoraInicio()) &&
-                        existente.getHoraFin().equals(bloque.getHoraFin())) {
-                    throw new RuntimeException("¡Error! Ya registraste exactamente el mismo bloque de horario para este día.");
-                }
-
-                boolean seCruzan = (bloque.getHoraInicio().isBefore(existente.getHoraFin()) &&
-                        bloque.getHoraFin().isAfter(existente.getHoraInicio()));
-
-                if (seCruzan) {
-                    throw new RuntimeException("¡Conflicto de Horario! El bloque que intentas agregar se cruza con las horas de un registro existente.");
-                }
-            }
-        }
-
-        // Si el ciclo (for) termina sin lanzar excepciones, significa que el horario está limpio y se puede guardar
+        // Si no hay duplicados ni cruces, el horario está limpio y se puede guardar
         return repository.save(bloque);
     }
 
@@ -77,6 +54,7 @@ import java.util.List;
 
         // Buscamos el registro actual en la base de datos
         DisponibilidadSemanal existente = obtenerPorId(id);
+        validarSinConflicto(detalles, id);
 
         // Sincronizamos los datos con lo que viene del frontend/Request
         existente.setDiaSemana(detalles.getDiaSemana());
@@ -95,5 +73,40 @@ import java.util.List;
         if (!horaInicio.isBefore(horaFin)) {
             throw new ValidacionNegocioException("La hora de inicio debe ser menor que la hora de fin");
         }
+    }
+
+    // Compara contra los bloques del mismo estudiante, ciclo y día. Al editar se excluye
+    // el propio bloque (idExcluir) para que no choque consigo mismo. Igual que en los
+    // horarios de clase, la comparación es estricta: 08:00-09:00 y 09:00-10:00 no se cruzan.
+    private void validarSinConflicto(DisponibilidadSemanal bloque, Long idExcluir) {
+        List<DisponibilidadSemanal> horarioExistente = obtenerHorarioEstudiante(
+                bloque.getEstudianteId(),
+                bloque.getCicloId()
+        );
+
+        for (DisponibilidadSemanal existente : horarioExistente) {
+            if (Objects.equals(existente.getId(), idExcluir)
+                    || !existente.getDiaSemana().equalsIgnoreCase(bloque.getDiaSemana())) {
+                continue;
+            }
+
+            if (existente.getHoraInicio().equals(bloque.getHoraInicio())
+                    && existente.getHoraFin().equals(bloque.getHoraFin())) {
+                throw new ConflictoHorarioException(
+                        "Ya existe un bloque de disponibilidad registrado el " + describirBloque(existente));
+            }
+
+            boolean seCruzan = bloque.getHoraInicio().isBefore(existente.getHoraFin())
+                    && bloque.getHoraFin().isAfter(existente.getHoraInicio());
+
+            if (seCruzan) {
+                throw new ConflictoHorarioException(
+                        "El bloque se cruza con otro registrado el " + describirBloque(existente));
+            }
+        }
+    }
+
+    private String describirBloque(DisponibilidadSemanal bloque) {
+        return bloque.getDiaSemana() + " de " + bloque.getHoraInicio() + " a " + bloque.getHoraFin();
     }
 }
