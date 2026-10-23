@@ -1,3 +1,5 @@
+import { fetchConSesion } from "../api/client";
+
 const API_BASE_URL = `${
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api"
 }/jornadas`;
@@ -5,7 +7,7 @@ const API_BASE_URL = `${
 export const jornadaService = {
   // 1. POST /api/jornadas
   crear: async (jornada) => {
-    const response = await fetch(API_BASE_URL, {
+    const response = await fetchConSesion(API_BASE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(jornada),
@@ -16,14 +18,14 @@ export const jornadaService = {
 
   // 2. GET /api/jornadas/estudiante/{estudianteId}
   listarPorEstudiante: async (estudianteId) => {
-    const response = await fetch(`${API_BASE_URL}/estudiante/${estudianteId}`);
+    const response = await fetchConSesion(`${API_BASE_URL}/estudiante/${estudianteId}`);
     if (!response.ok) throw new Error('Error al obtener las jornadas');
     return response.json();
   },
 
   // 3. DELETE /api/jornadas/{id}
   eliminar: async (id) => {
-    const response = await fetch(`${API_BASE_URL}/${id}`, {
+    const response = await fetchConSesion(`${API_BASE_URL}/${id}`, {
       method: 'DELETE'
     });
     if (!response.ok) throw new Error('Error al eliminar la jornada');
@@ -32,7 +34,7 @@ export const jornadaService = {
 
   // 4. PUT /api/jornadas/{id}
   actualizar: async (id, jornada) => {
-    const response = await fetch(`${API_BASE_URL}/${id}`, {
+    const response = await fetchConSesion(`${API_BASE_URL}/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(jornada),

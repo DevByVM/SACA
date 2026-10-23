@@ -2,6 +2,8 @@
 // Módulo de red para el recurso ActividadAcademica.
 // Centraliza todas las llamadas al backend para que los componentes no manejen fetch directamente.
 
+import { fetchConSesion } from "../api/client";
+
 const BASE_URL = `${
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api"
 }/actividades`;
@@ -11,7 +13,7 @@ const BASE_URL = `${
  * @returns {Promise<Array>} Lista de actividades
  */
 export async function getActividades() {
-  const respuesta = await fetch(BASE_URL);
+  const respuesta = await fetchConSesion(BASE_URL);
   if (!respuesta.ok) {
     throw new Error(`Error al obtener actividades: ${respuesta.status}`);
   }
@@ -24,7 +26,7 @@ export async function getActividades() {
  * @returns {Promise<Object>} Actividad encontrada
  */
 export async function getActividadPorId(id) {
-  const respuesta = await fetch(`${BASE_URL}/${id}`);
+  const respuesta = await fetchConSesion(`${BASE_URL}/${id}`);
   if (!respuesta.ok) {
     throw new Error(`Actividad con ID ${id} no encontrada: ${respuesta.status}`);
   }
@@ -37,7 +39,7 @@ export async function getActividadPorId(id) {
  * @returns {Promise<Object>} Actividad creada con su ID asignado
  */
 export async function crearActividad(actividad) {
-  const respuesta = await fetch(BASE_URL, {
+  const respuesta = await fetchConSesion(BASE_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -61,7 +63,7 @@ export async function crearActividad(actividad) {
  * @returns {Promise<Object>} Actividad actualizada
  */
 export async function actualizarActividad(id, actividad) {
-  const respuesta = await fetch(`${BASE_URL}/${id}`, {
+  const respuesta = await fetchConSesion(`${BASE_URL}/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -86,7 +88,7 @@ export async function actualizarActividad(id, actividad) {
  */
 export async function obtenerPorCicloActivoYEstdiante(estudianteId) {
 
-  const respuesta = await fetch(`${BASE_URL}/estudiante/${estudianteId}/activo`);
+  const respuesta = await fetchConSesion(`${BASE_URL}/estudiante/${estudianteId}/activo`);
   
   if (!respuesta.ok) {
     throw new Error(`Error al obtener actividades del ciclo activo: ${respuesta.status}`);

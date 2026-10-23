@@ -8,9 +8,14 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public interface ActividadAcademicaRepository extends JpaRepository<ActividadAcademica, Long> {
+
+    // La actividad solo se encuentra si su materia pertenece a un ciclo del estudiante indicado
+    Optional<ActividadAcademica> findByIdActividadAndMateriaInscritaCicloAcademicoEstudianteId(
+            long idActividad, Long estudianteId);
 
     //es necesario especificar un query ya que hay muchas tablas involucradas
     @Query("SELECT aa FROM ActividadAcademica aa " +

@@ -1,4 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import {
+  alExpirarSesion,
+  borrarSesion,
+  MENSAJE_SESION_EXPIRADA,
+  milisegundosHastaExpirar,
+  notificarSesionExpirada,
+  obtenerSesion,
+} from "./api/sesion";
 import Login from "./components/Login";
 import PerfilAcademico from "./components/PerfilAcademico";
 import Sidebar from "./components/Sidebar.jsx";
@@ -13,11 +22,11 @@ import NotificacionesProximas from "./components/NotificacionesProximas.jsx";
 function App() {
 
   const [logueado, setLogueado] = useState(
-    !!localStorage.getItem("estudiante")
+    () => !!obtenerSesion()
   );
 
   const [estudiante, setEstudiante] = useState(
-    JSON.parse(localStorage.getItem("estudiante"))
+    () => obtenerSesion()?.estudiante ?? null
   );
 
   const [vistaActiva, setVistaActiva] =
@@ -26,22 +35,43 @@ function App() {
 
   const cerrarSesion = () => {
 
-    localStorage.removeItem("estudiante");
+    borrarSesion();
 
     setEstudiante(null);
     setVistaActiva("dashboard");
     setLogueado(false);
   };
 
+  // Vuelve al login si el backend responde 401 o cuando vence el token
+  useEffect(() => {
+    if (!logueado) return undefined;
+
+    const dejarDeEscuchar = alExpirarSesion((evento) => {
+      // Indica a client.js que App gestiona el cierre y el aviso
+      evento.preventDefault();
+      setEstudiante(null);
+      setVistaActiva("dashboard");
+      setLogueado(false);
+      toast.info(MENSAJE_SESION_EXPIRADA, { toastId: "sesion-expirada" });
+    });
+
+    const sesion = obtenerSesion();
+    if (!sesion) {
+      notificarSesionExpirada();
+      return dejarDeEscuchar;
+    }
+    const temporizador = setTimeout(notificarSesionExpirada, milisegundosHastaExpirar(sesion));
+
+    return () => {
+      clearTimeout(temporizador);
+      dejarDeEscuchar();
+    };
+  }, [logueado]);
+
   if (!logueado) {
     return (
       <Login
         onLoginSuccess={(estudianteAutenticado) => {
-
-          localStorage.setItem(
-            "estudiante",
-            JSON.stringify(estudianteAutenticado)
-          );
 
           setEstudiante(estudianteAutenticado);
           setLogueado(true);

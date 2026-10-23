@@ -13,7 +13,8 @@ function PerfilAcademico({ estudiante }) {
     nombre: "",
     carnet: "",
     correoInstitucional: "",
-    contrasenia: ""
+    contrasenia: "",
+    contraseniaActual: ""
   });
 
   const [academico, setAcademico] = useState({
@@ -30,7 +31,8 @@ function PerfilAcademico({ estudiante }) {
         nombre: dataUsuario.nombre,
         carnet: dataUsuario.carnet,
         correoInstitucional: dataUsuario.correoInstitucional,
-        contrasenia: ""
+        contrasenia: "",
+        contraseniaActual: ""
       });
 
       const dataAcademico = await obtenerPerfilAcademico(estudiante.id);
@@ -83,6 +85,11 @@ const guardarUsuario = async (e) => {
     !usuario.contrasenia.match(/^(?=.*[A-Z])(?=.*\d).{8,}$/)
   ) {
     toast.warning("Contraseña débil");
+    return;
+  }
+
+  if (usuario.contrasenia && !usuario.contraseniaActual) {
+    toast.warning("Ingresa tu contraseña actual para cambiarla");
     return;
   }
 
@@ -285,6 +292,21 @@ const guardarAcademico = async (e) => {
               onChange={handleUserChange}
               className="w-full border border-[#430000]/20 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#960000]"
               placeholder="Opcional"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 text-sm font-semibold text-[#430000]">
+              Contraseña Actual
+            </label>
+
+            <input
+              type="password"
+              name="contraseniaActual"
+              value={usuario.contraseniaActual}
+              onChange={handleUserChange}
+              className="w-full border border-[#430000]/20 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#960000]"
+              placeholder="Solo si cambias la contraseña"
             />
           </div>
 

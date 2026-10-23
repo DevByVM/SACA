@@ -3,7 +3,9 @@ package com.saca.api.service;
 
 import com.saca.api.entity.DisponibilidadSemanal;
 import com.saca.api.exception.ConflictoHorarioException;
+import com.saca.api.exception.RecursoNoEncontradoException;
 import com.saca.api.exception.ValidacionNegocioException;
+import com.saca.api.repository.CicloAcademicoRepository;
 import com.saca.api.repository.DisponibilidadSemanalRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,15 +14,26 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
 
+// Todas las operaciones reciben el id del estudiante autenticado (sub del JWT) y solo
+// actúan sobre sus propios bloques; un bloque o ciclo ajeno responde igual que uno inexistente.
  @Service
  public class DisponibilidadSemanalService {
     @Autowired
     private DisponibilidadSemanalRepository repository;
 
+    @Autowired
+    private CicloAcademicoRepository cicloAcademicoRepository;
+
 
     // / 1. Agregar/Guardar bloque con validación para evitar duplicados
-    public DisponibilidadSemanal guardarBloque(DisponibilidadSemanal bloque) {
+    public DisponibilidadSemanal guardarBloque(DisponibilidadSemanal bloque, Long estudianteId) {
         validarRangoHoras(bloque.getHoraInicio(), bloque.getHoraFin());
+        validarEstudianteDelCuerpo(bloque.getEstudianteId(), estudianteId);
+        validarCicloDelEstudiante(bloque.getCicloId(), estudianteId);
+
+        // Un id en el cuerpo haría que save() sobrescribiera un bloque existente
+        bloque.setId(null);
+        bloque.setEstudianteId(estudianteId);
         validarSinConflicto(bloque, null);
 
         // Si no hay duplicados ni cruces, el horario está limpio y se puede guardar
@@ -33,27 +46,32 @@ import java.util.Objects;
     }
 
     // 3. Eliminar bloque por ID
-    public void eliminarBloque(Long id) {
-        repository.deleteById(id);
+    public void eliminarBloque(Long id, Long estudianteId) {
+        repository.delete(obtenerPorId(id, estudianteId));
     }
 
-    // 4. Obtener TODOS los bloques del sistema
-    public List<DisponibilidadSemanal> listarTodo() {
-        return repository.findAll();
+    // 4. Obtener los bloques del estudiante en todos sus ciclos
+    public List<DisponibilidadSemanal> listarDelEstudiante(Long estudianteId) {
+        return repository.findByEstudianteId(estudianteId);
     }
 
-    // 5. Obtener un solo bloque por su ID (Lanza excepción si no existe)
-    public DisponibilidadSemanal obtenerPorId(Long id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Bloque de disponibilidad no encontrado con ID: " + id));
+    // 5. Obtener un solo bloque por su ID (Lanza excepción si no existe o es de otro estudiante)
+    public DisponibilidadSemanal obtenerPorId(Long id, Long estudianteId) {
+        return repository.findByIdAndEstudianteId(id, estudianteId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró el bloque de disponibilidad solicitado"));
     }
 
     // 6. Actualizar un bloque existente (Mapeado con tus getters y setters reales)
-    public DisponibilidadSemanal actualizarBloque(Long id, DisponibilidadSemanal detalles) {
+    public DisponibilidadSemanal actualizarBloque(Long id, DisponibilidadSemanal detalles, Long estudianteId) {
         validarRangoHoras(detalles.getHoraInicio(), detalles.getHoraFin());
 
         // Buscamos el registro actual en la base de datos
-        DisponibilidadSemanal existente = obtenerPorId(id);
+        DisponibilidadSemanal existente = obtenerPorId(id, estudianteId);
+        validarEstudianteDelCuerpo(detalles.getEstudianteId(), estudianteId);
+        validarCicloDelEstudiante(detalles.getCicloId(), estudianteId);
+
+        // El propietario no cambia: los conflictos se buscan siempre entre sus bloques
+        detalles.setEstudianteId(estudianteId);
         validarSinConflicto(detalles, id);
 
         // Sincronizamos los datos con lo que viene del frontend/Request
@@ -62,7 +80,6 @@ import java.util.Objects;
         existente.setHoraFin(detalles.getHoraFin());
         existente.setTipoBloque(detalles.getTipoBloque());
         existente.setCicloId(detalles.getCicloId());
-        existente.setEstudianteId(detalles.getEstudianteId());
 
         // Guardamos los cambios en la base de datos
         return repository.save(existente);
@@ -72,6 +89,22 @@ import java.util.Objects;
     private void validarRangoHoras(LocalTime horaInicio, LocalTime horaFin) {
         if (!horaInicio.isBefore(horaFin)) {
             throw new ValidacionNegocioException("La hora de inicio debe ser menor que la hora de fin");
+        }
+    }
+
+    // El frontend envía su propio estudianteId; uno distinto se rechaza en lugar de ignorarse en silencio
+    private void validarEstudianteDelCuerpo(Long estudianteIdDelCuerpo, Long estudianteId) {
+        if (estudianteIdDelCuerpo != null && !estudianteIdDelCuerpo.equals(estudianteId)) {
+            throw new ValidacionNegocioException("El estudiante indicado no corresponde a la sesión iniciada");
+        }
+    }
+
+    private void validarCicloDelEstudiante(Long cicloId, Long estudianteId) {
+        if (cicloId == null) {
+            throw new ValidacionNegocioException("El ciclo académico es obligatorio");
+        }
+        if (!cicloAcademicoRepository.existsByIdAndEstudianteId(cicloId, estudianteId)) {
+            throw new RecursoNoEncontradoException("No se encontró el ciclo académico solicitado");
         }
     }
 

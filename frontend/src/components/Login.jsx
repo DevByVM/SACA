@@ -4,6 +4,9 @@ import { useState } from "react";
 // Importa las funciones para iniciar sesión y registrar usuarios
 import { login, registrar } from "../services/authService";
 
+// Guarda el token de sesión recibido al iniciar sesión
+import { guardarSesion } from "../api/sesion";
+
 // Importa las notificaciones emergentes (toast)
 import { toast } from "react-toastify";
 
@@ -58,10 +61,14 @@ function Login({ onLoginSuccess }) {
                 contrasenia: form.contrasenia
             });
 
+            // Sin token no hay sesión válida, aunque el backend diga que autenticó
+            if (respuesta.autenticado && !respuesta.token) {
+                toast.error("No se pudo iniciar sesión: el servidor no envió el token de sesión");
+                return;
+            }
+
             // Si las credenciales son correctas
             if (respuesta.autenticado) {
-
-                toast.success("Inicio de sesión exitoso");
 
                 /**
                  * Objeto con la información del estudiante autenticado.
@@ -73,11 +80,13 @@ function Login({ onLoginSuccess }) {
                     correoInstitucional: respuesta.correoInstitucional
                 };
 
-                // Guarda el correo en el navegador
-                localStorage.setItem(
-                    "correoInstitucional",
-                    estudianteAutenticado.correoInstitucional
-                );
+                // Guarda el token y los datos del estudiante en sessionStorage
+                guardarSesion({
+                    token: respuesta.token,
+                    estudiante: estudianteAutenticado
+                });
+
+                toast.success("Inicio de sesión exitoso");
 
                 // Notifica al componente padre que el login fue exitoso
                 onLoginSuccess(estudianteAutenticado);
