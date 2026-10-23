@@ -6,9 +6,22 @@ import {
   formatearFechaCorta,
   formatearPorcentaje
 } from '../hooks/useCargaAcademica.js';
+import Aviso from './ui/Aviso';
+import Boton from './ui/Boton';
+import EncabezadoModulo from './ui/EncabezadoModulo';
+import EstadoVacio from './ui/EstadoVacio';
+import Insignia from './ui/Insignia';
+import { unirClases } from './ui/unirClases';
 
 // Máximo de actividades que muestra el panel (la lista completa vive en Análisis de Carga)
 const MAX_ACTIVIDADES_PANEL = 5;
+
+// Colores del semáforo con los tonos de SACA; si el hook cambiara sus textos se usan sus clases originales
+const TONOS_SEMAFORO = {
+  'Carga Normal': { caja: 'border-success-200 bg-success-50 text-success-700', icono: 'text-success-700', barra: 'bg-success-700' },
+  'Carga Elevada': { caja: 'border-warning-200 bg-warning-50 text-warning-700', icono: 'text-warning-700', barra: 'bg-warning-700' },
+  'Sobrecarga Crítica': { caja: 'border-danger-200 bg-danger-50 text-danger-700', icono: 'text-danger-700', barra: 'bg-danger-700' }
+};
 
 // Panel de control académico (SDACAS-28)
 // Responde: "¿Cómo estoy y qué debo atender?"
@@ -31,9 +44,7 @@ function PanelControlAcademico({ estudiante, onNavegar }) {
 
   if (cargando) {
     return (
-      <div className="p-8 text-center text-[#430000] font-medium text-sm animate-pulse">
-        Sincronizando análisis horario de SACA UES...
-      </div>
+      <EstadoVacio cargando mensaje="Sincronizando análisis horario de SACA UES..." />
     );
   }
 
@@ -80,52 +91,51 @@ function PanelControlAcademico({ estudiante, onNavegar }) {
     { vista: 'analisis', icono: 'fa-gauge-high', titulo: 'Ver análisis completo', detalle: 'Distribución de la carga y lista priorizada' }
   ];
 
+  const tonoSemaforo = TONOS_SEMAFORO[semaforo.texto];
+
+  const clasesTarjetaBoton =
+    'rounded-xl border bg-surface px-4 py-3 text-left shadow-sm transition-colors hover:border-brand-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2';
+
   return (
-    <div className="w-full flex-1 min-w-0 space-y-4 bg-[#eeeeee] p-4 sm:p-5 rounded-xl">
+    <section className="w-full min-w-0 flex-1 space-y-5">
 
       {/* ENCABEZADO */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#430000]/20 pb-3">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 shrink-0 rounded-lg bg-[#430000] text-white flex items-center justify-center">
-            <i className="fa-solid fa-table-cells-large"></i>
-          </div>
-          <div>
-            <h3 className="text-xl font-bold text-[#430000] leading-tight">
-              Panel de control académico
-            </h3>
-            <p className="text-xs text-[#430000]/60">{rangoTexto}</p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={irA('analisis')}
-          className="inline-flex items-center justify-center gap-2 bg-[#960000] hover:bg-[#430000] text-[#eeeeee] text-xs font-bold px-4 py-2.5 rounded-lg transition-colors"
-        >
-          Ver análisis completo
-          <i className="fa-solid fa-arrow-right"></i>
-        </button>
-      </div>
+      <EncabezadoModulo
+        descripcion={rangoTexto}
+        icono="fa-solid fa-table-cells-large"
+        acciones={
+          <Boton onClick={irA('analisis')}>
+            Ver análisis completo
+            <i className="fa-solid fa-arrow-right" aria-hidden="true"></i>
+          </Boton>
+        }
+      />
 
       {/* INDICADORES */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
 
         {/* Estado de carga */}
         <button
           type="button"
           onClick={irA('analisis')}
-          className={`order-first lg:order-last col-span-2 lg:col-span-1 text-left border rounded-xl px-4 py-3 shadow-sm ${semaforo.bg}`}
+          className={unirClases(
+            'order-first sm:col-span-2 lg:order-last lg:col-span-1 rounded-xl border px-4 py-3 text-left shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2',
+            tonoSemaforo?.caja ?? semaforo.bg
+          )}
         >
           <div className="flex items-center gap-2">
-            <i className={`fa-solid ${semaforo.icon} text-xl`}></i>
+            <i
+              className={unirClases('fa-solid text-xl', tonoSemaforo ? `${tonoSemaforo.icono} ${semaforo.icon.split(' ')[0]}` : semaforo.icon)}
+              aria-hidden="true"
+            ></i>
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold opacity-70">Estado de carga</p>
-              <p className="text-base font-black leading-tight">{semaforo.texto}</p>
+              <p className="text-xs font-semibold">Estado de carga</p>
+              <p className="text-lg font-bold leading-tight">{semaforo.texto}</p>
             </div>
           </div>
-          <div className="mt-3 w-full bg-[#430000]/10 rounded-full h-2 overflow-hidden">
+          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-surface-muted">
             <div
-              className={`h-full transition-all duration-500 ${semaforo.barra}`}
+              className={unirClases('h-full transition-all duration-500', tonoSemaforo?.barra ?? semaforo.barra)}
               style={{ width: `${porcentajeCarga}%` }}
             ></div>
           </div>
@@ -136,50 +146,50 @@ function PanelControlAcademico({ estudiante, onNavegar }) {
             key={item.etiqueta}
             type="button"
             onClick={irA('analisis')}
-            className={`flex items-center gap-3 bg-white border rounded-xl px-4 py-3 shadow-sm text-left hover:border-[#960000]/40 transition-colors ${
-              item.destacado ? 'border-[#960000]/40' : 'border-[#430000]/10'
-            }`}
+            className={unirClases(
+              'flex items-center gap-3',
+              clasesTarjetaBoton,
+              item.destacado ? 'border-brand-200' : 'border-line'
+            )}
           >
             <div
-              className={`w-9 h-9 shrink-0 rounded-lg flex items-center justify-center ${
-                item.destacado ? 'bg-[#960000] text-white' : 'bg-[#430000]/10 text-[#430000]'
-              }`}
+              className={unirClases(
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+                item.destacado ? 'bg-brand-700 text-white' : 'bg-brand-50 text-brand-700'
+              )}
             >
-              <i className={`fa-solid ${item.icono}`}></i>
+              <i className={`fa-solid ${item.icono}`} aria-hidden="true"></i>
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold text-[#430000]/60">{item.etiqueta}</p>
-              <p className="text-lg font-black text-[#430000] leading-tight">{item.valor}</p>
-              <p className="text-[10px] text-[#430000]/50">{item.detalle}</p>
+              <p className="text-xs font-semibold text-ink-600">{item.etiqueta}</p>
+              <p className="text-xl font-bold leading-tight text-ink-900">{item.valor}</p>
+              <p className="text-xs text-ink-600">{item.detalle}</p>
             </div>
           </button>
         ))}
       </div>
 
       {/* AVISOS + PRÓXIMAS ACTIVIDADES */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
 
         {/* AVISOS IMPORTANTES */}
-        <div className="lg:col-span-5 flex flex-col bg-white border border-[#430000]/10 border-l-4 border-l-[#960000] rounded-xl p-4 shadow-sm">
-          <div className="flex items-center gap-2 mb-2">
-            <i className="fa-solid fa-bell text-[#960000]"></i>
-            <h4 className="text-sm font-bold text-[#430000]">Avisos importantes</h4>
+        <div className="flex flex-col rounded-xl border border-line border-l-4 border-l-brand-700 bg-surface p-4 shadow-sm sm:p-5 lg:col-span-5">
+          <div className="mb-3 flex items-center gap-2">
+            <i className="fa-solid fa-bell text-brand-700" aria-hidden="true"></i>
+            <h2 className="text-base font-bold text-ink-900">Avisos importantes</h2>
             {avisos.length > 0 && (
-              <span className="ml-auto text-[10px] font-bold bg-[#960000] text-white px-2 py-0.5 rounded-full">
+              <span className="ml-auto rounded-full bg-brand-700 px-2 py-0.5 text-xs font-bold text-white">
                 {avisos.length}
               </span>
             )}
           </div>
 
           {avisos.length === 0 ? (
-            <div className="flex items-start gap-2 text-xs text-emerald-800 bg-emerald-50/60 border border-emerald-200 rounded-lg p-3">
-              <i className="fa-solid fa-circle-check text-emerald-500 mt-0.5"></i>
-              <span>
-                No tienes actividades de alta ponderación ni conflictos con tu jornada laboral en los próximos 7 días.
-              </span>
-            </div>
+            <Aviso tono="exito">
+              No tienes actividades de alta ponderación ni conflictos con tu jornada laboral en los próximos 7 días.
+            </Aviso>
           ) : (
-            <ul className="divide-y divide-[#430000]/10 max-h-72 overflow-y-auto">
+            <ul className="max-h-72 divide-y divide-line overflow-y-auto">
               {avisos.map(({ tipo, act }) => {
                 const esConflicto = tipo === 'conflicto';
                 const detalle = esConflicto
@@ -193,32 +203,27 @@ function PanelControlAcademico({ estudiante, onNavegar }) {
                 return (
                   <li
                     key={`aviso-${tipo}-${obtenerIdActividad(act)}`}
-                    className="flex items-start gap-2.5 py-2.5 first:pt-1 last:pb-1"
+                    className="flex items-start gap-2.5 py-3 first:pt-1 last:pb-1"
                   >
                     <i
                       className={`fa-solid ${
                         esConflicto
-                          ? 'fa-triangle-exclamation text-amber-600'
-                          : 'fa-circle-exclamation text-[#960000]'
+                          ? 'fa-triangle-exclamation text-warning-700'
+                          : 'fa-circle-exclamation text-brand-700'
                       } mt-0.5`}
+                      aria-hidden="true"
                     ></i>
                     <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                        <p className="text-sm font-semibold text-[#430000] break-words leading-tight">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <p className="break-words text-sm font-semibold leading-tight text-ink-900">
                           {act.nombre}
                         </p>
-                        <span
-                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                            esConflicto
-                              ? 'text-amber-800 bg-amber-100'
-                              : 'text-[#960000] bg-[#960000]/10'
-                          }`}
-                        >
+                        <Insignia tono={esConflicto ? 'advertencia' : 'marca'}>
                           {esConflicto ? 'Conflicto laboral' : 'Alta ponderación'}
-                        </span>
+                        </Insignia>
                       </div>
-                      <p className="text-[11px] text-[#430000]/70 mt-0.5">{detalle}</p>
-                      <p className="text-[11px] font-semibold text-[#960000] mt-0.5">
+                      <p className="mt-1 text-sm text-ink-600">{detalle}</p>
+                      <p className="mt-0.5 text-sm font-semibold text-brand-700">
                         Vence {formatearFechaEntrega(act.fechaReferencia)}
                       </p>
                     </div>
@@ -229,23 +234,19 @@ function PanelControlAcademico({ estudiante, onNavegar }) {
           )}
 
           {avisosConflicto.length > 0 && (
-            <button
-              type="button"
-              onClick={irA('jornada')}
-              className="mt-3 self-start text-[11px] font-bold text-[#960000] hover:underline"
-            >
+            <Boton variante="texto" onClick={irA('jornada')} className="mt-3 self-start">
               Revisar horario laboral
-              <i className="fa-solid fa-arrow-right ml-1.5"></i>
-            </button>
+              <i className="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </Boton>
           )}
         </div>
 
         {/* PRÓXIMAS ACTIVIDADES */}
-        <div className="lg:col-span-7 flex flex-col bg-white border border-[#430000]/10 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center gap-2 mb-2">
-            <i className="fa-regular fa-calendar text-[#430000]/70"></i>
-            <h4 className="text-sm font-bold text-[#430000]">Próximas actividades</h4>
-            <span className="ml-auto text-[10px] font-bold text-[#430000]/60">
+        <div className="flex flex-col rounded-xl border border-line bg-surface p-4 shadow-sm sm:p-5 lg:col-span-7">
+          <div className="mb-3 flex items-center gap-2">
+            <i className="fa-regular fa-calendar text-ink-600" aria-hidden="true"></i>
+            <h2 className="text-base font-bold text-ink-900">Próximas actividades</h2>
+            <span className="ml-auto text-xs font-semibold text-ink-600">
               {actividades.length === 0
                 ? ''
                 : `${proximas.length} de ${actividades.length}`}
@@ -253,54 +254,57 @@ function PanelControlAcademico({ estudiante, onNavegar }) {
           </div>
 
           {actividades.length === 0 ? (
-            <div className="flex items-center justify-center gap-2 text-xs text-gray-500 bg-[#eeeeee]/60 p-4 rounded-lg text-center">
-              <i className="fa-regular fa-calendar-check"></i>
-              <span>No hay evaluaciones programadas para los próximos 7 días.</span>
-            </div>
+            <EstadoVacio
+              icono="fa-regular fa-calendar-check"
+              mensaje="No hay evaluaciones programadas para los próximos 7 días."
+            />
           ) : (
-            <ul className="divide-y divide-[#430000]/10">
+            <ul>
               {proximas.map((act) => {
                 const porcentajeTexto = formatearPorcentaje(act.porcentajeEvaluacion);
 
                 return (
                   <li
                     key={obtenerIdActividad(act)}
-                    className={`flex items-center gap-3 py-2.5 pl-3 border-l-4 ${
-                      act.altaPonderacion ? 'border-l-[#960000]' : 'border-l-transparent'
+                    // Solo el borde inferior separa filas: divide-y pintaba también el izquierdo de las que no son de alta ponderación
+                    className={`flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-l-4 border-b-line py-3 pl-3 last:border-b-0 sm:flex-nowrap ${
+                      act.altaPonderacion ? 'border-l-brand-700' : 'border-l-transparent'
                     }`}
                   >
-                    <span className="font-mono text-[10px] bg-[#430000]/10 text-[#430000] px-2 py-1 rounded-md font-bold shrink-0">
+                    <span className="shrink-0 rounded-md bg-surface-muted px-2 py-1 font-mono text-xs font-bold text-ink-900">
                       {act.materiaInscritaCodigo || 'SACA'}
                     </span>
 
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-[#430000] break-words leading-tight">
+                    <div className="min-w-0 flex-1 basis-40">
+                      <p className="break-words text-sm font-semibold leading-tight text-ink-900">
                         {act.nombre}
                         {act.tieneConflicto && (
                           <i
-                            className="fa-solid fa-triangle-exclamation text-amber-600 ml-1.5 text-xs"
+                            className="fa-solid fa-triangle-exclamation ml-1.5 text-xs text-warning-700"
                             title="Coincide con tu jornada laboral"
+                            role="img"
+                            aria-label="Coincide con tu jornada laboral"
                           ></i>
                         )}
                       </p>
-                      <p className="text-[11px] text-[#430000]/60 mt-0.5">
+                      <p className="mt-1 text-sm text-ink-600">
                         {act.tipoActividadNombre || 'Evaluación'} · {formatearFechaEntrega(act.fechaReferencia)}
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="ml-auto flex shrink-0 items-center gap-1.5">
                       {porcentajeTexto && (
                         <span
-                          className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
+                          className={`rounded-md border px-2 py-0.5 text-xs font-bold ${
                             act.altaPonderacion
-                              ? 'bg-[#960000] text-white border-[#960000]'
-                              : 'bg-white text-[#430000] border-[#430000]/20'
+                              ? 'border-brand-700 bg-brand-700 text-white'
+                              : 'border-line bg-surface text-ink-900'
                           }`}
                         >
                           {porcentajeTexto}
                         </span>
                       )}
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#960000]/10 text-[#430000] border border-[#430000]/20">
+                      <span className="rounded-md border border-brand-200 bg-brand-50 px-2 py-0.5 text-xs font-bold text-ink-900">
                         {act.tiempoEstimadoHoras} hrs
                       </span>
                     </div>
@@ -311,38 +315,34 @@ function PanelControlAcademico({ estudiante, onNavegar }) {
           )}
 
           {restantes > 0 && (
-            <button
-              type="button"
-              onClick={irA('analisis')}
-              className="mt-3 self-start text-[11px] font-bold text-[#960000] hover:underline"
-            >
+            <Boton variante="texto" onClick={irA('analisis')} className="mt-3 self-start text-left">
               y {restantes} {restantes === 1 ? 'actividad más' : 'actividades más'} en Análisis de Carga
-              <i className="fa-solid fa-arrow-right ml-1.5"></i>
-            </button>
+              <i className="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </Boton>
           )}
         </div>
       </div>
 
       {/* ACCESOS RÁPIDOS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {accesos.map((acceso) => (
           <button
             key={acceso.vista}
             type="button"
             onClick={irA(acceso.vista)}
-            className="flex items-center gap-3 bg-white border border-[#430000]/10 hover:border-[#960000]/40 rounded-xl px-4 py-3 shadow-sm text-left transition-colors"
+            className={unirClases('flex items-center gap-3 border-line', clasesTarjetaBoton)}
           >
-            <div className="w-9 h-9 shrink-0 rounded-lg bg-[#430000]/10 text-[#430000] flex items-center justify-center">
-              <i className={`fa-solid ${acceso.icono}`}></i>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+              <i className={`fa-solid ${acceso.icono}`} aria-hidden="true"></i>
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-[#430000] leading-tight">{acceso.titulo}</p>
-              <p className="text-[11px] text-[#430000]/60">{acceso.detalle}</p>
+              <p className="text-sm font-bold leading-tight text-ink-900">{acceso.titulo}</p>
+              <p className="mt-0.5 text-xs text-ink-600">{acceso.detalle}</p>
             </div>
           </button>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 

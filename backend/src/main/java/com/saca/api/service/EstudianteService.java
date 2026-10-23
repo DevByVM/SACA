@@ -11,8 +11,10 @@ import org.springframework.stereotype.Service;
 import com.saca.api.dto.ActualizarPerfilRequest;
 import com.saca.api.dto.LoginRequest;
 import com.saca.api.dto.LoginResponse;
+import com.saca.api.dto.PerfilResponse;
 import com.saca.api.dto.RegistroRequest;
 import com.saca.api.entity.Estudiante;
+import com.saca.api.exception.RecursoNoEncontradoException;
 import com.saca.api.exception.ValidacionNegocioException;
 import com.saca.api.repository.EstudianteRepository;
 
@@ -21,6 +23,9 @@ public class EstudianteService {
 
     @Autowired
     private EstudianteRepository repository;
+
+    @Autowired
+    private TokenService tokenService;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -132,13 +137,18 @@ public class EstudianteService {
 
         repository.save(estudiante);
 
+        // Solo se llega aquí con cuenta activa, sin bloqueo y contraseña correcta
+        TokenService.TokenEmitido token = tokenService.emitir(estudiante);
+
         return new LoginResponse(
                 true,
                 "LOGIN_OK",
                 estudiante.getId(),
                 estudiante.getNombre(),
                 estudiante.getCarnet(),
-                estudiante.getCorreoInstitucional());
+                estudiante.getCorreoInstitucional(),
+                token.valor(),
+                token.expiraEn());
     }
 
     public String actualizarPerfil(Long id, ActualizarPerfilRequest request) {
@@ -190,6 +200,17 @@ public class EstudianteService {
             if (!contraseniaValida(request.getContrasenia())) {
                 return "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número";
             }
+
+            // Quien solo tenga el token (p. ej. una sesión abierta ajena) no puede cambiar la contraseña
+            if (request.getContraseniaActual() == null || request.getContraseniaActual().isBlank()) {
+                return "Debe indicar la contraseña actual para cambiarla";
+            }
+
+            String hashActual = estudianteOpt.get().getContrasenia();
+            if (!esHashBCrypt(hashActual)
+                    || !passwordEncoder.matches(request.getContraseniaActual(), hashActual)) {
+                return "La contraseña actual es incorrecta";
+            }
         }
 
         Estudiante estudiante = estudianteOpt.get();
@@ -210,10 +231,10 @@ public class EstudianteService {
         return "Perfil actualizado correctamente";
     }
 
-    public Estudiante obtenerPorCorreo(String correo) {
-        return repository.findByCorreoInstitucional(
-                normalizarCorreo(correo))
-                .orElse(null);
+    public PerfilResponse obtenerPerfil(Long id) {
+        return repository.findById(id)
+                .map(PerfilResponse::de)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Estudiante no encontrado"));
     }
 
     private String normalizarCorreo(String correo) {

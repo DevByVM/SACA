@@ -1,5 +1,20 @@
 import { useEffect, useState } from "react";
 import { obtenerCalendario } from "../services/calendarioService";
+import EncabezadoModulo from "./ui/EncabezadoModulo";
+import Tabla from "./ui/Tabla";
+import Tarjeta from "./ui/Tarjeta";
+
+// Las columnas cortas no se parten: en pantallas pequeñas la tabla se desplaza en horizontal.
+// Tabla aplica className solo a las celdas, por eso los títulos de dos palabras llevan su propio span.
+const COLUMNAS = [
+  { titulo: "Materia", className: "min-w-40 font-semibold" },
+  { titulo: "Código", className: "whitespace-nowrap" },
+  { titulo: "Día", className: "whitespace-nowrap" },
+  { titulo: <span className="whitespace-nowrap">Hora Inicio</span>, className: "whitespace-nowrap font-mono" },
+  { titulo: <span className="whitespace-nowrap">Hora Fin</span>, className: "whitespace-nowrap font-mono" },
+  { titulo: "Modalidad", className: "whitespace-nowrap" },
+  { titulo: "Docente", className: "min-w-40" },
+];
 
 function CalendarioAcademico({ estudiante }) {
 
@@ -28,90 +43,35 @@ function CalendarioAcademico({ estudiante }) {
 
   };
 
+  const filas = horarios.map((h) => ({
+    celdas: [
+      h.materia,
+      h.codigo,
+      h.diaSemana,
+      h.horaInicio,
+      h.horaFin,
+      h.modalidad,
+      h.docenteTutor,
+    ],
+  }));
+
   return (
 
-    <div className="bg-white p-6 rounded-xl shadow">
+    <section className="space-y-5">
 
-      <h2 className="text-2xl font-bold mb-6">
-        Calendario Académico Semanal
-      </h2>
+      <EncabezadoModulo
+        descripcion="Horarios de clase de tus materias inscritas."
+      />
 
-      {horarios.length === 0 ? (
+      <Tarjeta>
+        <Tabla
+          columnas={COLUMNAS}
+          filas={filas}
+          mensajeVacio="No existen horarios registrados."
+        />
+      </Tarjeta>
 
-        <p>No existen horarios registrados.</p>
-
-      ) : (
-
-        <div className="overflow-x-auto">
-
-          <table className="w-full border">
-
-            <thead>
-
-              <tr className="bg-[#960000] text-white">
-
-                <th className="p-3">Materia</th>
-                <th className="p-3">Código</th>
-                <th className="p-3">Día</th>
-                <th className="p-3">Hora Inicio</th>
-                <th className="p-3">Hora Fin</th>
-                <th className="p-3">Modalidad</th>
-                <th className="p-3">Docente</th>
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {horarios.map((h, index) => (
-
-                <tr
-                  key={index}
-                  className="border-b text-center hover:bg-gray-50"
-                >
-
-                  <td className="p-3 font-semibold">
-                    {h.materia}
-                  </td>
-
-                  <td className="p-3">
-                    {h.codigo}
-                  </td>
-
-                  <td className="p-3">
-                    {h.diaSemana}
-                  </td>
-
-                  <td className="p-3">
-                    {h.horaInicio}
-                  </td>
-
-                  <td className="p-3">
-                    {h.horaFin}
-                  </td>
-
-                  <td className="p-3">
-                    {h.modalidad}
-                  </td>
-
-                  <td className="p-3">
-                    {h.docenteTutor}
-                  </td>
-
-                </tr>
-
-              ))}
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      )}
-
-    </div>
+    </section>
 
   );
 }

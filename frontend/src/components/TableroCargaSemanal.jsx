@@ -9,18 +9,32 @@ import {
   UMBRAL_HORAS_CRITICA,
   HORAS_ESCALA_MAXIMA
 } from '../hooks/useCargaAcademica.js';
+import Aviso from './ui/Aviso';
+import EncabezadoModulo from './ui/EncabezadoModulo';
+import EstadoVacio from './ui/EstadoVacio';
+import Selector from './ui/Selector';
+import Tabla from './ui/Tabla';
+import Tarjeta from './ui/Tarjeta';
+import { unirClases } from './ui/unirClases';
 
 const formateadorDiaCorto = new Intl.DateTimeFormat('es-SV', { weekday: 'short' });
 
 const capitalizar = (texto) => (texto ? texto.charAt(0).toUpperCase() + texto.slice(1) : texto);
 
 const ESTILOS_PRIORIDAD = {
-  'Alta': 'bg-[#960000] text-white border-[#960000]',
-  'Media': 'bg-amber-100 text-amber-800 border-amber-200',
-  'Baja': 'bg-emerald-50 text-emerald-800 border-emerald-200',
-  'Sin fecha': 'bg-gray-100 text-gray-600 border-gray-200'
+  'Alta': 'bg-brand-700 text-white border-brand-700',
+  'Media': 'bg-warning-50 text-warning-700 border-warning-200',
+  'Baja': 'bg-success-50 text-success-700 border-success-200',
+  'Sin fecha': 'bg-surface-muted text-ink-600 border-line'
 };
 
+
+// Colores del semáforo con los tonos de SACA; si el hook cambiara sus textos se usan sus clases originales
+const TONOS_SEMAFORO = {
+  'Carga Normal': { caja: 'border-success-200 bg-success-50 text-success-700', icono: 'text-success-700', barra: 'bg-success-700' },
+  'Carga Elevada': { caja: 'border-warning-200 bg-warning-50 text-warning-700', icono: 'text-warning-700', barra: 'bg-warning-700' },
+  'Sobrecarga Crítica': { caja: 'border-danger-200 bg-danger-50 text-danger-700', icono: 'text-danger-700', barra: 'bg-danger-700' }
+};
 const OPCIONES_PRIORIDAD = ['Alta', 'Media', 'Baja', 'Sin fecha'];
 
 // Análisis de Carga (vista detallada, solo lectura)
@@ -108,9 +122,7 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
 
   if (cargando) {
     return (
-      <div className="p-8 text-center text-[#430000] font-medium text-sm animate-pulse">
-        Sincronizando análisis horario de SACA UES...
-      </div>
+      <EstadoVacio cargando mensaje="Sincronizando análisis horario de SACA UES..." />
     );
   }
 
@@ -129,64 +141,105 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
   const diaMasCargado = maxHorasDia > 0 ? horasPorFecha.find((dia) => dia.horas === maxHorasDia) : null;
   const totalHorasMaterias = horasPorMateria.reduce((suma, materia) => suma + materia.horas, 0);
 
+  const tonoSemaforo = TONOS_SEMAFORO[semaforo.texto];
+
+  const filasActividades = actividadesFiltradas.map((act) => {
+    const porcentajeTexto = formatearPorcentaje(act.porcentajeEvaluacion);
+
+    return {
+      id: obtenerIdActividad(act),
+      className: act.tieneConflicto ? 'bg-danger-50' : undefined,
+      celdas: [
+        <span className={`inline-block rounded-md border px-2 py-0.5 text-xs font-bold ${ESTILOS_PRIORIDAD[act.prioridad] || ESTILOS_PRIORIDAD['Sin fecha']}`}>
+          {act.prioridad}
+        </span>,
+        <span className="rounded-md bg-surface-muted px-2 py-1 font-mono text-xs font-bold text-ink-900">
+          {act.materiaInscritaCodigo || 'SACA'}
+        </span>,
+        <span>{act.nombre}</span>,
+        <span>{act.tipoActividadNombre || 'Evaluación'}</span>,
+        <span>{formatearFechaEntrega(act.fechaReferencia)}</span>,
+        porcentajeTexto ? (
+          <span
+            className={`inline-block rounded-md border px-2 py-0.5 font-bold ${
+              act.altaPonderacion
+                ? 'border-brand-700 bg-brand-700 text-white'
+                : 'border-line bg-surface text-ink-900'
+            }`}
+            title={act.altaPonderacion ? 'Alta ponderación' : undefined}
+          >
+            {porcentajeTexto}
+          </span>
+        ) : (
+          <span className="text-ink-500">Sin dato</span>
+        ),
+        <span>{act.tiempoEstimadoHoras ? `${act.tiempoEstimadoHoras} hrs` : 'Sin dato'}</span>,
+        act.tieneConflicto ? (
+          <span className="inline-flex items-center gap-1 font-semibold text-danger-700">
+            <i className="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+            Sí
+          </span>
+        ) : (
+          <span className="text-ink-500">No</span>
+        )
+      ]
+    };
+  });
+
   return (
-    <div className="w-full flex-1 min-w-0 space-y-4 bg-[#eeeeee] p-4 sm:p-5 rounded-xl">
+    <section className="w-full min-w-0 flex-1 space-y-5">
 
       {/* ENCABEZADO */}
-      <div className="flex items-center gap-3 border-b border-[#430000]/20 pb-3">
-        <div className="w-9 h-9 shrink-0 rounded-lg bg-[#430000] text-white flex items-center justify-center">
-          <i className="fa-solid fa-gauge-high"></i>
-        </div>
-        <div>
-          <h3 className="text-xl font-bold text-[#430000] leading-tight">
-            Análisis de Carga Académica
-          </h3>
-          <p className="text-xs text-[#430000]/60">
-            Próximos 7 días{rangoTexto && ` · ${rangoTexto}`} · Vista de solo lectura
-          </p>
-        </div>
-      </div>
+      <EncabezadoModulo
+        descripcion={`Próximos 7 días${rangoTexto ? ` · ${rangoTexto}` : ''} · Vista de solo lectura`}
+        icono="fa-solid fa-gauge-high"
+      />
 
       {/* SEMÁFORO COMPLETO */}
-      <div className={`border p-5 rounded-xl shadow-sm transition-all duration-300 ${semaforo.bg}`}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className={unirClases('rounded-xl border p-4 shadow-sm transition-all duration-300 sm:p-5', tonoSemaforo?.caja ?? semaforo.bg)}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <i className={`fa-solid ${semaforo.icon} text-3xl`}></i>
+            <i
+              className={unirClases('fa-solid text-3xl', tonoSemaforo ? `${tonoSemaforo.icono} ${semaforo.icon.split(' ')[0]}` : semaforo.icon)}
+              aria-hidden="true"
+            ></i>
             <div>
-              <span className="text-xs font-semibold opacity-70">Estado de carga</span>
-              <h4 className="text-xl font-black leading-tight">{semaforo.texto}</h4>
-              <p className="text-xs mt-0.5">{semaforo.mensaje}</p>
+              <p className="text-xs font-semibold">Estado de carga</p>
+              <h2 className="text-xl font-bold leading-tight">{semaforo.texto}</h2>
+              <p className="mt-0.5 text-sm">{semaforo.mensaje}</p>
             </div>
           </div>
 
           <div className="sm:text-right">
-            <span className="text-xs opacity-70 block">Horas pendientes</span>
-            <span className="text-3xl font-black leading-tight">
+            <p className="text-xs font-semibold">Horas pendientes</p>
+            <p className="text-3xl font-bold leading-tight">
               {horasPendientes.toFixed(1)} hrs
-            </span>
+            </p>
           </div>
         </div>
 
         {/* BARRA CON UMBRALES */}
         <div className="mt-5">
           <div className="relative">
-            <div className="w-full bg-[#430000]/10 rounded-full h-3 overflow-hidden">
+            <div className="h-3 w-full overflow-hidden rounded-full bg-surface">
               <div
-                className={`h-full transition-all duration-500 ${semaforo.barra}`}
+                className={unirClases('h-full transition-all duration-500', tonoSemaforo?.barra ?? semaforo.barra)}
                 style={{ width: `${porcentajeCarga}%` }}
               ></div>
             </div>
             <span
-              className="absolute top-0 h-3 w-px bg-[#430000]/50"
+              className="absolute top-0 h-3 w-px bg-ink-600"
               style={{ left: `${(UMBRAL_HORAS_ELEVADA / HORAS_ESCALA_MAXIMA) * 100}%` }}
+              aria-hidden="true"
             ></span>
             <span
-              className="absolute top-0 h-3 w-px bg-[#430000]/50"
+              className="absolute top-0 h-3 w-px bg-ink-600"
               style={{ left: `${(UMBRAL_HORAS_CRITICA / HORAS_ESCALA_MAXIMA) * 100}%` }}
+              aria-hidden="true"
             ></span>
           </div>
 
-          <div className="relative h-4 mt-1 text-[10px] font-bold text-[#430000]/60">
+          <div className="relative mt-1 h-5 text-xs font-bold text-ink-600">
             <span className="absolute left-0">0</span>
             <span
               className="absolute -translate-x-1/2"
@@ -204,53 +257,47 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
           </div>
         </div>
 
-        <p className="text-xs mt-3 border-t border-[#430000]/20 pt-3 text-[#430000]">
+        <p className="mt-3 border-t border-ink-900/10 pt-3 text-sm text-ink-900">
           {margenTexto}
         </p>
       </div>
 
       {/* COMPOSICIÓN DE LA CARGA */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 
         {/* HORAS QUE VENCEN CADA DÍA */}
-        <div className="bg-white border border-[#430000]/10 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <i className="fa-solid fa-chart-column text-[#430000]/70"></i>
-            <h4 className="text-sm font-bold text-[#430000]">Horas que vencen cada día</h4>
-          </div>
-
+        <Tarjeta titulo="Horas que vencen cada día" nivelTitulo={2} icono="fa-solid fa-chart-column" className="p-3 sm:p-5">
           {horasPendientes === 0 ? (
-            <p className="text-xs text-gray-500 bg-[#eeeeee]/60 p-4 rounded-lg text-center">
-              No hay horas pendientes en los próximos 7 días.
-            </p>
+            <EstadoVacio icono="fa-regular fa-clock" mensaje="No hay horas pendientes en los próximos 7 días." />
           ) : (
             <>
-              <div className="flex items-end gap-1.5">
+              {/* En móvil los huecos son mínimos para que las fechas dd/mm quepan en sus 8 columnas */}
+              <div className="flex items-end gap-0.5 sm:gap-1.5">
                 {horasPorFecha.map((dia, indice) => {
                   const altura = maxHorasDia > 0 ? (dia.horas / maxHorasDia) * 100 : 0;
                   const esMasCargado = diaMasCargado && dia.clave === diaMasCargado.clave;
 
                   return (
-                    <div key={dia.clave} className="flex-1 min-w-0 flex flex-col items-center">
-                      <span className="text-[10px] font-bold text-[#430000] h-4">
+                    <div key={dia.clave} className="flex min-w-0 flex-1 flex-col items-center">
+                      <span className="h-5 text-xs font-bold text-ink-900">
                         {dia.horas > 0 ? dia.horas.toFixed(1) : ''}
                       </span>
-                      <div className="w-full h-28 flex items-end justify-center">
+                      <div className="flex h-28 w-full items-end justify-center">
                         <div
                           className={`w-full max-w-[28px] rounded-t-md ${
                             dia.horas === 0
-                              ? 'bg-[#430000]/10'
+                              ? 'bg-line'
                               : esMasCargado
-                                ? 'bg-[#960000]'
-                                : 'bg-[#430000]/70'
+                                ? 'bg-brand-700'
+                                : 'bg-ink-500'
                           }`}
                           style={{ height: dia.horas === 0 ? '2px' : `${Math.max(altura, 4)}%` }}
                         ></div>
                       </div>
-                      <span className="text-[10px] font-semibold text-[#430000]/80 mt-1">
+                      <span className="mt-1 text-xs font-semibold text-ink-900">
                         {indice === 0 ? 'Hoy' : capitalizar(formateadorDiaCorto.format(dia.fecha))}
                       </span>
-                      <span className="text-[9px] text-[#430000]/50">
+                      <span className="text-xs tracking-tight text-ink-600">
                         {formatearFechaCorta(dia.fecha)}
                       </span>
                     </div>
@@ -259,29 +306,22 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
               </div>
 
               {diaMasCargado && (
-                <p className="text-[11px] text-[#430000] mt-3">
+                <p className="mt-4 text-sm text-ink-900">
                   <span className="font-bold">Día más cargado:</span>{' '}
                   {capitalizar(formateadorDiaCorto.format(diaMasCargado.fecha))} {formatearFechaCorta(diaMasCargado.fecha)} ({diaMasCargado.horas.toFixed(1)} hrs)
                 </p>
               )}
-              <p className="text-[10px] text-[#430000]/50 mt-1">
+              <p className="mt-1 text-xs text-ink-600">
                 Las horas se cuentan en la fecha de entrega, no en el día en que conviene trabajarlas.
               </p>
             </>
           )}
-        </div>
+        </Tarjeta>
 
         {/* HORAS POR MATERIA */}
-        <div className="bg-white border border-[#430000]/10 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <i className="fa-solid fa-chart-bar text-[#430000]/70"></i>
-            <h4 className="text-sm font-bold text-[#430000]">Horas pendientes por materia</h4>
-          </div>
-
+        <Tarjeta titulo="Horas pendientes por materia" nivelTitulo={2} icono="fa-solid fa-chart-bar" className="p-4 sm:p-5">
           {horasPorMateria.length === 0 ? (
-            <p className="text-xs text-gray-500 bg-[#eeeeee]/60 p-4 rounded-lg text-center">
-              No hay actividades pendientes en los próximos 7 días.
-            </p>
+            <EstadoVacio icono="fa-regular fa-folder-open" mensaje="No hay actividades pendientes en los próximos 7 días." />
           ) : (
             <ul className="space-y-3">
               {horasPorMateria.map((materia) => {
@@ -289,21 +329,21 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
 
                 return (
                   <li key={materia.codigo}>
-                    <div className="flex items-baseline justify-between gap-2 text-xs">
-                      <span className="font-bold text-[#430000]">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-sm">
+                      <span className="font-bold text-ink-900">
                         {materia.codigo}
-                        <span className="font-normal text-[#430000]/60">
+                        <span className="font-normal text-ink-600">
                           {' '}· {materia.cantidad} {materia.cantidad === 1 ? 'actividad' : 'actividades'}
                         </span>
                       </span>
-                      <span className="font-bold text-[#430000]">
+                      <span className="font-bold text-ink-900">
                         {materia.horas.toFixed(1)} hrs
-                        <span className="font-normal text-[#430000]/60"> · {Math.round(proporcion)}%</span>
+                        <span className="font-normal text-ink-600"> · {Math.round(proporcion)}%</span>
                       </span>
                     </div>
-                    <div className="mt-1 w-full bg-[#430000]/10 rounded-full h-2 overflow-hidden">
+                    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-surface-muted">
                       <div
-                        className="h-full bg-[#960000] rounded-full"
+                        className="h-full rounded-full bg-brand-700"
                         style={{ width: `${proporcion}%` }}
                       ></div>
                     </div>
@@ -312,36 +352,37 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
               })}
             </ul>
           )}
-        </div>
+        </Tarjeta>
       </div>
 
       {/* CONFLICTOS CON LA JORNADA LABORAL */}
-      <div className="bg-white border border-[#430000]/10 rounded-xl p-4 shadow-sm">
-        <div className="flex items-center gap-2 mb-2">
-          <i className="fa-solid fa-briefcase text-[#430000]/70"></i>
-          <h4 className="text-sm font-bold text-[#430000]">Conflictos con la jornada laboral</h4>
-          {avisosConflicto.length > 0 && (
-            <span className="ml-auto text-[10px] font-bold bg-amber-500 text-white px-2 py-0.5 rounded-full">
+      <Tarjeta
+        titulo="Conflictos con la jornada laboral"
+        nivelTitulo={2}
+        icono="fa-solid fa-briefcase"
+        className="p-4 sm:p-5"
+        acciones={
+          avisosConflicto.length > 0 && (
+            <span className="rounded-full bg-warning-700 px-2 py-0.5 text-xs font-bold text-white">
               {avisosConflicto.length}
             </span>
-          )}
-        </div>
-
+          )
+        }
+      >
         {avisosConflicto.length === 0 ? (
-          <div className="flex items-center gap-2 text-xs text-emerald-800 bg-emerald-50/60 border border-emerald-200 rounded-lg p-3">
-            <i className="fa-solid fa-circle-check text-emerald-500"></i>
-            <span>Ninguna entrega de los próximos 7 días coincide con tu jornada laboral.</span>
-          </div>
+          <Aviso tono="exito">
+            Ninguna entrega de los próximos 7 días coincide con tu jornada laboral.
+          </Aviso>
         ) : (
-          <ul className="divide-y divide-[#430000]/10">
+          <ul className="divide-y divide-line">
             {avisosConflicto.map((act) => (
-              <li key={`conflicto-${obtenerIdActividad(act)}`} className="flex items-start gap-2.5 py-2 first:pt-0 last:pb-0">
-                <i className="fa-solid fa-triangle-exclamation text-amber-600 mt-0.5"></i>
-                <div className="min-w-0 text-xs">
-                  <p className="font-semibold text-[#430000] break-words">
+              <li key={`conflicto-${obtenerIdActividad(act)}`} className="flex items-start gap-2.5 py-3 first:pt-0 last:pb-0">
+                <i className="fa-solid fa-triangle-exclamation mt-0.5 text-warning-700" aria-hidden="true"></i>
+                <div className="min-w-0 text-sm">
+                  <p className="break-words font-semibold text-ink-900">
                     {act.materiaInscritaCodigo || 'SACA'} · {act.nombre}
                   </p>
-                  <p className="text-[#430000]/70">
+                  <p className="text-ink-600">
                     Entrega {formatearFechaEntrega(act.fechaReferencia)}, dentro de tu jornada del{' '}
                     {act.jornadaConflicto.diaSemana} ({act.jornadaConflicto.horaInicio.substring(0, 5)} – {act.jornadaConflicto.horaFin.substring(0, 5)}).
                   </p>
@@ -350,143 +391,81 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
             ))}
           </ul>
         )}
-      </div>
+      </Tarjeta>
 
       {/* LISTA PRIORIZADA COMPLETA */}
-      <div className="bg-white border border-[#430000]/10 rounded-xl p-4 shadow-sm space-y-3">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <i className="fa-solid fa-list-ol text-[#430000]/70"></i>
-            <h4 className="text-sm font-bold text-[#430000]">Lista priorizada de actividades</h4>
-            <span className="text-[11px] text-[#430000]/60">
-              {actividadesFiltradas.length} de {actividades.length}
-            </span>
-          </div>
+      <Tarjeta
+        titulo="Lista priorizada de actividades"
+        nivelTitulo={2}
+        icono="fa-solid fa-list-ol"
+        className="p-4 sm:p-5"
+        acciones={
+          <span className="text-xs font-semibold text-ink-600">
+            {actividadesFiltradas.length} de {actividades.length}
+          </span>
+        }
+      >
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:items-end">
+          <Selector
+            label="Materia"
+            value={filtroMateria}
+            onChange={(e) => setFiltroMateria(e.target.value)}
+            options={[
+              { value: 'todas', label: 'Todas las materias' },
+              ...materiasDisponibles
+            ]}
+            placeholder={null}
+            required={false}
+          />
 
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <select
-              value={filtroMateria}
-              onChange={(e) => setFiltroMateria(e.target.value)}
-              className="border border-[#430000]/20 rounded-lg px-2.5 py-1.5 bg-white text-[#430000]"
-              aria-label="Filtrar por materia"
-            >
-              <option value="todas">Todas las materias</option>
-              {materiasDisponibles.map((codigo) => (
-                <option key={codigo} value={codigo}>{codigo}</option>
-              ))}
-            </select>
+          <Selector
+            label="Prioridad"
+            value={filtroPrioridad}
+            onChange={(e) => setFiltroPrioridad(e.target.value)}
+            options={[
+              { value: 'todas', label: 'Todas las prioridades' },
+              ...OPCIONES_PRIORIDAD
+            ]}
+            placeholder={null}
+            required={false}
+          />
 
-            <select
-              value={filtroPrioridad}
-              onChange={(e) => setFiltroPrioridad(e.target.value)}
-              className="border border-[#430000]/20 rounded-lg px-2.5 py-1.5 bg-white text-[#430000]"
-              aria-label="Filtrar por prioridad"
-            >
-              <option value="todas">Todas las prioridades</option>
-              {OPCIONES_PRIORIDAD.map((prioridad) => (
-                <option key={prioridad} value={prioridad}>{prioridad}</option>
-              ))}
-            </select>
-
-            <label className="flex items-center gap-1.5 border border-[#430000]/20 rounded-lg px-2.5 py-1.5 text-[#430000] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={soloConflictos}
-                onChange={(e) => setSoloConflictos(e.target.checked)}
-              />
-              Solo con conflicto
-            </label>
-          </div>
+          <label className="flex min-h-[2.375rem] cursor-pointer items-center gap-2 rounded-lg border border-ink-500 bg-surface px-3 py-2 text-sm text-ink-900 focus-within:ring-2 focus-within:ring-brand-700/20 sm:col-span-2 lg:col-span-1">
+            <input
+              type="checkbox"
+              checked={soloConflictos}
+              onChange={(e) => setSoloConflictos(e.target.checked)}
+              className="h-4 w-4 accent-brand-700"
+            />
+            Solo con conflicto
+          </label>
         </div>
 
         {actividades.length === 0 ? (
-          <div className="flex items-center justify-center gap-2 text-xs text-gray-500 bg-[#eeeeee]/60 p-4 rounded-lg text-center">
-            <i className="fa-regular fa-calendar-check"></i>
-            <span>No hay evaluaciones programadas para los próximos 7 días.</span>
-          </div>
+          <EstadoVacio icono="fa-regular fa-calendar-check" mensaje="No hay evaluaciones programadas para los próximos 7 días." />
         ) : actividadesFiltradas.length === 0 ? (
-          <p className="text-xs text-gray-500 bg-[#eeeeee]/60 p-4 rounded-lg text-center">
-            Ninguna actividad coincide con los filtros seleccionados.
-          </p>
+          <EstadoVacio icono="fa-solid fa-filter" mensaje="Ninguna actividad coincide con los filtros seleccionados." />
         ) : (
-          <div className="w-full overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-xs">
-              <thead className="bg-[#430000]/10 text-[#430000]">
-                <tr>
-                  <th className="px-2 py-2">Prioridad</th>
-                  <th className="px-2 py-2">Materia</th>
-                  <th className="px-2 py-2">Actividad</th>
-                  <th className="px-2 py-2">Tipo</th>
-                  <th className="px-2 py-2">Entrega</th>
-                  <th className="px-2 py-2">%</th>
-                  <th className="px-2 py-2">Horas</th>
-                  <th className="px-2 py-2">Conflicto</th>
-                </tr>
-              </thead>
-              <tbody>
-                {actividadesFiltradas.map((act) => {
-                  const porcentajeTexto = formatearPorcentaje(act.porcentajeEvaluacion);
-
-                  return (
-                    <tr
-                      key={obtenerIdActividad(act)}
-                      className={`border-b border-[#430000]/10 ${act.tieneConflicto ? 'bg-rose-50/40' : ''}`}
-                    >
-                      <td className="px-2 py-2">
-                        <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md border ${ESTILOS_PRIORIDAD[act.prioridad] || ESTILOS_PRIORIDAD['Sin fecha']}`}>
-                          {act.prioridad}
-                        </span>
-                      </td>
-                      <td className="px-2 py-2">
-                        <span className="font-mono text-[10px] bg-[#430000]/10 text-[#430000] px-2 py-1 rounded-md font-bold">
-                          {act.materiaInscritaCodigo || 'SACA'}
-                        </span>
-                      </td>
-                      <td className="px-2 py-2 font-semibold text-[#430000]">{act.nombre}</td>
-                      <td className="px-2 py-2 text-[#430000]/70">{act.tipoActividadNombre || 'Evaluación'}</td>
-                      <td className="px-2 py-2 whitespace-nowrap text-[#430000]/80">
-                        {formatearFechaEntrega(act.fechaReferencia)}
-                      </td>
-                      <td className="px-2 py-2">
-                        {porcentajeTexto ? (
-                          <span
-                            className={`inline-block font-bold px-2 py-0.5 rounded-md border ${
-                              act.altaPonderacion
-                                ? 'bg-[#960000] text-white border-[#960000]'
-                                : 'bg-white text-[#430000] border-[#430000]/20'
-                            }`}
-                            title={act.altaPonderacion ? 'Alta ponderación' : undefined}
-                          >
-                            {porcentajeTexto}
-                          </span>
-                        ) : (
-                          <span className="text-[#430000]/50">Sin dato</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-2 whitespace-nowrap font-semibold text-[#430000]">
-                        {act.tiempoEstimadoHoras ? `${act.tiempoEstimadoHoras} hrs` : 'Sin dato'}
-                      </td>
-                      <td className="px-2 py-2">
-                        {act.tieneConflicto ? (
-                          <span className="inline-flex items-center gap-1 text-rose-700 font-semibold">
-                            <i className="fa-solid fa-triangle-exclamation"></i>
-                            Sí
-                          </span>
-                        ) : (
-                          <span className="text-[#430000]/50">No</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <Tabla
+            compacta
+            anchoTabla="w-full min-w-[760px]"
+            columnas={[
+              { titulo: 'Prioridad', className: 'whitespace-nowrap' },
+              'Materia',
+              { titulo: 'Actividad', className: 'font-semibold' },
+              { titulo: 'Tipo', className: 'text-ink-600' },
+              { titulo: 'Entrega', className: 'whitespace-nowrap' },
+              '%',
+              { titulo: 'Horas', className: 'whitespace-nowrap font-semibold' },
+              'Conflicto'
+            ]}
+            filas={filasActividades}
+          />
         )}
-      </div>
+      </Tarjeta>
 
       {/* ENLACES A OTRAS VISTAS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {[
           { vista: 'academico', icono: 'fa-book-open', titulo: 'Gestionar actividades', detalle: 'Editar, completar y registrar notas' },
           { vista: 'academico', icono: 'fa-chart-line', titulo: 'Ver rendimiento por materia', detalle: 'Gestión Académica > Actividades' },
@@ -496,19 +475,19 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
             key={enlace.titulo}
             type="button"
             onClick={irA(enlace.vista)}
-            className="flex items-center gap-3 bg-white border border-[#430000]/10 hover:border-[#960000]/40 rounded-xl px-4 py-3 shadow-sm text-left transition-colors"
+            className="flex items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 text-left shadow-sm transition-colors hover:border-brand-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2"
           >
-            <div className="w-9 h-9 shrink-0 rounded-lg bg-[#430000]/10 text-[#430000] flex items-center justify-center">
-              <i className={`fa-solid ${enlace.icono}`}></i>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+              <i className={`fa-solid ${enlace.icono}`} aria-hidden="true"></i>
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-[#430000] leading-tight">{enlace.titulo}</p>
-              <p className="text-[11px] text-[#430000]/60">{enlace.detalle}</p>
+              <p className="text-sm font-bold leading-tight text-ink-900">{enlace.titulo}</p>
+              <p className="mt-0.5 text-xs text-ink-600">{enlace.detalle}</p>
             </div>
           </button>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 

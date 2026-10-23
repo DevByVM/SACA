@@ -1,4 +1,7 @@
 import React from 'react';
+import Boton from './ui/Boton';
+import { unirClases } from './ui/unirClases';
+
 function SidebarItem({
   id,
   label,
@@ -10,19 +13,24 @@ function SidebarItem({
 
   return (
     <button
+      type="button"
       onClick={() => setVistaActiva(id)}
-      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 cursor-pointer ${
+      aria-current={isActive ? "page" : undefined}
+      className={unirClases(
+        "flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2",
         isActive
-          ? "bg-[#960000] text-[#eeeeee] font-semibold shadow-md"
-          : "text-[#430000] hover:bg-[#430000]/10"
-      }`}
+          ? "bg-brand-700 font-semibold text-white shadow-sm"
+          : "text-ink-900 hover:bg-brand-50"
+      )}
     >
       <i
-        className={`fa-solid ${icon} text-base ${
-          isActive
-            ? "text-[#eeeeee]"
-            : "text-[#430000]"
-        }`}
+        className={unirClases(
+          "fa-solid w-5 shrink-0 text-center text-base",
+          icon,
+          isActive ? "text-white" : "text-brand-700"
+        )}
+        aria-hidden="true"
       ></i>
 
       <span>{label}</span>
@@ -36,29 +44,31 @@ function Sidebar({
   cerrarSesion
 }) {
   return (
-    <aside className="w-full md:w-64 bg-[#ffffff] flex flex-col justify-between md:min-h-screen border-r border-[#430000]/20 shadow-lg">
+    <aside className="flex w-full flex-col justify-between border-b border-line bg-surface md:min-h-screen md:w-64 md:border-b-0 md:border-r">
 
-      <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-[#960000] hidden md:block"></div>
+      <div className="absolute bottom-0 left-0 top-0 hidden w-[4px] bg-brand-700 md:block"></div>
 
       <div>
 
         {/* HEADER */}
-        <div className="p-5 flex items-center space-x-3 border-b border-[#430000]/20 bg-[#960000]/10">
+        <div className="flex items-center gap-3 border-b border-line bg-brand-50 p-5">
 
-          <div className="text-[#960000] text-2xl">
-            <i className="fa-solid fa-graduation-cap"></i>
+          <div className="text-2xl text-brand-700">
+            <i className="fa-solid fa-graduation-cap" aria-hidden="true"></i>
           </div>
 
-          <h1 className="text-xl font-extrabold text-[#430000]">
+          {/* La página ya tiene su h1 en App.jsx; aquí es solo la marca */}
+          <p className="text-xl font-extrabold text-ink-900">
             SACA
-          </h1>
+          </p>
 
         </div>
 
         {/* NAVEGACIÓN */}
-        <nav className="p-4 space-y-1">
+        {/* En móvil las opciones van en dos columnas para no ocupar toda la primera pantalla */}
+        <nav className="grid grid-cols-2 gap-1 p-4 md:grid-cols-1" aria-label="Módulos del Sistema">
 
-          <div className="pb-2 px-4 text-[11px] font-bold tracking-widest text-[#430000]/60 uppercase">
+          <div className="col-span-2 px-3 pb-2 text-xs font-bold uppercase tracking-widest text-ink-600 md:col-span-1">
             Módulos del Sistema
           </div>
 
@@ -93,28 +103,29 @@ function Sidebar({
             vistaActiva={vistaActiva}
             setVistaActiva={setVistaActiva}
           />
+
           <SidebarItem
             id="disponibilidad"
-            label="Gestión disponibilidad"
+            label="Gestión de disponibilidad"
             icon="fa-clock"
             vistaActiva={vistaActiva}
             setVistaActiva={setVistaActiva}
           />
 
-           <SidebarItem
+          <SidebarItem
             id="jornada"
             label="Horario Laboral"
-             icon="fa-briefcase"
+            icon="fa-briefcase"
             vistaActiva={vistaActiva}
             setVistaActiva={setVistaActiva}
           />
 
           <SidebarItem
-           id="calendario"
-           label="Calendario Académico"
-           icon="fa-calendar-week"
-           vistaActiva={vistaActiva}
-          setVistaActiva={setVistaActiva}
+            id="calendario"
+            label="Calendario Académico"
+            icon="fa-calendar-week"
+            vistaActiva={vistaActiva}
+            setVistaActiva={setVistaActiva}
           />
 
           <SidebarItem
@@ -124,46 +135,18 @@ function Sidebar({
             vistaActiva={vistaActiva}
             setVistaActiva={setVistaActiva}
           />
-          <hr className="my-4 border-[#430000]/20" />
 
-          <button
-           onClick={cerrarSesion}
-           className="
-    w-full mt-3 py-2.5 px-4
-         bg-[#960000]
-    text-[#F4E5E5]
-    border border-[#960000]
-    hover:bg-[#F4E5E5]
-    hover:text-[#960000]
-    transition-all duration-300
-    text-xs font-bold rounded-xl
-  "
->
-  <i className="fa-solid fa-power-off"></i>
-  <span> Cerrar Sesión</span>
-</button>
+          <hr className="col-span-2 my-3 border-line md:col-span-1" />
+
+          <Boton
+            icono="fa-solid fa-power-off"
+            onClick={cerrarSesion}
+            className="col-span-2 min-h-11 w-full md:col-span-1"
+          >
+            Cerrar Sesión
+          </Boton>
 
         </nav>
-
-      </div>
-
-      {/* TARJETA INFERIOR */}
-      <div className="p-4 m-4 md:mx-5 bg-[#960000]/10 border border-[#430000]/20 rounded-2xl shadow-sm">
-
-        <h3 className="text-[#430000] font-bold text-base">
-          Carga Académica UES
-        </h3>
-
-        <p className="text-xs text-[#430000]/70 mt-1">
-          Monitoreo automático de horas.
-        </p>
-
-        <button
-          onClick={() => alert("¡MVP Grupo 03 Completo!")}
-          className="w-full mt-4 py-2.5 px-4 bg-[#960000] hover:bg-[#430000] text-[#eeeeee] text-xs font-bold rounded-xl transition-all"
-        >
-          Ciclo I-2026 Activo
-        </button>
 
       </div>
 

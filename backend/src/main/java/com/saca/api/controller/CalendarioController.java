@@ -4,8 +4,11 @@ package com.saca.api.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import com.saca.api.config.EstudianteAutenticado;
 import com.saca.api.dto.CalendarioDTO;
 import com.saca.api.service.CalendarioService;
 
@@ -18,7 +21,6 @@ import com.saca.api.service.CalendarioService;
  */
 @RestController
 @RequestMapping("/api/calendario")
-@CrossOrigin(origins = "*") // Permite peticiones desde cualquier origen
 public class CalendarioController {
 
     /**
@@ -49,9 +51,10 @@ public class CalendarioController {
      */
     @GetMapping("/semanal/{estudianteId}")
     public List<CalendarioDTO> obtenerCalendario(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long estudianteId) {
 
-        // Delega la consulta al servicio
-        return service.obtenerCalendarioSemanal(estudianteId);
+        // Delega la consulta al servicio; solo se admite el estudianteId del token (otro responde 404)
+        return service.obtenerCalendarioSemanal(EstudianteAutenticado.idPropio(jwt, estudianteId));
     }
 }

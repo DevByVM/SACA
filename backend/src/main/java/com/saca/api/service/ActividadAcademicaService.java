@@ -7,10 +7,8 @@ import com.saca.api.exception.RecursoNoEncontradoException;
 import com.saca.api.exception.ValidacionNegocioException;
 import com.saca.api.mapper.ActividadAcademicaMapper;
 import com.saca.api.repository.*;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,6 +16,8 @@ import java.time.LocalDate;
 
 @Service
 public class ActividadAcademicaService {
+
+    private static final String NOTA_NO_ENCONTRADA = "No se encontró la nota solicitada";
 
     private final ActividadAcademicaRepository actividadRepository;
     private final ActividadAcademicaMapper mapper;
@@ -34,26 +34,25 @@ public class ActividadAcademicaService {
         this.estudianteRepository = estudianteRepository;
     }
 
+    // Todas las operaciones reciben el id del estudiante autenticado (sub del JWT); una actividad,
+    // materia o nota ajena responde igual que una inexistente
     @Transactional(readOnly = true)
-    public ActividadAcademicaResponse getById(Long id){
+    public ActividadAcademicaResponse getById(Long id, Long estudianteId){
 
-        return actividadRepository.findById(id)
-                .map(mapper::toResponse)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Actividad académica no encontrada"
-                ));
+        return mapper.toResponse(buscarActividadDelEstudiante(id, estudianteId));
     }
 
     @Transactional
-    public ActividadAcademicaResponse crear(ActividadAcademicaRequest request) {
+    public ActividadAcademicaResponse crear(ActividadAcademicaRequest request, Long estudianteId) {
         //validando fechas de inicio y entrega
         validarFechas(request.fechaInicio(), request.fechaEntrega());
 
-        MateriaInscrita materia = materiaInscritaRepository.getReferenceById(request.materiaInscritaId());
+        MateriaInscrita materia = buscarMateriaDelEstudiante(request.materiaInscritaId(), estudianteId);
         ActividadAcademica actividad = mapper.toEntity(request, materia);
+        // Una actividad nueva aún no tiene nota propia: un notaId solo podría apuntar a la nota de otra
+        // actividad o a una nota sin actividad, cuyo propietario no se puede comprobar
         if(request.notaId() != null){
-            Nota nota = notaRepository.getReferenceById(request.notaId());
-            actividad.setNota(nota);
+            throw new RecursoNoEncontradoException(NOTA_NO_ENCONTRADA);
         }
         if (request.notaObtenida() != null) {
             Nota nota = new Nota();
@@ -67,27 +66,26 @@ public class ActividadAcademicaService {
     }
 
     @Transactional
-    public ActividadAcademicaResponse actualizar(ActividadAcademicaRequest request, Long actividadId) {
+    public ActividadAcademicaResponse actualizar(ActividadAcademicaRequest request, Long actividadId, Long estudianteId) {
 
-        //se valida la existencia de la actividad
-        ActividadAcademica actividadExistente = actividadRepository.findById(actividadId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Actividad Academica no encontrada"
-                ));
+        //se valida la existencia de la actividad y que sea del estudiante
+        ActividadAcademica actividadExistente = buscarActividadDelEstudiante(actividadId, estudianteId);
 
         //validando fechas de inicio y entrega
         validarFechas(request.fechaInicio(), request.fechaEntrega());
 
+        // La materia de destino también debe ser del estudiante: así la actividad no puede pasar a otro
+        MateriaInscrita materia = buscarMateriaDelEstudiante(request.materiaInscritaId(), estudianteId);
+        // Solo se admite la nota que esta misma actividad ya tiene enlazada
+        if (request.notaObtenida() == null && request.notaId() != null
+                && (actividadExistente.getNota() == null || actividadExistente.getNota().getId() != request.notaId())) {
+            throw new RecursoNoEncontradoException(NOTA_NO_ENCONTRADA);
+        }
+
         //se mapea el objeto
         ActividadAcademica actividadActualizada = mapper.updateEntity(actividadExistente, request);
         actividadActualizada.setTipoActividad(request.tipoActividad());
-
-        //se verifica si hubo cambio de materia
-        if(actividadExistente.getMateriaInscrita().getId() != request.materiaInscritaId()){
-            MateriaInscrita materia = materiaInscritaRepository.getReferenceById(request.materiaInscritaId());
-            actividadActualizada.setMateriaInscrita(materia);
-
-        }
+        actividadActualizada.setMateriaInscrita(materia);
 
         // se verifica si se registró, actualizó o eliminó una nota obtenida
         if (request.notaObtenida() != null) {
@@ -104,8 +102,8 @@ public class ActividadAcademicaService {
             actividadActualizada.setNota(notaGuardada);
 
         } else if (request.notaId() != null) {
-            Nota nota = notaRepository.getReferenceById(request.notaId());
-            actividadActualizada.setNota(nota);
+            // Ya comprobado arriba: es la nota actual de la actividad, que se conserva
+            actividadActualizada.setNota(actividadExistente.getNota());
 
         } else {
             actividadActualizada.setNota(null);
@@ -116,12 +114,8 @@ public class ActividadAcademicaService {
     }
 
     @Transactional
-    public void eliminar(Long actividadId){
-        if(actividadRepository.existsById(actividadId)){
-            actividadRepository.deleteById(actividadId);
-        }else{
-            throw new RecursoNoEncontradoException("Actividad académica no encontrada");
-        }
+    public void eliminar(Long actividadId, Long estudianteId){
+        actividadRepository.delete(buscarActividadDelEstudiante(actividadId, estudianteId));
     }
 
     @Transactional(readOnly = true)
@@ -139,13 +133,27 @@ public class ActividadAcademicaService {
     @Transactional(readOnly = true)
     public List<ActividadAcademicaResponse> obtenerPorCicloYEstdiante(Long cicloId, Long estudianteId){
         if(estudianteRepository.existsById(estudianteId)){
-            return actividadRepository.findActividadesPorCicloYEstudiante(cicloId,estudianteId)
+            // La consulta declara (idEstudiante, idCiclo); antes se pasaban en orden inverso
+            return actividadRepository.findActividadesPorCicloYEstudiante(estudianteId, cicloId)
                     .stream()
                     .map(mapper::toResponse)
                     .toList();
         }else{
             throw new RecursoNoEncontradoException("No se encontró el estudiante solicitado");
         }
+    }
+
+    private ActividadAcademica buscarActividadDelEstudiante(Long actividadId, Long estudianteId) {
+        return actividadRepository.findByIdActividadAndMateriaInscritaCicloAcademicoEstudianteId(actividadId, estudianteId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró la actividad académica solicitada"));
+    }
+
+    private MateriaInscrita buscarMateriaDelEstudiante(Long materiaInscritaId, Long estudianteId) {
+        if (materiaInscritaId == null) {
+            throw new ValidacionNegocioException("La materia es obligatoria");
+        }
+        return materiaInscritaRepository.findByIdAndCicloAcademicoEstudianteId(materiaInscritaId, estudianteId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontro la materia inscrita solicitada"));
     }
 
     private void validarFechas(LocalDateTime fechaInicio, LocalDateTime fechaEntrega) {

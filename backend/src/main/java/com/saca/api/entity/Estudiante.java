@@ -2,6 +2,8 @@ package com.saca.api.entity;
 
 import java.sql.Timestamp;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -26,6 +28,9 @@ public class Estudiante {
 	@Column(name = "correo_institucional", length = 120, unique = true)
 	private String correoInstitucional;
 
+	// La entidad se devuelve directamente (perfil por correo) o anidada en otras;
+	// el hash nunca debe salir en una respuesta JSON.
+	@JsonIgnore
 	@Column(name = "contrasenia", length = 255, nullable = false)
 	private String contrasenia;
 

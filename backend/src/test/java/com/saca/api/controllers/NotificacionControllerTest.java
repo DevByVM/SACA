@@ -6,11 +6,16 @@ import com.saca.api.dto.response.PreferenciaNotificacionResponse;
 import com.saca.api.entity.TipoActividadAcademica;
 import com.saca.api.service.NotificacionService;
 import com.saca.api.service.PreferenciaNotificacionService;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -37,6 +42,19 @@ class NotificacionControllerTest {
 
     @MockitoBean
     private NotificacionService notificacionService;
+
+    // Prueba funcional de la capa web sin filtros: la identidad del token (sub=7) se coloca a mano.
+    // La autorización con filtros activos se comprueba en PropiedadCalendarioNotificacionTest.
+    @BeforeEach
+    void autenticarComoEstudiante7() {
+        Jwt jwt = Jwt.withTokenValue("token-de-prueba").header("alg", "HS256").subject("7").build();
+        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
+    }
+
+    @AfterEach
+    void limpiarAutenticacion() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Test
     void obtieneLasPreferenciasDelEstudiante() throws Exception {

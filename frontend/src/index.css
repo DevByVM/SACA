@@ -2,6 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Paleta SACA. Se guardan como canales RGB para que Tailwind pueda aplicar
+   opacidad sobre ellos (p. ej. bg-brand-700/10). */
+:root {
+  /* Marca: vino institucional UES */
+  --saca-brand-50: 251 243 244;   /* #FBF3F4 */
+  --saca-brand-100: 244 221 225;  /* #F4DDE1 */
+  --saca-brand-200: 232 185 193;  /* #E8B9C1 */
+  --saca-brand-700: 138 28 43;    /* #8A1C2B */
+  --saca-brand-800: 110 21 34;    /* #6E1522 */
+  --saca-brand-900: 74 14 23;     /* #4A0E17 */
+
+  /* Neutros para texto, bordes y superficies */
+  --saca-ink-900: 31 35 40;       /* #1F2328 */
+  --saca-ink-600: 75 85 99;       /* #4B5563 */
+  --saca-ink-500: 107 114 128;    /* #6B7280, solo texto de 12px o más */
+  --saca-line: 227 230 234;       /* #E3E6EA */
+  --saca-canvas: 246 247 249;     /* #F6F7F9 */
+  --saca-surface: 255 255 255;    /* #FFFFFF */
+  --saca-surface-muted: 238 240 243; /* #EEF0F3 */
+
+  /* Información y gráficas */
+  --saca-info-50: 234 242 248;    /* #EAF2F8 */
+  --saca-info-200: 195 216 232;   /* #C3D8E8 */
+  --saca-info-700: 47 93 124;     /* #2F5D7C */
+
+  /* Estados: separados de la marca para no confundir acción principal con alerta */
+  --saca-success-50: 232 245 238; /* #E8F5EE */
+  --saca-success-200: 183 224 200; /* #B7E0C8 */
+  --saca-success-700: 27 116 71;  /* #1B7447 */
+  --saca-warning-50: 254 245 231; /* #FEF5E7 */
+  --saca-warning-200: 246 217 168; /* #F6D9A8 */
+  --saca-warning-700: 180 83 9;   /* #B45309 */
+  --saca-danger-50: 253 236 234;  /* #FDECEA */
+  --saca-danger-200: 245 194 188; /* #F5C2BC */
+  --saca-danger-700: 180 35 24;   /* #B42318 */
+}
+
 :root {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #430000;

@@ -60,9 +60,10 @@ public class CicloAcademicoService {
 	}
 
 	@Transactional
-	public CicloAcademicoResponse crear(CrearCicloAcademicoRequest request) {
+	public CicloAcademicoResponse crear(CrearCicloAcademicoRequest request, Long estudianteId) {
 		validarRangoFechas(request.fechaInicio(), request.fechaFin());
-		Estudiante estudiante = buscarEstudiante(request.estudianteId());
+		// estudianteId es el del token, ya contrastado con el del cuerpo en el controlador
+		Estudiante estudiante = buscarEstudiante(estudianteId);
 
 		CicloAcademico cicloAcademico = cicloAcademicoMapper.toEntity(request, estudiante);
 		CicloAcademico cicloGuardado = cicloAcademicoRepository.save(cicloAcademico);

@@ -6,6 +6,8 @@ public class ActualizarPerfilRequest {
     private String carnet;
     private String correoInstitucional;
     private String contrasenia;
+    // Obligatoria solo cuando se envía una contraseña nueva
+    private String contraseniaActual;
 
     public String getNombre() {
         return nombre;
@@ -37,5 +39,13 @@ public class ActualizarPerfilRequest {
 
     public void setContrasenia(String contrasenia) {
         this.contrasenia = contrasenia;
+    }
+
+    public String getContraseniaActual() {
+        return contraseniaActual;
+    }
+
+    public void setContraseniaActual(String contraseniaActual) {
+        this.contraseniaActual = contraseniaActual;
     }
 }
