@@ -189,7 +189,10 @@ function App() {
             )}
 
             {vistaActiva === "academico" && (
-              <GestionAcademica estudiante={estudiante} />
+              <GestionAcademica
+                estudiante={estudiante}
+                onActividadesActualizadas={() => setActualizacionNotificaciones((actual) => actual + 1)}
+              />
             )}
 
             {vistaActiva === "perfil" && (

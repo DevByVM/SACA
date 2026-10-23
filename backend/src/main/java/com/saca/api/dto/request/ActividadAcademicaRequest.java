@@ -20,7 +20,7 @@ public record ActividadAcademicaRequest(
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
         LocalDateTime fechaEntrega,
 
-        @Min(value = 0, message = "El minimo de porcentaje es 1")
+        @Min(value = 1, message = "El minimo de porcentaje es 1")
         @Max(value = 100, message = "El maximo de porcentaje es 100")
         Double porcentajeEvaluacion,
 

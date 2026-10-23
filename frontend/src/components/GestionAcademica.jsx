@@ -83,6 +83,14 @@ function obtenerFechaHoraLocalActual() {
   return `${anio}-${mes}-${dia} ${horas}:${minutos}`;
 }
 
+// Fecha local en formato YYYY-MM-DD; toISOString usaría UTC y en la noche devolvería el día siguiente
+function fechaLocalHoy() {
+  const hoy = new Date();
+  const mes = String(hoy.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoy.getDate()).padStart(2, "0");
+  return `${hoy.getFullYear()}-${mes}-${dia}`;
+}
+
 function formatFechaLocalDateTime(value) {
   if (!value) return null;
 
@@ -92,7 +100,7 @@ function formatFechaLocalDateTime(value) {
 }
 
 
-function GestionAcademica({ estudiante }) {
+function GestionAcademica({ estudiante, onActividadesActualizadas }) {
   const estudianteId = estudiante?.id ? String(estudiante.id) : "";
   const [vista, setVista] = useState("ciclos");
   const [cargando, setCargando] = useState(false);
@@ -259,6 +267,11 @@ function GestionAcademica({ estudiante }) {
     //se obtienen los datos a validar por cliente
     const materiaSeleccionadaId = Number(actividadForm.materiaInscritaId);
     const porcentajeNuevo = Number(actividadForm.porcentajeEvaluacion);
+    // Solo al registrar: una actividad ya vencida se puede seguir editando o completando
+    if (editando.tipo !== "actividad" && actividadForm.fechaEntrega.slice(0, 10) < fechaLocalHoy()) {
+      toast.error("La fecha de entrega no puede ser anterior a la fecha actual");
+      return;
+    }
     //se extraen las actividades de la materia seleccionada
     const actividadesPorMateria = actividades.filter(
       (actividad) => Number(actividad.materiaInscritaId) === materiaSeleccionadaId
@@ -276,7 +289,7 @@ function GestionAcademica({ estudiante }) {
     const porcentajeDisponible = 100 - porcentajeRegistrado;
     //se detiene el guardado si no hay disponibilidad de porcentaje
     if (porcentajeNuevo > porcentajeDisponible) {
-      toast.warning(`Solo cuenta con ${porcentajeDisponible}% disponible para esta materia.`);
+      toast.error(`Solo cuenta con ${porcentajeDisponible}% disponible para esta materia.`);
       return;
     }
 
@@ -313,6 +326,7 @@ function GestionAcademica({ estudiante }) {
       setActividades((actuales) => editando.tipo === "actividad"
         ? actuales.map((actividad) => actividad.idActividad === editando.id ? actividadGuardada : actividad)
         : [actividadGuardada, ...actuales]);
+      if (editando.tipo !== "actividad") onActividadesActualizadas?.();
       coleccionesCargadas.current.add("actividades");
       setActividadForm(actividadInicial);
     }, "Actividad academica guardada");
@@ -365,6 +379,7 @@ function GestionAcademica({ estudiante }) {
       }
       if (tipo === "actividad") {
         setActividades((actuales) => actuales.filter((actividad) => actividad.idActividad !== id));
+        onActividadesActualizadas?.();
       }
     }, "Registro eliminado");
   }
@@ -393,7 +408,8 @@ function GestionAcademica({ estudiante }) {
     };
 
     await guardar(async () => {
-      await actualizarActividad(actividadId, payload);
+      const actividadActualizada = await actualizarActividad(actividadId, payload);
+      reemplazarActividad(actividadId, actividadActualizada);
     }, "Actividad marcada como completada");
   }
 
@@ -421,8 +437,17 @@ function GestionAcademica({ estudiante }) {
     };
 
     await guardar(async () => {
-      await actualizarActividad(actividadId, payload);
+      const actividadActualizada = await actualizarActividad(actividadId, payload);
+      reemplazarActividad(actividadId, actividadActualizada);
     }, "Actividad reactivada");
+  }
+
+  // Sustituye la actividad por la respuesta del backend para que la fila y sus botones cambien sin recargar.
+  // La campana vive en App y no se vuelve a montar: se le avisa para que pida de nuevo las próximas entregas
+  function reemplazarActividad(actividadId, actividadActualizada) {
+    setActividades((actuales) => actuales.map((actividad) =>
+      (actividad.id ?? actividad.idActividad) === actividadId ? actividadActualizada : actividad));
+    onActividadesActualizadas?.();
   }
 
   function editarCiclo(ciclo) {
@@ -635,6 +660,7 @@ function GestionAcademica({ estudiante }) {
             setForm={setActividadForm}
             onSubmit={guardarActividad}
             onCancel={cerrarFormulario}
+            fechaEntregaMinima={editando.tipo === "actividad" ? undefined : `${fechaLocalHoy()}T00:00`}
           />
         )}
       </Modal>
@@ -715,7 +741,7 @@ function FormularioHorario({ materias, form, setForm, onSubmit, onCancel }) {
 }
 
 //form de actividades
-function FormularioActividades({ materias, form, setForm, onSubmit, onCancel }) {
+function FormularioActividades({ materias, form, setForm, onSubmit, onCancel, fechaEntregaMinima }) {
   return (
     <form className="grid gap-4 sm:grid-cols-2" onSubmit={onSubmit}>
       <Selector
@@ -726,9 +752,9 @@ function FormularioActividades({ materias, form, setForm, onSubmit, onCancel }) 
       />
       <Selector label="Tipo de Actividad" value={form.tipoActividad} onValorChange={(tipoActividad) => setForm({ ...form, tipoActividad })} options={["PARCIAL", "LABORATORIO", "PROYECTO", "INVESTIGACION"]} />
       <CampoUi className="sm:col-span-2" label="Nombre" value={form.nombre} onValorChange={(nombre) => setForm({ ...form, nombre })} />
-      <CampoUi className="sm:col-span-2" label="Porcentaje de evaluacion (ej. 10%)" type="number" value={form.porcentajeEvaluacion} onValorChange={(porcentajeEvaluacion) => setForm({ ...form, porcentajeEvaluacion })} />
+      <CampoUi className="sm:col-span-2" label="Porcentaje de evaluacion (ej. 10%)" type="number" min={1} max={100} value={form.porcentajeEvaluacion} onValorChange={(porcentajeEvaluacion) => setForm({ ...form, porcentajeEvaluacion })} />
       <CampoUi label="Fecha inicio" type="datetime-local" value={form.fechaInicio} onValorChange={(fechaInicio) => setForm({ ...form, fechaInicio })} />
-      <CampoUi label="Fecha Entrega" type="datetime-local" value={form.fechaEntrega} onValorChange={(fechaEntrega) => setForm({ ...form, fechaEntrega })} />
+      <CampoUi label="Fecha Entrega" type="datetime-local" min={fechaEntregaMinima} value={form.fechaEntrega} onValorChange={(fechaEntrega) => setForm({ ...form, fechaEntrega })} />
       <CampoUi label="Tiempo estimado (horas)" type="number" value={form.tiempoEstimadoHoras} onValorChange={(tiempoEstimadoHoras) => setForm({ ...form, tiempoEstimadoHoras })} />
       <CampoUi label="Nota obtenida" type="number" required={false} value={form.notaObtenida} onValorChange={(notaObtenida) => setForm({ ...form, notaObtenida })} />
       <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:col-span-2 sm:flex-row sm:justify-end">

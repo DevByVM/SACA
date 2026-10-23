@@ -25,7 +25,8 @@ const ESTILOS_PRIORIDAD = {
   'Alta': 'bg-brand-700 text-white border-brand-700',
   'Media': 'bg-warning-50 text-warning-700 border-warning-200',
   'Baja': 'bg-success-50 text-success-700 border-success-200',
-  'Sin fecha': 'bg-surface-muted text-ink-600 border-line'
+  'Sin fecha': 'bg-surface-muted text-ink-600 border-line',
+  'Completada': 'bg-success-50 text-success-700 border-success-200'
 };
 
 
@@ -37,6 +38,15 @@ const TONOS_SEMAFORO = {
 };
 const OPCIONES_PRIORIDAD = ['Alta', 'Media', 'Baja', 'Sin fecha'];
 
+const OPCIONES_ESTADO = [
+  { value: 'pendientes', label: 'Pendientes' },
+  { value: 'completadas', label: 'Completadas' },
+  { value: 'todas', label: 'Todos los estados' }
+];
+
+// Una actividad completada ya no compite por prioridad: se muestra y se filtra como «Completada»
+const etiquetaPrioridad = (act) => (act.estado === 'COMPLETADA' ? 'Completada' : act.prioridad);
+
 // Análisis de Carga (vista detallada, solo lectura)
 // Responde: "¿De qué está compuesta mi carga y cómo la planifico?"
 // Las acciones sobre actividades (editar, completar, notas) viven en Gestión Académica.
@@ -44,6 +54,7 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
   const {
     cargando,
     actividades,
+    actividadesCompletadas,
     horasPendientes,
     ventana,
     semaforo,
@@ -53,6 +64,7 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
 
   // Filtros de la lista priorizada
   const [filtroMateria, setFiltroMateria] = useState('todas');
+  const [filtroEstado, setFiltroEstado] = useState('pendientes');
   const [filtroPrioridad, setFiltroPrioridad] = useState('todas');
   const [soloConflictos, setSoloConflictos] = useState(false);
 
@@ -98,22 +110,33 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
     return [...grupos.values()].sort((a, b) => b.horas - a.horas);
   }, [actividades]);
 
+  // Pendientes primero (en su orden de prioridad) y después las completadas de la misma ventana
+  const actividadesDeLaSemana = useMemo(
+    () => [...actividades, ...actividadesCompletadas],
+    [actividades, actividadesCompletadas]
+  );
+
   const materiasDisponibles = useMemo(
-    () => [...new Set(actividades.map((act) => act.materiaInscritaCodigo || 'Sin materia'))].sort(),
-    [actividades]
+    () => [...new Set(actividadesDeLaSemana.map((act) => act.materiaInscritaCodigo || 'Sin materia'))].sort(),
+    [actividadesDeLaSemana]
   );
 
   // Lista priorizada filtrada (mantiene el orden original)
   const actividadesFiltradas = useMemo(
     () =>
-      actividades.filter((act) => {
+      (filtroEstado === 'pendientes'
+        ? actividades
+        : filtroEstado === 'completadas'
+          ? actividadesCompletadas
+          : actividadesDeLaSemana
+      ).filter((act) => {
         const codigo = act.materiaInscritaCodigo || 'Sin materia';
         if (filtroMateria !== 'todas' && codigo !== filtroMateria) return false;
-        if (filtroPrioridad !== 'todas' && act.prioridad !== filtroPrioridad) return false;
+        if (filtroPrioridad !== 'todas' && etiquetaPrioridad(act) !== filtroPrioridad) return false;
         if (soloConflictos && !act.tieneConflicto) return false;
         return true;
       }),
-    [actividades, filtroMateria, filtroPrioridad, soloConflictos]
+    [actividades, actividadesCompletadas, actividadesDeLaSemana, filtroEstado, filtroMateria, filtroPrioridad, soloConflictos]
   );
 
   const irA = (vista) => () => {
@@ -150,8 +173,8 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
       id: obtenerIdActividad(act),
       className: act.tieneConflicto ? 'bg-danger-50' : undefined,
       celdas: [
-        <span className={`inline-block rounded-md border px-2 py-0.5 text-xs font-bold ${ESTILOS_PRIORIDAD[act.prioridad] || ESTILOS_PRIORIDAD['Sin fecha']}`}>
-          {act.prioridad}
+        <span className={`inline-block rounded-md border px-2 py-0.5 text-xs font-bold ${ESTILOS_PRIORIDAD[etiquetaPrioridad(act)] || ESTILOS_PRIORIDAD['Sin fecha']}`}>
+          {etiquetaPrioridad(act)}
         </span>,
         <span className="rounded-md bg-surface-muted px-2 py-1 font-mono text-xs font-bold text-ink-900">
           {act.materiaInscritaCodigo || 'SACA'}
@@ -401,11 +424,11 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
         className="p-4 sm:p-5"
         acciones={
           <span className="text-xs font-semibold text-ink-600">
-            {actividadesFiltradas.length} de {actividades.length}
+            {actividadesFiltradas.length} de {actividadesDeLaSemana.length}
           </span>
         }
       >
-        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:items-end">
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
           <Selector
             label="Materia"
             value={filtroMateria}
@@ -414,6 +437,15 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
               { value: 'todas', label: 'Todas las materias' },
               ...materiasDisponibles
             ]}
+            placeholder={null}
+            required={false}
+          />
+
+          <Selector
+            label="Estado"
+            value={filtroEstado}
+            onChange={(e) => setFiltroEstado(e.target.value)}
+            options={OPCIONES_ESTADO}
             placeholder={null}
             required={false}
           />
@@ -430,7 +462,7 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
             required={false}
           />
 
-          <label className="flex min-h-[2.375rem] cursor-pointer items-center gap-2 rounded-lg border border-ink-500 bg-surface px-3 py-2 text-sm text-ink-900 focus-within:ring-2 focus-within:ring-brand-700/20 sm:col-span-2 lg:col-span-1">
+          <label className="flex min-h-[2.375rem] cursor-pointer items-center gap-2 rounded-lg border border-ink-500 bg-surface px-3 py-2 text-sm text-ink-900 focus-within:ring-2 focus-within:ring-brand-700/20">
             <input
               type="checkbox"
               checked={soloConflictos}
@@ -441,7 +473,7 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
           </label>
         </div>
 
-        {actividades.length === 0 ? (
+        {actividadesDeLaSemana.length === 0 ? (
           <EstadoVacio icono="fa-regular fa-calendar-check" mensaje="No hay evaluaciones programadas para los próximos 7 días." />
         ) : actividadesFiltradas.length === 0 ? (
           <EstadoVacio icono="fa-solid fa-filter" mensaje="Ninguna actividad coincide con los filtros seleccionados." />

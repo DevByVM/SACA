@@ -30,6 +30,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -50,6 +51,7 @@ class PropiedadActividadTest {
 
     private static final String NOMBRE_ACTIVIDAD_A = "Parcial privado de A";
     private static final double NOTA_A = 7.25;
+    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     @Autowired
     private MockMvc mockMvc;
@@ -166,12 +168,15 @@ class PropiedadActividadTest {
         return como(token, peticion.contentType(MediaType.APPLICATION_JSON).content(cuerpo));
     }
 
+    // Fechas relativas a hoy: al registrar no se admite una entrega anterior a la fecha actual
     private static String actividad(String nombre, Long materiaInscritaId, Integer notaId, Double notaObtenida) {
+        LocalDateTime inicio = LocalDate.now().plusDays(7).atTime(8, 0);
         return """
-                {"nombre":"%s","fechaInicio":"2026-04-01 08:00","fechaEntrega":"2026-04-05 08:00",
+                {"nombre":"%s","fechaInicio":"%s","fechaEntrega":"%s",
                  "porcentajeEvaluacion":10,"tiempoEstimadoHoras":3,"estado":"ACTIVO","tipoActividad":"LABORATORIO",
                  "materiaInscritaId":%s,"notaId":%s,"notaObtenida":%s}
-                """.formatted(nombre, materiaInscritaId, notaId, notaObtenida);
+                """.formatted(nombre, FORMATO_FECHA.format(inicio), FORMATO_FECHA.format(inicio.plusDays(4)),
+                materiaInscritaId, notaId, notaObtenida);
     }
 
     private JsonNode json(MvcResult resultado) throws Exception {
