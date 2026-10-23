@@ -25,6 +25,14 @@ import {
   eliminarActividad,
   actualizarActividad
 } from "../api/actividadesApi";
+import Boton from "./ui/Boton";
+import EncabezadoModulo from "./ui/EncabezadoModulo";
+import Insignia from "./ui/Insignia";
+import Modal from "./ui/Modal";
+import Selector from "./ui/Selector";
+import Tarjeta from "./ui/Tarjeta";
+import CampoUi from "./ui/Campo";
+import TablaUi from "./ui/Tabla";
 
 const cicloInicial = {
   nombre: "",
@@ -505,37 +513,34 @@ function GestionAcademica({ estudiante }) {
   }, [formularioAbierto]);
 
   const titulosFormulario = {
-    ciclos: "Ciclo académico",
-    materias: "Materia inscrita",
-    horarios: "Horario de clase",
-    actividades: "Actividad académica",
+    ciclos: { nuevo: "Nuevo ciclo académico", editar: "Editar ciclo académico" },
+    materias: { nuevo: "Nueva materia inscrita", editar: "Editar materia inscrita" },
+    horarios: { nuevo: "Nuevo horario de clase", editar: "Editar horario de clase" },
+    actividades: { nuevo: "Nueva actividad académica", editar: "Editar actividad académica" },
   };
 
   return (
     <section className="space-y-5">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-2xl font-black text-[#430000]">Gestion academica</h2>
-          <p className="text-sm text-[#430000]/70">
-            Ciclos, materias inscritas, horarios y actividades académicas.
-          </p>
-        </div>
-        <button
-          className="inline-flex items-center justify-center gap-2 self-start rounded-lg bg-[#960000] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#750000] md:self-auto"
-          type="button"
-          onClick={nuevoRegistro}
-        >
-          <i className="fa-solid fa-plus" aria-hidden="true"></i>
-          Nuevo {vista === "ciclos" ? "ciclo" : vista === "materias" ? "materia" : vista === "horarios" ? "horario" : "actividad"}
-        </button>
-      </div>
+      <EncabezadoModulo
+        descripcion="Ciclos, materias inscritas, horarios y actividades académicas."
+        acciones={
+          <Boton className="whitespace-nowrap" icono="fa-solid fa-plus" onClick={nuevoRegistro}>
+            {vista === "ciclos" ? "Nuevo ciclo" : vista === "materias" ? "Nueva materia" : vista === "horarios" ? "Nuevo horario" : "Nueva actividad"}
+          </Boton>
+        }
+      />
 
-      <div className="flex flex-wrap gap-2">
+      <div
+        role="group"
+        aria-label="Secciones de gestión académica"
+        className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-surface p-1 sm:inline-grid sm:grid-cols-4"
+      >
         {["ciclos", "materias", "horarios", "actividades"].map((item) => (
           <button
             key={item}
-            className={`rounded-lg px-4 py-2 text-sm font-bold ${
-              vista === item ? "bg-[#960000] text-white" : "bg-[#430000]/10 text-[#430000]"
+            aria-pressed={vista === item}
+            className={`min-h-11 rounded-lg px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2 ${
+              vista === item ? "bg-brand-700 text-white hover:bg-brand-800" : "text-ink-900 hover:bg-surface-muted"
             }`}
             type="button"
             onClick={() => {
@@ -548,7 +553,7 @@ function GestionAcademica({ estudiante }) {
         ))}
       </div>
 
-      {cargando && <p className="text-sm text-[#430000]/70">Cargando informacion...</p>}
+      {cargando && <p className="text-sm text-ink-600">Cargando información...</p>}
 
       {vista === "ciclos" && (
         <TablaCiclos ciclos={ciclos} onEdit={editarCiclo} onDelete={(id) => eliminar("ciclo", id)} />
@@ -588,123 +593,123 @@ function GestionAcademica({ estudiante }) {
         </div>
       )}
 
-      {formularioAbierto && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) cerrarFormulario();
-          }}
-        >
-          <div
-            aria-labelledby="titulo-formulario-academico"
-            aria-modal="true"
-            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-7"
-            role="dialog"
-          >
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <h3 id="titulo-formulario-academico" className="text-xl font-black text-[#430000]">
-                  {editando.tipo ? "Editar" : "Nuevo"} {titulosFormulario[vista]}
-                </h3>
-                <p className="mt-1 text-sm text-[#430000]/60">Completa los datos del registro.</p>
-              </div>
-              <button
-                aria-label="Cerrar formulario"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#430000]/70 transition hover:bg-[#430000]/10"
-                type="button"
-                onClick={cerrarFormulario}
-              >
-                <i className="fa-solid fa-xmark" aria-hidden="true"></i>
-              </button>
-            </div>
-
-            {vista === "ciclos" && (
-              <FormularioCiclo
-                form={cicloForm}
-                setForm={setCicloForm}
-                onSubmit={guardarCiclo}
-                onCancel={cerrarFormulario}
-              />
-            )}
-            {vista === "materias" && (
-              <FormularioMateria
-                ciclos={ciclos}
-                form={materiaForm}
-                setForm={setMateriaForm}
-                onSubmit={guardarMateria}
-                onCancel={cerrarFormulario}
-              />
-            )}
-            {vista === "horarios" && (
-              <FormularioHorario
-                materias={materias}
-                form={horarioForm}
-                setForm={setHorarioForm}
-                onSubmit={guardarHorario}
-                onCancel={cerrarFormulario}
-              />
-            )}
-            {vista === "actividades" && (
-              <FormularioActividades
-                materias={materias}
-                form={actividadForm}
-                setForm={setActividadForm}
-                onSubmit={guardarActividad}
-                onCancel={cerrarFormulario}
-              />
-            )}
-          </div>
-        </div>
-      )}
+      {/* El Escape lo gestiona el useEffect de este módulo; si Modal también lo escuchara, cerraría dos veces */}
+      <Modal
+        abierto={formularioAbierto}
+        titulo={editando.tipo ? titulosFormulario[vista].editar : titulosFormulario[vista].nuevo}
+        descripcion="Completa los datos del registro."
+        etiquetaCerrar="Cerrar formulario"
+        onCerrar={cerrarFormulario}
+        cerrarConEscape={false}
+      >
+        {vista === "ciclos" && (
+          <FormularioCiclo
+            form={cicloForm}
+            setForm={setCicloForm}
+            onSubmit={guardarCiclo}
+            onCancel={cerrarFormulario}
+          />
+        )}
+        {vista === "materias" && (
+          <FormularioMateria
+            ciclos={ciclos}
+            form={materiaForm}
+            setForm={setMateriaForm}
+            onSubmit={guardarMateria}
+            onCancel={cerrarFormulario}
+          />
+        )}
+        {vista === "horarios" && (
+          <FormularioHorario
+            materias={materias}
+            form={horarioForm}
+            setForm={setHorarioForm}
+            onSubmit={guardarHorario}
+            onCancel={cerrarFormulario}
+          />
+        )}
+        {vista === "actividades" && (
+          <FormularioActividades
+            materias={materias}
+            form={actividadForm}
+            setForm={setActividadForm}
+            onSubmit={guardarActividad}
+            onCancel={cerrarFormulario}
+          />
+        )}
+      </Modal>
     </section>
   );
 }
 
 function FormularioCiclo({ form, setForm, onSubmit, onCancel }) {
   return (
-    <form className="space-y-3" onSubmit={onSubmit}>
-      <Campo label="Nombre" value={form.nombre} onChange={(nombre) => setForm({ ...form, nombre })} />
-      <Campo label="Anio" type="number" value={form.anio} onChange={(anio) => setForm({ ...form, anio })} />
-      <Campo label="Fecha inicio" type="date" value={form.fechaInicio} onChange={(fechaInicio) => setForm({ ...form, fechaInicio })} />
-      <Campo label="Fecha fin" type="date" value={form.fechaFin} onChange={(fechaFin) => setForm({ ...form, fechaFin })} />
-      <Select label="Estado" value={form.estado} onChange={(estado) => setForm({ ...form, estado })} options={["PLANIFICADO", "ACTIVO", "FINALIZADO"]} />
-      <AccionesFormulario onCancel={onCancel} />
+    <form className="grid gap-4 sm:grid-cols-2" onSubmit={onSubmit}>
+      <CampoUi label="Nombre" value={form.nombre} onValorChange={(nombre) => setForm({ ...form, nombre })} />
+      <CampoUi label="Anio" type="number" value={form.anio} onValorChange={(anio) => setForm({ ...form, anio })} />
+      <CampoUi label="Fecha inicio" type="date" value={form.fechaInicio} onValorChange={(fechaInicio) => setForm({ ...form, fechaInicio })} />
+      <CampoUi label="Fecha fin" type="date" value={form.fechaFin} onValorChange={(fechaFin) => setForm({ ...form, fechaFin })} />
+      <Selector
+        className="sm:col-span-2"
+        label="Estado"
+        value={form.estado}
+        onValorChange={(estado) => setForm({ ...form, estado })}
+        options={["PLANIFICADO", "ACTIVO", "FINALIZADO"]}
+      />
+      <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:col-span-2 sm:flex-row sm:justify-end">
+        <Boton variante="secundario" onClick={onCancel}>
+          Cancelar
+        </Boton>
+        <Boton type="submit">Guardar</Boton>
+      </div>
     </form>
   );
 }
 
 function FormularioMateria({ ciclos, form, setForm, onSubmit, onCancel }) {
   return (
-    <form className="space-y-3" onSubmit={onSubmit}>
-      <Select
+    <form className="grid gap-4 sm:grid-cols-2" onSubmit={onSubmit}>
+      <Selector
+        className="sm:col-span-2"
         label="Ciclo"
         value={form.cicloAcademicoId}
-        onChange={(cicloAcademicoId) => setForm({ ...form, cicloAcademicoId })}
+        onValorChange={(cicloAcademicoId) => setForm({ ...form, cicloAcademicoId })}
         options={ciclos.map((ciclo) => ({ value: ciclo.id, label: `${ciclo.nombre} - ${ciclo.anio}` }))}
       />
-      <Campo label="Nombre" value={form.nombre} onChange={(nombre) => setForm({ ...form, nombre })} />
-      <Campo label="Codigo" value={form.codigo} onChange={(codigo) => setForm({ ...form, codigo })} />
-      <Campo label="Grupo teorico" value={form.grupoTeorico} onChange={(grupoTeorico) => setForm({ ...form, grupoTeorico })} />
-      <AccionesFormulario onCancel={onCancel} />
+      <CampoUi className="sm:col-span-2" label="Nombre" value={form.nombre} onValorChange={(nombre) => setForm({ ...form, nombre })} />
+      <CampoUi label="Codigo" value={form.codigo} onValorChange={(codigo) => setForm({ ...form, codigo })} />
+      <CampoUi label="Grupo teorico" value={form.grupoTeorico} onValorChange={(grupoTeorico) => setForm({ ...form, grupoTeorico })} />
+      <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:col-span-2 sm:flex-row sm:justify-end">
+        <Boton variante="secundario" onClick={onCancel}>
+          Cancelar
+        </Boton>
+        <Boton type="submit">Guardar</Boton>
+      </div>
     </form>
   );
 }
 
 function FormularioHorario({ materias, form, setForm, onSubmit, onCancel }) {
   return (
-    <form className="space-y-3" onSubmit={onSubmit}>
-      <Select
+    <form className="grid gap-4 sm:grid-cols-2" onSubmit={onSubmit}>
+      <Selector
+        className="sm:col-span-2"
         label="Materia"
         value={form.materiaInscritaId}
-        onChange={(materiaInscritaId) => setForm({ ...form, materiaInscritaId })}
+        onValorChange={(materiaInscritaId) => setForm({ ...form, materiaInscritaId })}
         options={materias.map((materia) => ({ value: materia.id, label: `${materia.codigo} - ${materia.nombre}` }))}
       />
-      <Select label="Dia" value={form.diaSemana} onChange={(diaSemana) => setForm({ ...form, diaSemana })} options={["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"]} />
-      <Select label="Modalidad" value={form.modalidad} onChange={(modalidad) => setForm({ ...form, modalidad })} options={["PRESENCIAL", "VIRTUAL", "HIBRIDA"]} />
-      <Campo label="Hora inicio" type="time" value={form.horaInicio} onChange={(horaInicio) => setForm({ ...form, horaInicio })} />
-      <Campo label="Hora fin" type="time" value={form.horaFin} onChange={(horaFin) => setForm({ ...form, horaFin })} />
-      <Campo label="Docente o tutor" required={false} value={form.docenteTutor} onChange={(docenteTutor) => setForm({ ...form, docenteTutor })} />
-      <AccionesFormulario onCancel={onCancel} />
+      <Selector label="Dia" value={form.diaSemana} onValorChange={(diaSemana) => setForm({ ...form, diaSemana })} options={["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"]} />
+      <Selector label="Modalidad" value={form.modalidad} onValorChange={(modalidad) => setForm({ ...form, modalidad })} options={["PRESENCIAL", "VIRTUAL", "HIBRIDA"]} />
+      <CampoUi label="Hora inicio" type="time" value={form.horaInicio} onValorChange={(horaInicio) => setForm({ ...form, horaInicio })} />
+      <CampoUi label="Hora fin" type="time" value={form.horaFin} onValorChange={(horaFin) => setForm({ ...form, horaFin })} />
+      <CampoUi className="sm:col-span-2" label="Docente o tutor" required={false} value={form.docenteTutor} onValorChange={(docenteTutor) => setForm({ ...form, docenteTutor })} />
+      <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:col-span-2 sm:flex-row sm:justify-end">
+        <Boton variante="secundario" onClick={onCancel}>
+          Cancelar
+        </Boton>
+        <Boton type="submit">Guardar</Boton>
+      </div>
     </form>
   );
 }
@@ -712,69 +717,147 @@ function FormularioHorario({ materias, form, setForm, onSubmit, onCancel }) {
 //form de actividades
 function FormularioActividades({ materias, form, setForm, onSubmit, onCancel }) {
   return (
-    <form className="space-y-3" onSubmit={onSubmit}>
-      <Select
+    <form className="grid gap-4 sm:grid-cols-2" onSubmit={onSubmit}>
+      <Selector
         label="Materia inscrita"
         value={form.materiaInscritaId}
-        onChange={(materiaInscritaId) => setForm({ ...form, materiaInscritaId })}
+        onValorChange={(materiaInscritaId) => setForm({ ...form, materiaInscritaId })}
         options={materias.map((materia) => ({ value: materia.id, label: `${materia.codigo} - ${materia.nombre}` }))}
       />
-      <Select label="Tipo de Actividad" value={form.tipoActividad} onChange={(tipoActividad) => setForm({ ...form, tipoActividad })} options={["PARCIAL", "LABORATORIO", "PROYECTO", "INVESTIGACION"]} />
-      <Campo label="Nombre" value={form.nombre} onChange={(nombre) => setForm({ ...form, nombre })} />
-      <Campo label="Porcentaje de evaluacion (ej. 10%)" type="number" value={form.porcentajeEvaluacion} onChange={(porcentajeEvaluacion) => setForm({ ...form, porcentajeEvaluacion })} />
-      <Campo label="Fecha inicio" type="datetime-local" value={form.fechaInicio} onChange={(fechaInicio) => setForm({ ...form, fechaInicio })} />
-      <Campo label="Fecha Entrega" type="datetime-local" value={form.fechaEntrega} onChange={(fechaEntrega) => setForm({ ...form, fechaEntrega })} />
-      <Campo label="Tiempo estimado (horas)" type="number" value={form.tiempoEstimadoHoras} onChange={(tiempoEstimadoHoras) => setForm({ ...form, tiempoEstimadoHoras })} />
-      <Campo label="Nota obtenida" type="number" required={false} value={form.notaObtenida} onChange={(notaObtenida) => setForm({ ...form, notaObtenida })} />
-      <AccionesFormulario onCancel={onCancel} />
+      <Selector label="Tipo de Actividad" value={form.tipoActividad} onValorChange={(tipoActividad) => setForm({ ...form, tipoActividad })} options={["PARCIAL", "LABORATORIO", "PROYECTO", "INVESTIGACION"]} />
+      <CampoUi className="sm:col-span-2" label="Nombre" value={form.nombre} onValorChange={(nombre) => setForm({ ...form, nombre })} />
+      <CampoUi className="sm:col-span-2" label="Porcentaje de evaluacion (ej. 10%)" type="number" value={form.porcentajeEvaluacion} onValorChange={(porcentajeEvaluacion) => setForm({ ...form, porcentajeEvaluacion })} />
+      <CampoUi label="Fecha inicio" type="datetime-local" value={form.fechaInicio} onValorChange={(fechaInicio) => setForm({ ...form, fechaInicio })} />
+      <CampoUi label="Fecha Entrega" type="datetime-local" value={form.fechaEntrega} onValorChange={(fechaEntrega) => setForm({ ...form, fechaEntrega })} />
+      <CampoUi label="Tiempo estimado (horas)" type="number" value={form.tiempoEstimadoHoras} onValorChange={(tiempoEstimadoHoras) => setForm({ ...form, tiempoEstimadoHoras })} />
+      <CampoUi label="Nota obtenida" type="number" required={false} value={form.notaObtenida} onValorChange={(notaObtenida) => setForm({ ...form, notaObtenida })} />
+      <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:col-span-2 sm:flex-row sm:justify-end">
+        <Boton variante="secundario" onClick={onCancel}>
+          Cancelar
+        </Boton>
+        <Boton type="submit">Guardar</Boton>
+      </div>
     </form>
   );
 }
 
+const TONOS_ESTADO_CICLO = {
+  PLANIFICADO: "info",
+  ACTIVO: "exito",
+  FINALIZADO: "neutro",
+};
+
 function TablaCiclos({ ciclos, onEdit, onDelete }) {
   return (
-    <Tabla
-      columnas={["Nombre", "Anio", "Periodo", "Estado"]}
-      filas={ciclos.map((ciclo) => ({
-        id: ciclo.id,
-        celdas: [ciclo.nombre, ciclo.anio, `${ciclo.fechaInicio} a ${ciclo.fechaFin}`, ciclo.estado],
-        item: ciclo,
-      }))}
-      onEdit={onEdit}
-      onDelete={onDelete}
-    />
+    <Tarjeta titulo="Registros" nivelTitulo={2}>
+      <TablaUi
+        columnas={[
+          { titulo: "Nombre", className: "min-w-40" },
+          "Anio",
+          { titulo: "Periodo", className: "whitespace-nowrap" },
+          "Estado",
+          "Acciones",
+        ]}
+        filas={ciclos.map((ciclo) => ({
+          id: ciclo.id,
+          celdas: [
+            ciclo.nombre,
+            ciclo.anio,
+            `${ciclo.fechaInicio} a ${ciclo.fechaFin}`,
+            ciclo.estado && <Insignia tono={TONOS_ESTADO_CICLO[ciclo.estado]}>{ciclo.estado}</Insignia>,
+            <div className="flex gap-2">
+              <Boton variante="secundario" tamano="sm" onClick={() => onEdit(ciclo)}>
+                Editar
+              </Boton>
+              <Boton variante="peligro" tamano="sm" onClick={() => onDelete(ciclo.id)}>
+                Eliminar
+              </Boton>
+            </div>,
+          ],
+        }))}
+      />
+    </Tarjeta>
   );
 }
 
 function TablaMaterias({ materias, onEdit, onDelete }) {
   return (
-    <Tabla
-      columnas={["Codigo", "Materia", "Ciclo", "Grupo"]}
-      filas={materias.map((materia) => ({
-        id: materia.id,
-        celdas: [materia.codigo, materia.nombre, materia.cicloAcademicoNombre, materia.grupoTeorico],
-        item: materia,
-      }))}
-      onEdit={onEdit}
-      onDelete={onDelete}
-    />
+    <Tarjeta titulo="Registros" nivelTitulo={2}>
+      <TablaUi
+        columnas={[
+          { titulo: "Codigo", className: "whitespace-nowrap font-semibold" },
+          { titulo: "Materia", className: "min-w-40" },
+          { titulo: "Ciclo", className: "min-w-32" },
+          { titulo: "Grupo", className: "whitespace-nowrap" },
+          "Acciones",
+        ]}
+        filas={materias.map((materia) => ({
+          id: materia.id,
+          celdas: [
+            materia.codigo,
+            materia.nombre,
+            materia.cicloAcademicoNombre,
+            materia.grupoTeorico,
+            <div className="flex gap-2">
+              <Boton variante="secundario" tamano="sm" onClick={() => onEdit(materia)}>
+                Editar
+              </Boton>
+              <Boton variante="peligro" tamano="sm" onClick={() => onDelete(materia.id)}>
+                Eliminar
+              </Boton>
+            </div>,
+          ],
+        }))}
+      />
+    </Tarjeta>
   );
 }
 
 function TablaHorarios({ horarios, onEdit, onDelete }) {
   return (
-    <Tabla
-      columnas={["Dia", "Horario", "Materia", "Modalidad"]}
-      filas={horarios.map((horario) => ({
-        id: horario.id,
-        celdas: [horario.diaSemana, `${horario.horaInicio} - ${horario.horaFin}`, horario.materiaNombre, horario.modalidad],
-        item: horario,
-      }))}
-      onEdit={onEdit}
-      onDelete={onDelete}
-    />
+    <Tarjeta titulo="Registros" nivelTitulo={2}>
+      <TablaUi
+        columnas={[
+          { titulo: "Dia", className: "whitespace-nowrap font-semibold" },
+          { titulo: "Horario", className: "whitespace-nowrap" },
+          { titulo: "Materia", className: "min-w-40" },
+          { titulo: "Modalidad", className: "whitespace-nowrap" },
+          "Acciones",
+        ]}
+        filas={horarios.map((horario) => ({
+          id: horario.id,
+          celdas: [
+            horario.diaSemana,
+            `${horario.horaInicio} - ${horario.horaFin}`,
+            horario.materiaNombre,
+            horario.modalidad,
+            <div className="flex gap-2">
+              <Boton variante="secundario" tamano="sm" onClick={() => onEdit(horario)}>
+                Editar
+              </Boton>
+              <Boton variante="peligro" tamano="sm" onClick={() => onDelete(horario.id)}>
+                Eliminar
+              </Boton>
+            </div>,
+          ],
+        }))}
+      />
+    </Tarjeta>
   );
 }
+
+const TONOS_PRIORIDAD_ACTIVIDAD = {
+  Alta: "peligro",
+  Media: "advertencia",
+  Baja: "neutro",
+  "Sin fecha": "neutro",
+};
+
+const TONOS_RENDIMIENTO = {
+  "Sin actividades": "neutro",
+  "Con rendimiento registrado": "exito",
+  "Pendiente de notas": "advertencia",
+};
 
 function TablaActividades({ actividades, materias, onEdit, onDelete, onComplete, onReactivate }) {
   const obtenerNombreMateria = (materiaId) => {
@@ -827,30 +910,63 @@ function TablaActividades({ actividades, materias, onEdit, onDelete, onComplete,
   });
 
   return (
-    <Tabla
-      columnas={["Prioridad", "Tipo", "Materia", "%", "Nombre", "Entrega", "Horas", "Nota", "Estado"]}
-      filas={actividadesPriorizadas.map((actividad) => ({
-        id: actividad.id ?? actividad.idActividad,
-        celdas: [
-          obtenerPrioridad(actividad),
-          actividad.tipoActividad,
-          obtenerNombreMateria(actividad.materiaInscritaId),
-          `${actividad.porcentajeEvaluacion}%`,
-          actividad.nombre,
-          actividad.fechaEntrega,
-          actividad.tiempoEstimadoHoras ? `${actividad.tiempoEstimadoHoras} hrs` : "Sin dato",
-          actividad.notaObtenida !== null && actividad.notaObtenida !== undefined
-            ? actividad.notaObtenida
-            : "Sin nota",
-          actividad.estado || "ACTIVO",
-        ],
-        item: actividad,
-      }))}
-      onEdit={onEdit}
-      onDelete={onDelete}
-      onComplete={onComplete}
-      onReactivate={onReactivate}
-    />
+    <Tarjeta titulo="Registros" nivelTitulo={2}>
+      <TablaUi
+        compacta
+        columnas={[
+          "Prioridad",
+          { titulo: "Tipo", className: "whitespace-nowrap" },
+          { titulo: "Materia", className: "whitespace-nowrap" },
+          { titulo: "%", alinear: "derecha" },
+          { titulo: "Nombre", className: "min-w-48" },
+          { titulo: "Entrega", className: "whitespace-nowrap" },
+          { titulo: "Horas", className: "whitespace-nowrap" },
+          { titulo: "Nota", className: "whitespace-nowrap" },
+          "Estado",
+          "Acciones",
+        ]}
+        filas={actividadesPriorizadas.map((actividad) => {
+          const id = actividad.id ?? actividad.idActividad;
+          const prioridad = obtenerPrioridad(actividad);
+          const estado = actividad.estado || "ACTIVO";
+
+          return {
+            id,
+            celdas: [
+              <Insignia tono={TONOS_PRIORIDAD_ACTIVIDAD[prioridad]}>{prioridad}</Insignia>,
+              actividad.tipoActividad,
+              obtenerNombreMateria(actividad.materiaInscritaId),
+              `${actividad.porcentajeEvaluacion}%`,
+              actividad.nombre,
+              actividad.fechaEntrega,
+              actividad.tiempoEstimadoHoras ? `${actividad.tiempoEstimadoHoras} hrs` : "Sin dato",
+              // Como en la tabla anterior, una nota 0 se muestra como «Sin dato»
+              actividad.notaObtenida !== null && actividad.notaObtenida !== undefined
+                ? actividad.notaObtenida || "Sin dato"
+                : "Sin nota",
+              <Insignia tono={estado === "COMPLETADA" ? "exito" : "info"}>{estado}</Insignia>,
+              <div className="flex gap-2">
+                <Boton variante="secundario" tamano="sm" onClick={() => onEdit(actividad)}>
+                  Editar
+                </Boton>
+                {estado !== "COMPLETADA" ? (
+                  <Boton tamano="sm" onClick={() => onComplete(actividad)}>
+                    Completar
+                  </Boton>
+                ) : (
+                  <Boton variante="secundario" tamano="sm" onClick={() => onReactivate(actividad)}>
+                    Reactivar
+                  </Boton>
+                )}
+                <Boton variante="peligro" tamano="sm" onClick={() => onDelete(id)}>
+                  Eliminar
+                </Boton>
+              </div>,
+            ],
+          };
+        })}
+      />
+    </Tarjeta>
   );
 }
 
@@ -890,211 +1006,40 @@ function ReporteRendimientoPorMateria({ actividades, materias }) {
   });
 
   return (
-    <Panel titulo="Reporte de rendimiento por materia">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[680px] text-left text-sm">
-          <thead className="bg-[#430000]/10 text-[#430000]">
-            <tr>
-              <th className="px-3 py-2">Materia</th>
-              <th className="px-3 py-2">Actividades</th>
-              <th className="px-3 py-2">Completadas</th>
-              <th className="px-3 py-2">Porcentaje evaluado</th>
-              <th className="px-3 py-2">Promedio de notas</th>
-              <th className="px-3 py-2">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reportes.map((reporte) => (
-              <tr key={reporte.id} className="border-b border-[#430000]/10">
-                <td className="px-3 py-2">
-                  {reporte.codigo} - {reporte.nombre}
-                </td>
-                <td className="px-3 py-2">{reporte.totalActividades}</td>
-                <td className="px-3 py-2">{reporte.actividadesCompletadas}</td>
-                <td className="px-3 py-2">{reporte.porcentajeEvaluado}%</td>
-                <td className="px-3 py-2">
-                  {reporte.promedioNotas !== null
-                    ? reporte.promedioNotas.toFixed(2)
-                    : "Sin notas"}
-                </td>
-                <td className="px-3 py-2">
-                  {reporte.totalActividades === 0
-                    ? "Sin actividades"
-                    : reporte.promedioNotas !== null
-                    ? "Con rendimiento registrado"
-                    : "Pendiente de notas"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <Tarjeta titulo="Reporte de rendimiento por materia" nivelTitulo={2}>
+      <TablaUi
+        columnas={[
+          { titulo: "Materia", className: "min-w-48" },
+          { titulo: "Actividades", alinear: "derecha" },
+          { titulo: "Completadas", alinear: "derecha" },
+          { titulo: "Porcentaje evaluado", alinear: "derecha" },
+          { titulo: "Promedio de notas", alinear: "derecha" },
+          "Estado",
+        ]}
+        mensajeVacio="No hay materias registradas para generar el reporte."
+        filas={reportes.map((reporte) => {
+          const estado = reporte.totalActividades === 0
+            ? "Sin actividades"
+            : reporte.promedioNotas !== null
+            ? "Con rendimiento registrado"
+            : "Pendiente de notas";
 
-        {reportes.length === 0 && (
-          <p className="p-4 text-sm text-[#430000]/60">
-            No hay materias registradas para generar el reporte.
-          </p>
-        )}
-      </div>
-    </Panel>
-  );
-}
-
-function Tabla({ columnas, filas, onEdit, onDelete, onComplete, onReactivate }) {
-  return (
-    <Panel titulo="Registros">
-      <div className="w-full max-w-full overflow-x-auto">
-        <table className="w-max min-w-full text-left text-xs">
-          <thead className="bg-[#430000]/10 text-[#430000]">
-            <tr>
-              {columnas.map((columna) => (
-                <th key={columna} className="px-2 py-2">{columna}</th>
-              ))}
-              <th className="px-2 py-2">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filas.map((fila) => (
-              <tr key={fila.id} className="border-b border-[#430000]/10">
-                {fila.celdas.map((celda, index) => (
-                  <td key={`${fila.id}-${index}`} className="px-2 py-2">{celda || "Sin dato"}</td>
-                ))}
-                <td className="whitespace-nowrap px-3 py-2">
-                  <div className="flex gap-2">
-                    <button
-                      className="rounded bg-[#430000]/10 px-3 py-1 font-semibold"
-                      type="button"
-                      onClick={() => onEdit(fila.item)}
-                    >
-                      Editar
-                    </button>
-
-                    {onComplete && (fila.item.estado || "ACTIVO") !== "COMPLETADA" && (
-                      <button
-                        className="rounded bg-green-700 px-3 py-1 font-semibold text-white"
-                        type="button"
-                        onClick={() => onComplete(fila.item)}
-                      >
-                        Completar
-                      </button>
-                    )}
-
-                    {onReactivate && (fila.item.estado || "ACTIVO") === "COMPLETADA" && (
-                      <button
-                        className="rounded bg-amber-600 px-3 py-1 font-semibold text-white"
-                        type="button"
-                        onClick={() => onReactivate(fila.item)}
-                      >
-                        Reactivar
-                      </button>
-                    )}
-
-                    <button
-                      className="rounded bg-[#960000] px-3 py-1 font-semibold text-white"
-                      type="button"
-                      onClick={() => onDelete(fila.id)}
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {filas.length === 0 && <p className="p-4 text-sm text-[#430000]/60">No hay registros.</p>}
-      </div>
-    </Panel>
-  );
-}
-
-function Panel({ titulo, children }) {
-  return (
-    <div className="rounded-xl border border-[#430000]/20 bg-white p-5 shadow-sm">
-      <h3 className="mb-4 text-lg font-black text-[#430000]">{titulo}</h3>
-      {children}
-    </div>
-  );
-}
-
-function Campo({ label, value, onChange, type = "text", required = true }) {
-  const inputRef = useRef(null);
-  const hasPicker = type === "date" || type === "time";
-  const pickerIcon = type === "date" ? "fa-calendar-days" : "fa-clock";
-
-  function abrirPicker() {
-    if (inputRef.current?.showPicker) {
-      inputRef.current.showPicker();
-      return;
-    }
-
-    inputRef.current?.focus();
-  }
-
-  return (
-    <label className="block text-sm font-semibold text-[#430000]">
-      {label}
-      <div className="relative mt-1">
-        <input
-          ref={inputRef}
-          required={required}
-          className={`block w-full rounded-lg border border-[#430000]/20 bg-white px-3 py-2 text-[#430000] outline-none transition focus:border-[#960000] focus:ring-2 focus:ring-[#960000]/20 ${
-            hasPicker ? "pr-11" : ""
-          }`}
-          type={type}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-        />
-
-        {hasPicker && (
-          <button
-            aria-label={`Abrir selector de ${label.toLowerCase()}`}
-            className="absolute inset-y-1 right-1 flex w-9 items-center justify-center rounded-md text-[#960000] transition hover:bg-[#960000]/10"
-            type="button"
-            onClick={abrirPicker}
-          >
-            <i className={`fa-solid ${pickerIcon}`}></i>
-          </button>
-        )}
-      </div>
-    </label>
-  );
-}
-
-function Select({ label, value, onChange, options }) {
-  return (
-    <label className="block text-sm font-semibold text-[#430000]">
-      {label}
-      <select
-        required
-        className="mt-1 block w-full rounded-lg border border-[#430000]/20 px-3 py-2"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        <option value="">Seleccione</option>
-        {options.map((option) => {
-          const valueOption = typeof option === "string" ? option : option.value;
-          const labelOption = typeof option === "string" ? option : option.label;
-          return <option key={valueOption} value={valueOption}>{labelOption}</option>;
+          return {
+            id: reporte.id,
+            celdas: [
+              <>{reporte.codigo} - {reporte.nombre}</>,
+              reporte.totalActividades,
+              reporte.actividadesCompletadas,
+              `${reporte.porcentajeEvaluado}%`,
+              reporte.promedioNotas !== null
+                ? reporte.promedioNotas.toFixed(2)
+                : "Sin notas",
+              <Insignia tono={TONOS_RENDIMIENTO[estado]}>{estado}</Insignia>,
+            ],
+          };
         })}
-      </select>
-    </label>
-  );
-}
-
-function AccionesFormulario({ onCancel }) {
-  return (
-    <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-      <button
-        className="rounded-lg border border-[#430000]/20 px-4 py-2 font-bold text-[#430000] transition hover:bg-[#430000]/5"
-        type="button"
-        onClick={onCancel}
-      >
-        Cancelar
-      </button>
-      <button className="rounded-lg bg-[#960000] px-4 py-2 font-bold text-white transition hover:bg-[#750000]" type="submit">
-        Guardar
-      </button>
-    </div>
+      />
+    </Tarjeta>
   );
 }
 

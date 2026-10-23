@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import {
   alExpirarSesion,
@@ -19,6 +19,8 @@ import { RegistroJornada } from "./components/GestionJornadaLaboral.jsx";
 import CalendarioAcademico from "./components/CalendarioAcademico.jsx";
 import ConfiguracionNotificaciones from "./components/ConfiguracionNotificaciones.jsx";
 import NotificacionesProximas from "./components/NotificacionesProximas.jsx";
+import Boton from "./components/ui/Boton";
+import { unirClases } from "./components/ui/unirClases";
 function App() {
 
   const [logueado, setLogueado] = useState(
@@ -32,6 +34,8 @@ function App() {
   const [vistaActiva, setVistaActiva] =
     useState("dashboard");
   const [actualizacionNotificaciones, setActualizacionNotificaciones] = useState(0);
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const botonMenuRef = useRef(null);
 
   const cerrarSesion = () => {
 
@@ -80,112 +84,144 @@ function App() {
     );
   }
 
+  // En móvil el menú se pliega: elegir un módulo lo cierra y devuelve al contenido
+  const navegarDesdeMenu = (vista) => {
+    setVistaActiva(vista);
+    setMenuAbierto(false);
+  };
+
+  const cerrarMenuConEscape = (evento) => {
+    if (evento.key === "Escape" && menuAbierto) {
+      setMenuAbierto(false);
+      botonMenuRef.current?.focus();
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#ffffff] flex flex-col md:flex-row w-full overflow-x-hidden font-sans text-[#430000]">
+    <div className="min-h-screen bg-canvas flex flex-col md:flex-row w-full overflow-x-hidden font-sans text-ink-900">
 
-      <Sidebar
-        vistaActiva={vistaActiva}
-        setVistaActiva={setVistaActiva}
-        cerrarSesion={cerrarSesion}
-      />
+      <div className="border-b border-line bg-surface p-4 md:hidden">
+        <Boton
+          ref={botonMenuRef}
+          variante="secundario"
+          icono={menuAbierto ? "fa-solid fa-xmark" : "fa-solid fa-bars"}
+          aria-expanded={menuAbierto}
+          aria-controls="menu-principal"
+          onClick={() => setMenuAbierto((abierto) => !abierto)}
+          className="min-h-11 w-full"
+        >
+          {menuAbierto ? "Cerrar menú" : "Menú"}
+        </Boton>
+      </div>
 
-      <div className="flex-1 flex relative z-20 items-stretch overflow-hidden min-w-0 bg-[#ffffff]">
+      <div
+        id="menu-principal"
+        className={unirClases(menuAbierto ? "block" : "hidden", "md:flex")}
+        onKeyDown={cerrarMenuConEscape}
+      >
+        <Sidebar
+          vistaActiva={vistaActiva}
+          setVistaActiva={navegarDesdeMenu}
+          cerrarSesion={cerrarSesion}
+        />
+      </div>
 
-        <div className="container mx-auto px-6 flex flex-col xl:flex-row relative py-8 gap-8 items-stretch w-full">
+      <main className="relative z-20 min-w-0 flex-1">
 
-          <div className="absolute right-6 top-4 sm:top-6 flex items-center gap-3 rounded-lg border border-[#430000]/20 bg-[#ffffff] px-4 py-2 text-right shadow-sm">
+        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
 
-            <i className="fa-solid fa-user-graduate text-[#960000]"></i>
+          <header className="mb-6 flex flex-col-reverse gap-4 sm:flex-row sm:items-start sm:justify-between">
 
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#430000]/50">
-                Estudiante
+            <div className="min-w-0">
+
+              <span className="mb-4 block h-1.5 w-16 rounded-full bg-brand-700" aria-hidden="true"></span>
+
+              <p className="text-sm font-bold uppercase tracking-widest text-brand-700">
+                SACA UES
               </p>
 
-              <p className="max-w-44 truncate text-sm font-black text-[#430000]">
-                {estudiante?.nombre || "Sin estudiante"}
-              </p>
+              <h1 className="mt-1 text-3xl font-extrabold uppercase leading-tight tracking-tight text-ink-900 sm:text-4xl">
+                {vistaActiva === "dashboard" && "Panel de control"}
+                {vistaActiva === "academico" && "Gestión académica"}
+                {vistaActiva === "perfil" && "Perfil académico"}
+                {vistaActiva === "analisis" && "Análisis de carga"}
+                {vistaActiva === "disponibilidad" && "Gestión de disponibilidad"}
+                {vistaActiva === "jornada" && "Gestión de jornada laboral"}
+                {vistaActiva === "calendario" && "Calendario académico"}
+                {vistaActiva === "notificaciones" && "Notificaciones"}
+              </h1>
+
             </div>
 
-            <NotificacionesProximas
-              estudiante={estudiante}
-              onConfigurar={() => setVistaActiva("notificaciones")}
-              actualizacion={actualizacionNotificaciones}
-            />
+            <div className="flex shrink-0 items-center gap-3 self-end rounded-lg border border-line bg-surface px-4 py-2 text-right shadow-sm sm:self-start">
+
+              <i className="fa-solid fa-user-graduate text-brand-700" aria-hidden="true"></i>
+
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-widest text-ink-600">
+                  Estudiante
+                </p>
+
+                <p className="max-w-44 truncate text-sm font-bold text-ink-900">
+                  {estudiante?.nombre || "Sin estudiante"}
+                </p>
+              </div>
+
+              <NotificacionesProximas
+                estudiante={estudiante}
+                onConfigurar={() => setVistaActiva("notificaciones")}
+                actualizacion={actualizacionNotificaciones}
+              />
+
+            </div>
+
+          </header>
+
+          <div className="w-full">
+
+            {vistaActiva === "dashboard" && (
+              <PanelControlAcademico
+                estudiante={estudiante}
+                onNavegar={setVistaActiva}
+              />
+            )}
+
+            {vistaActiva === "academico" && (
+              <GestionAcademica estudiante={estudiante} />
+            )}
+
+            {vistaActiva === "perfil" && (
+              <PerfilAcademico estudiante={estudiante} />
+            )}
+
+            {vistaActiva === "analisis" && (
+              <TableroCargaSemanal estudiante={estudiante} onNavegar={setVistaActiva} />
+            )}
+
+            {vistaActiva === "disponibilidad" && <GestionDisponiblidad estudiante={estudiante} />}
+
+            {vistaActiva === "jornada" && (
+              <RegistroJornada estudiante={estudiante} />
+            )}
+
+            {vistaActiva === "calendario" && (
+              <CalendarioAcademico
+                estudiante={estudiante}
+              />
+            )}
+
+            {vistaActiva === "notificaciones" && (
+              <ConfiguracionNotificaciones
+                estudiante={estudiante}
+                onPreferenciasGuardadas={() => setActualizacionNotificaciones((actual) => actual + 1)}
+              />
+            )}
 
           </div>
 
-          <div className="w-full min-w-0 pt-16 sm:pt-12 flex flex-col justify-start">
-
-            <span className="w-20 h-2 bg-[#960000] mb-6 block rounded-full"></span>
-
-            <h1 className="font-extrabold uppercase text-4xl sm:text-5xl flex flex-col leading-none text-[#430000] tracking-tight mb-2">
-
-              SACA UES
-
-              <span className="text-3xl sm:text-4xl text-[#960000] font-black mt-1">
-                {vistaActiva === "dashboard" && "Panel de Control"}
-                {vistaActiva === "academico" && "Gestión Académica"}
-                {vistaActiva === "perfil" && "Perfil Académico"}
-                {vistaActiva === "analisis" && "Análisis de Carga"}
-                 {vistaActiva === "disponibilidad" && "Gestión disponibilidad"}
-                  {vistaActiva === "jornada" && "Gestión de Jornada Laboral"}
-                  {vistaActiva === "calendario" && "Calendario Académico"}
-                  {vistaActiva === "notificaciones" && "Notificaciones"}
-              </span>
-
-            </h1>
-
-            <p className="text-xs text-[#430000]/60 mb-6 leading-relaxed max-w-2xl">
-              Sistema de Análisis de Carga Académica.
-            </p>
-
-            <div className="w-full flex-1">
-
-              {vistaActiva === "dashboard" && (
-                <PanelControlAcademico
-                  estudiante={estudiante}
-                  onNavegar={setVistaActiva}
-                />
-              )}
-
-              {vistaActiva === "academico" && (
-                <GestionAcademica estudiante={estudiante} />
-              )}
-
-              {vistaActiva === "perfil" && (
-                <PerfilAcademico estudiante={estudiante} />
-              )}
-
-              {vistaActiva === "analisis" && (
-                <TableroCargaSemanal estudiante={estudiante} onNavegar={setVistaActiva} />
-              )}
-              {vistaActiva === "disponibilidad" && <GestionDisponiblidad estudiante={estudiante} />}
-
-          
-               {vistaActiva === "jornada" && (
-   <RegistroJornada estudiante={estudiante} />
-)}
-
-               {vistaActiva === "calendario" && (
-  <CalendarioAcademico
-    estudiante={estudiante}
-  />
-)}
-
-              {vistaActiva === "notificaciones" && (
-                <ConfiguracionNotificaciones
-                  estudiante={estudiante}
-                  onPreferenciasGuardadas={() => setActualizacionNotificaciones((actual) => actual + 1)}
-                />
-              )}
-               </div>
-
-             </div>
-
         </div>
 
-      </div>
+      </main>
 
     </div>
   );

@@ -170,7 +170,6 @@ export const RegistroJornada = ({ estudiante }) => {
     <div className="w-full animate-fade-in">
       <EncabezadoModulo
         className="mb-5"
-        titulo="Jornada laboral"
         descripcion="Administra tus horarios de trabajo por día."
         acciones={
           <Boton icono="fa-solid fa-plus" onClick={abrirFormularioNuevo}>
@@ -186,7 +185,7 @@ export const RegistroJornada = ({ estudiante }) => {
       )}
 
       {/* Contenedor de la tabla */}
-      <Tarjeta titulo="Jornadas Laborales Registradas">
+      <Tarjeta titulo="Jornadas laborales registradas" nivelTitulo={2}>
         <Campo
           className="mb-4 w-full sm:w-60"
           required={false}
@@ -261,7 +260,7 @@ export const RegistroJornada = ({ estudiante }) => {
       {/* MODAL DE CONFIRMACIÓN: como antes, no se cierra con Escape ni pulsando fuera */}
       <DialogoConfirmacion
         abierto={modalEliminar.isOpen}
-        titulo="¿Eliminar Jornada Laboral?"
+        titulo="¿Eliminar jornada laboral?"
         mensaje={
           <>
             ¿Estás seguro de que deseas eliminar la jornada del día{' '}

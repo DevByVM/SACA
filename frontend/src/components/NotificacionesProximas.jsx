@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { obtenerNotificacionesProximas } from "../api/notificacionesApi";
+import Aviso from "./ui/Aviso";
+import Boton from "./ui/Boton";
+import EstadoVacio from "./ui/EstadoVacio";
+import Insignia from "./ui/Insignia";
 
 function formatearTipoActividad(tipoActividad) {
   return String(tipoActividad || "ACTIVIDAD")
@@ -58,13 +62,13 @@ function NotificacionesProximas({ estudiante, onConfigurar, actualizacion }) {
         onClick={() => setAbierto((estadoActual) => !estadoActual)}
         aria-expanded={abierto}
         aria-controls="notificaciones-proximas"
-        className="relative inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#430000]/20 bg-[#ffffff] text-[#960000] shadow-sm transition-colors hover:bg-[#960000]/10 focus:outline-none focus:ring-2 focus:ring-[#960000] focus:ring-offset-2"
+        className="relative inline-flex h-11 w-11 items-center justify-center rounded-xl border border-line bg-surface text-brand-700 shadow-sm transition-colors hover:bg-brand-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2"
         title="Ver notificaciones próximas"
       >
         <i className="fa-solid fa-bell text-lg" aria-hidden="true"></i>
         <span className="sr-only">Ver notificaciones próximas</span>
         {!cargando && !error && notificaciones.length > 0 && (
-          <span className="absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#960000] px-1 text-[10px] font-bold text-[#ffffff]">
+          <span className="absolute -right-2 -top-2 flex min-h-6 min-w-6 items-center justify-center rounded-full bg-brand-700 px-1.5 text-xs font-bold text-white ring-2 ring-surface">
             {notificaciones.length}
           </span>
         )}
@@ -73,62 +77,47 @@ function NotificacionesProximas({ estudiante, onConfigurar, actualizacion }) {
       {abierto && (
         <section
           id="notificaciones-proximas"
-          className="absolute right-0 top-full z-30 mt-3 w-[min(24rem,calc(100vw-3rem))] overflow-hidden rounded-2xl border border-[#430000]/20 bg-[#ffffff] shadow-lg"
+          className="absolute right-0 top-full z-30 mt-3 w-[min(24rem,calc(100vw-3rem))] overflow-hidden rounded-xl border border-line bg-surface shadow-lg"
         >
-          <header className="flex items-start justify-between gap-4 border-b border-[#430000]/15 px-5 py-4">
-            <div>
-              <h2 className="flex items-center gap-2 text-lg font-bold text-[#430000]">
-                <i className="fa-solid fa-bell text-[#960000]" aria-hidden="true"></i>
+          <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+            <div className="min-w-0">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-ink-900">
+                <i className="fa-solid fa-bell text-brand-700" aria-hidden="true"></i>
                 Próximas entregas
               </h2>
-              <p className="mt-1 text-xs text-[#430000]/60">
+              <p className="mt-1 text-sm text-ink-600">
                 Actividades que coinciden con tus preferencias de notificación.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setAbierto(false)}
-              className="text-sm font-bold text-[#960000] hover:text-[#430000]"
-            >
+            <Boton variante="texto" onClick={() => setAbierto(false)} className="shrink-0">
               Cerrar
-            </button>
+            </Boton>
           </header>
 
-          <div className="max-h-96 overflow-y-auto p-5">
+          <div className="max-h-96 overflow-y-auto p-4 sm:p-5">
             {cargando && (
-              <p className="text-sm font-medium text-[#430000] animate-pulse">
-                Cargando próximas entregas...
-              </p>
+              <EstadoVacio cargando mensaje="Cargando próximas entregas..." />
             )}
 
             {!cargando && error && (
-              <div className="space-y-3" role="alert">
-                <p className="rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800">
-                  {error}
-                </p>
-                <button
-                  type="button"
-                  onClick={cargarNotificaciones}
-                  className="rounded-lg border border-[#960000] px-3 py-2 text-xs font-bold text-[#960000] transition-colors hover:bg-[#960000] hover:text-[#eeeeee]"
-                >
+              <div className="space-y-3">
+                <Aviso tono="peligro">{error}</Aviso>
+                <Boton variante="secundario" tamano="sm" icono="fa-solid fa-rotate-right" onClick={cargarNotificaciones}>
                   Reintentar
-                </button>
+                </Boton>
               </div>
             )}
 
             {!cargando && !error && notificaciones.length === 0 && (
-              <div className="space-y-3 rounded-xl border border-[#430000]/15 bg-[#430000]/5 p-4">
-                <p className="text-sm text-[#430000]/75">
-                  No hay actividades próximas que coincidan con tus preferencias.
-                </p>
-                <button
-                  type="button"
-                  onClick={onConfigurar}
-                  className="text-xs font-bold text-[#960000] underline underline-offset-2"
-                >
-                  Configurar tipos de notificación
-                </button>
-              </div>
+              <EstadoVacio
+                icono="fa-regular fa-bell-slash"
+                mensaje="No hay actividades próximas que coincidan con tus preferencias."
+                accion={
+                  <Boton variante="texto" onClick={onConfigurar}>
+                    Configurar tipos de notificación
+                  </Boton>
+                }
+              />
             )}
 
             {!cargando && !error && notificaciones.length > 0 && (
@@ -136,20 +125,20 @@ function NotificacionesProximas({ estudiante, onConfigurar, actualizacion }) {
                 {notificaciones.map((actividad) => (
                   <li
                     key={actividad.idActividad}
-                    className="rounded-xl border border-[#430000]/15 bg-[#ffffff] p-3"
+                    className="rounded-lg border border-line bg-surface p-3"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <span className="inline-flex min-h-6 items-center whitespace-nowrap rounded-md bg-[#960000]/10 px-2 py-1 text-[10px] font-bold leading-none text-[#430000]">
+                      <div className="min-w-0">
+                        <Insignia tono="marca">
                           {formatearTipoActividad(actividad.tipoActividadNombre || actividad.tipoActividad)}
-                        </span>
-                        <h3 className="mt-2 text-sm font-bold text-[#430000]">
+                        </Insignia>
+                        <h3 className="mt-2 break-words text-base font-semibold text-ink-900">
                           {actividad.nombre || "Actividad sin nombre"}
                         </h3>
                       </div>
-                      <i className="fa-solid fa-calendar-day text-[#960000]" aria-hidden="true"></i>
+                      <i className="fa-solid fa-calendar-day mt-1 text-brand-700" aria-hidden="true"></i>
                     </div>
-                    <p className="mt-2 text-xs text-[#430000]/70">
+                    <p className="mt-2 text-sm text-ink-600">
                       {actividad.materiaInscritaCodigo || "Materia no disponible"} · Entrega: {formatearFechaEntrega(actividad.fechaEntrega)}
                     </p>
                   </li>

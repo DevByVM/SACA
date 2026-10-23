@@ -10,6 +10,11 @@ import { guardarSesion } from "../api/sesion";
 // Importa las notificaciones emergentes (toast)
 import { toast } from "react-toastify";
 
+// Componentes compartidos del sistema de diseño
+import Boton from "./ui/Boton";
+import Campo from "./ui/Campo";
+import Tarjeta from "./ui/Tarjeta";
+
 /**
  * Componente Login
  * 
@@ -146,39 +151,40 @@ function Login({ onLoginSuccess }) {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#ffffff] p-6">
+        <main className="flex min-h-screen items-center justify-center bg-canvas px-4 py-8 sm:p-6">
 
             {/* Contenedor principal */}
-            <div className="w-full max-w-md p-8 rounded-2xl bg-[#ffffff] border border-[#430000]/20 shadow-lg">
+            <Tarjeta className="w-full max-w-md p-6 shadow-md sm:p-8">
 
                 {/* Encabezado */}
-                <div className="flex flex-col items-center mb-6">
+                <div className="mb-6 flex flex-col items-center text-center">
 
                     {/* Ícono decorativo */}
-                    <div className="w-20 h-20 rounded-full bg-[#960000]/10 border border-[#960000]/20 flex items-center justify-center mb-4">
-                        <i className="fa-solid fa-graduation-cap text-[#960000] text-4xl"></i>
+                    <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full border border-brand-200 bg-brand-50 text-brand-700">
+                        <i className="fa-solid fa-graduation-cap text-4xl" aria-hidden="true"></i>
                     </div>
 
                     {/* Nombre del sistema */}
-                    <h1 className="text-3xl font-bold text-[#430000] text-center">
+                    <h1 className="text-3xl font-bold text-ink-900">
                         SACA UES
                     </h1>
 
                     {/* Descripción */}
-                    <p className="text-sm text-[#430000]/60 mt-1">
+                    <p className="mt-1 text-sm text-ink-600">
                         Sistema de Análisis de Carga Académica
                     </p>
 
                     {/* Línea decorativa */}
-                    <div className="w-16 h-1 bg-[#960000] rounded-full mt-4"></div>
+                    <div className="mt-4 h-1 w-16 rounded-full bg-brand-700" aria-hidden="true"></div>
                 </div>
 
                 {/* Título dinámico */}
-                <h2 className="text-[#960000] text-center font-semibold mb-6">
+                <h2 className="mb-6 text-center text-lg font-semibold text-brand-700">
                     {modo === "login" ? "Iniciar Sesión" : "Registro"}
                 </h2>
 
                 {/* Formulario principal */}
+                {/* Sin required: los campos vacíos los rechaza el backend y su mensaje se muestra como aviso */}
                 <form
                     onSubmit={modo === "login" ? handleLogin : handleRegistro}
                     className="flex flex-col gap-4"
@@ -187,60 +193,57 @@ function Login({ onLoginSuccess }) {
                     {/* Campos exclusivos para registro */}
                     {modo === "registro" && (
                         <>
-                            <input
+                            <Campo
+                                label="Nombre"
                                 name="nombre"
+                                required={false}
                                 value={form.nombre}
-                                placeholder="Nombre"
-                                className="p-3 rounded-lg bg-[#eeeeee] border border-[#430000]/20 text-[#430000] outline-none focus:border-[#960000]"
                                 onChange={handleChange}
                             />
 
-                            <input
+                            <Campo
+                                label="Carnet"
                                 name="carnet"
+                                required={false}
                                 value={form.carnet}
-                                placeholder="Carnet"
-                                className="p-3 rounded-lg bg-[#eeeeee] border border-[#430000]/20 text-[#430000] outline-none focus:border-[#960000]"
                                 onChange={handleChange}
                             />
                         </>
                     )}
 
                     {/* Correo institucional */}
-                    <input
+                    <Campo
+                        label="Correo institucional"
                         name="correoInstitucional"
+                        required={false}
                         value={form.correoInstitucional}
                         autoComplete="off"
-                        placeholder="Correo institucional"
-                        className="p-3 rounded-lg bg-[#eeeeee] border border-[#430000]/20 text-[#430000] outline-none focus:border-[#960000]"
                         onChange={handleChange}
                     />
-
 
                     {/* Contraseña */}
-                    <input
+                    <Campo
+                        label="Contraseña"
                         name="contrasenia"
                         type="password"
+                        required={false}
                         value={form.contrasenia}
                         autoComplete="new-password"
-                        placeholder="Contraseña"
-                        className="p-3 rounded-lg bg-[#eeeeee] border border-[#430000]/20 text-[#430000] outline-none focus:border-[#960000]"
                         onChange={handleChange}
                     />
+
                     {/* Botón principal */}
-                    <button
-                        type="submit"
-                        className="bg-[#960000] hover:bg-[#430000] text-[#eeeeee] font-bold p-3 rounded-lg transition-all"
-                    >
+                    <Boton type="submit" className="mt-2 min-h-11 w-full">
                         {modo === "login"
                             ? "Ingresar"
                             : "Registrarse"}
-                    </button>
-
+                    </Boton>
 
                 </form>
 
                 {/* Botón para cambiar entre login y registro */}
-                <button
+                <Boton
+                    variante="texto"
                     onClick={() => {
 
                         setForm({
@@ -256,15 +259,15 @@ function Login({ onLoginSuccess }) {
                                 : "login"
                         );
                     }}
-                    className="mt-5 text-sm text-[#430000]/70 hover:text-[#960000] w-full transition-colors"
+                    className="mt-5 w-full"
                 >
                     {modo === "login"
                         ? "¿No tienes cuenta? Regístrate"
                         : "¿Ya tienes cuenta? Inicia sesión"}
-                </button>
+                </Boton>
 
-            </div>
-        </div>
+            </Tarjeta>
+        </main>
     );
 }
 

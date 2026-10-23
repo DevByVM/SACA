@@ -170,7 +170,6 @@ function GestionDisponibilidad({ estudiante }) {
   return (
     <section className="space-y-5">
       <EncabezadoModulo
-        titulo="Disponibilidad Semanal"
         descripcion="Gestiona tus bloques de tiempo disponibles por cada ciclo académico."
         acciones={
           <Boton icono="fa-solid fa-plus" onClick={nuevoRegistro}>
@@ -180,7 +179,8 @@ function GestionDisponibilidad({ estudiante }) {
       />
 
       <Tarjeta
-        titulo="Bloques de Disponibilidad Registrados"
+        titulo="Bloques de disponibilidad registrados"
+        nivelTitulo={2}
         acciones={
           cargando && !cargaInicial && (
             <span className="text-sm text-ink-600">Cargando información...</span>

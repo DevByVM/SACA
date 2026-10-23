@@ -5,6 +5,10 @@ import {
   obtenerPerfilAcademico,
   actualizarPerfilAcademico
 } from "../services/perfilAcademicoService";
+import Boton from "./ui/Boton";
+import Campo from "./ui/Campo";
+import EncabezadoModulo from "./ui/EncabezadoModulo";
+import Tarjeta from "./ui/Tarjeta";
 
 function PerfilAcademico({ estudiante }) {
 
@@ -151,288 +155,148 @@ const guardarAcademico = async (e) => {
 };
 
   return (
-  <div className="space-y-8">
+  <section className="space-y-5">
 
-    {/* TARJETA ESTUDIANTE */}
-    <div className="bg-white border border-[#430000]/10 rounded-2xl shadow-sm p-6">
+    <EncabezadoModulo
+      descripcion="Consulta y actualiza tus datos de usuario y tu información académica."
+    />
 
-  <div className="flex items-start gap-4">
+    {/* RESUMEN DEL ESTUDIANTE */}
+    <Tarjeta>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
 
-    <div className="w-16 h-16 rounded-full bg-[#960000]/10 flex items-center justify-center">
-      <i className="fa-solid fa-user-graduate text-3xl text-[#960000]"></i>
-    </div>
-
-    <div className="flex-1">
-
-      <h2 className="text-2xl font-bold text-[#430000]">
-        {usuario.nombre || "Estudiante"}
-      </h2>
-
-      <p className="text-[#430000]/70">
-        Carnet: {usuario.carnet}
-      </p>
-
-      <p className="text-[#430000]/60 text-sm mb-4">
-       Correo: {usuario.correoInstitucional}
-      </p>
-
-      <div className="grid md:grid-cols-2 gap-3 text-sm">
-
-        <div className="bg-[#960000]/5 rounded-lg p-3">
-          <span className="font-semibold text-[#430000]">
-            Carrera:
-          </span>
-          <br />
-          {academico.carrera || "No registrada"}
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+          <i className="fa-solid fa-user-graduate text-3xl" aria-hidden="true"></i>
         </div>
 
-        <div className="bg-[#960000]/5 rounded-lg p-3">
-          <span className="font-semibold text-[#430000]">
-            Facultad:
-          </span>
-          <br />
-          {academico.facultad || "No registrada"}
-        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-xl font-bold text-ink-900">
+            {usuario.nombre || "Estudiante"}
+          </h2>
+          <p className="text-sm text-ink-600">Carnet: {usuario.carnet}</p>
+          <p className="break-words text-sm text-ink-600">Correo: {usuario.correoInstitucional}</p>
 
-        <div className="bg-[#960000]/5 rounded-lg p-3">
-          <span className="font-semibold text-[#430000]">
-            Fecha de ingreso:
-          </span>
-          <br />
-          {academico.fechaIngreso || "No registrada"}
-        </div>
-
-        <div className="bg-[#960000]/5 rounded-lg p-3">
-          <span className="font-semibold text-[#430000]">
-            Plan de estudio:
-          </span>
-          <br />
-          {academico.planEstudio || "No registrado"}
+          <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+            {[
+              ["Carrera", academico.carrera || "No registrada"],
+              ["Facultad", academico.facultad || "No registrada"],
+              ["Fecha de ingreso", academico.fechaIngreso || "No registrada"],
+              ["Plan de estudio", academico.planEstudio || "No registrado"],
+            ].map(([etiqueta, valor]) => (
+              <div key={etiqueta} className="rounded-lg bg-surface-muted p-3">
+                <dt className="font-semibold text-ink-900">{etiqueta}</dt>
+                <dd className="mt-1 break-words text-ink-600">{valor}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
 
       </div>
-
-    </div>
-
-  </div>
-
-</div>
+    </Tarjeta>
 
     {/* DATOS USUARIO */}
-    <div className="bg-white border border-[#430000]/10 rounded-2xl shadow-sm overflow-hidden">
+    {/* Los campos no usan required: las validaciones con aviso de guardarUsuario siguen siendo las que deciden */}
+    <Tarjeta titulo="Datos de usuario" nivelTitulo={2} icono="fa-solid fa-user">
+      <form onSubmit={guardarUsuario} className="space-y-4">
 
-      <div className="bg-[#960000] px-6 py-4">
-
-        <h2 className="text-white font-bold text-lg flex items-center gap-2">
-          <i className="fa-solid fa-user"></i>
-          Datos de Usuario
-        </h2>
-
-      </div>
-
-      <form
-        onSubmit={guardarUsuario}
-        className="p-6 space-y-5"
-      >
-
-        <div className="grid md:grid-cols-2 gap-4">
-
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-[#430000]">
-              Nombre
-            </label>
-
-            <input
-              name="nombre"
-              value={usuario.nombre}
-              onChange={handleUserChange}
-              className="w-full border border-[#430000]/20 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#960000]"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-[#430000]">
-              Carnet
-            </label>
-
-            <input
-              name="carnet"
-              value={usuario.carnet}
-              onChange={handleUserChange}
-              className="w-full border border-[#430000]/20 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#960000]"
-            />
-          </div>
-
+        <div className="grid gap-4 md:grid-cols-2">
+          <Campo
+            label="Nombre"
+            name="nombre"
+            required={false}
+            value={usuario.nombre}
+            onChange={handleUserChange}
+          />
+          <Campo
+            label="Carnet"
+            name="carnet"
+            required={false}
+            value={usuario.carnet}
+            onChange={handleUserChange}
+          />
+          <Campo
+            className="md:col-span-2"
+            label="Correo Institucional"
+            name="correoInstitucional"
+            required={false}
+            value={usuario.correoInstitucional}
+            onChange={handleUserChange}
+          />
+          <Campo
+            label="Nueva Contraseña"
+            type="password"
+            name="contrasenia"
+            required={false}
+            value={usuario.contrasenia}
+            onChange={handleUserChange}
+            ayuda="Opcional. Mínimo 8 caracteres, con una mayúscula y un número."
+          />
+          <Campo
+            label="Contraseña Actual"
+            type="password"
+            name="contraseniaActual"
+            required={false}
+            value={usuario.contraseniaActual}
+            onChange={handleUserChange}
+            ayuda="Obligatoria solo si cambias la contraseña."
+          />
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
-
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-[#430000]">
-              Correo Institucional
-            </label>
-
-            <input
-              name="correoInstitucional"
-              value={usuario.correoInstitucional}
-              onChange={handleUserChange}
-              className="w-full border border-[#430000]/20 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#960000]"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-[#430000]">
-              Nueva Contraseña
-            </label>
-
-            <input
-              type="password"
-              name="contrasenia"
-              value={usuario.contrasenia}
-              onChange={handleUserChange}
-              className="w-full border border-[#430000]/20 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#960000]"
-              placeholder="Opcional"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-[#430000]">
-              Contraseña Actual
-            </label>
-
-            <input
-              type="password"
-              name="contraseniaActual"
-              value={usuario.contraseniaActual}
-              onChange={handleUserChange}
-              className="w-full border border-[#430000]/20 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#960000]"
-              placeholder="Solo si cambias la contraseña"
-            />
-          </div>
-
+        <div className="flex justify-end">
+          <Boton type="submit" icono="fa-solid fa-floppy-disk" className="w-full sm:w-auto">
+            Guardar Usuario
+          </Boton>
         </div>
-
-        <button
-          type="submit"
-          className="
-            w-full
-            bg-[#960000]
-            hover:bg-[#7d0000]
-            text-white
-            font-bold
-            py-3
-            rounded-xl
-            transition-all
-            shadow-md
-          "
-        >
-          Guardar Usuario
-        </button>
 
       </form>
-
-    </div>
+    </Tarjeta>
 
     {/* DATOS ACADÉMICOS */}
-    <div className="bg-white border border-[#430000]/10 rounded-2xl shadow-sm overflow-hidden">
+    <Tarjeta titulo="Datos académicos" nivelTitulo={2} icono="fa-solid fa-book">
+      <form onSubmit={guardarAcademico} className="space-y-4">
 
-      <div className="bg-[#960000] px-6 py-4">
-
-        <h2 className="text-white font-bold text-lg flex items-center gap-2">
-          <i className="fa-solid fa-book"></i>
-          Datos Académicos
-        </h2>
-
-      </div>
-
-      <form
-        onSubmit={guardarAcademico}
-        className="p-6 space-y-5"
-      >
-
-        <div className="grid md:grid-cols-2 gap-4">
-
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-[#430000]">
-              Carrera
-            </label>
-
-            <input
-              name="carrera"
-              value={academico.carrera}
-              onChange={handleAcadChange}
-              className="w-full border border-[#430000]/20 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#960000]"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-[#430000]">
-              Facultad
-            </label>
-
-            <input
-              name="facultad"
-              value={academico.facultad}
-              onChange={handleAcadChange}
-              className="w-full border border-[#430000]/20 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#960000]"
-            />
-          </div>
-
+        <div className="grid gap-4 md:grid-cols-2">
+          <Campo
+            label="Carrera"
+            name="carrera"
+            required={false}
+            value={academico.carrera}
+            onChange={handleAcadChange}
+          />
+          <Campo
+            label="Facultad"
+            name="facultad"
+            required={false}
+            value={academico.facultad}
+            onChange={handleAcadChange}
+          />
+          <Campo
+            label="Fecha de Ingreso"
+            type="date"
+            name="fechaIngreso"
+            required={false}
+            value={academico.fechaIngreso}
+            onChange={handleAcadChange}
+          />
+          <Campo
+            label="Plan de Estudio"
+            name="planEstudio"
+            required={false}
+            value={academico.planEstudio}
+            onChange={handleAcadChange}
+          />
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
-
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-[#430000]">
-              Fecha de Ingreso
-            </label>
-
-            <input
-              type="date"
-              name="fechaIngreso"
-              value={academico.fechaIngreso}
-              onChange={handleAcadChange}
-              className="w-full border border-[#430000]/20 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#960000]"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-[#430000]">
-              Plan de Estudio
-            </label>
-
-            <input
-              name="planEstudio"
-              value={academico.planEstudio}
-              onChange={handleAcadChange}
-              className="w-full border border-[#430000]/20 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#960000]"
-            />
-          </div>
-
+        <div className="flex justify-end">
+          <Boton type="submit" icono="fa-solid fa-floppy-disk" className="w-full sm:w-auto">
+            Guardar Perfil Académico
+          </Boton>
         </div>
-
-        <button
-          type="submit"
-          className="
-            w-full
-            bg-[#960000]
-            hover:bg-[#7d0000]
-            text-white
-            font-bold
-            py-3
-            rounded-xl
-            transition-all
-            shadow-md
-          "
-        >
-          Guardar Perfil Académico
-        </button>
 
       </form>
+    </Tarjeta>
 
-    </div>
-
-  </div>
+  </section>
 );
 }
 export default PerfilAcademico;

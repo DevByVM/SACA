@@ -32,6 +32,9 @@ function Campo({
   const inputRef = useRef(null);
 
   const hasPicker = type === "date" || type === "time";
+  // Chrome, Edge y Safari pintan su propio icono dentro del input; se oculta para no duplicar
+  // el botón, que abre el mismo selector nativo con showPicker.
+  const ocultarIconoNativo = "[&::-webkit-calendar-picker-indicator]:hidden";
   const pickerIcon = type === "date" ? "fa-calendar-days" : "fa-clock";
   const pickerLabel = typeof label === "string"
     ? `Abrir selector de ${label.toLowerCase()}`
@@ -75,7 +78,8 @@ function Campo({
           className={unirClases(
             CLASES_CONTROL,
             error ? CLASES_ESTADO.error : CLASES_ESTADO.normal,
-            hasPicker && "pr-11"
+            hasPicker && "pr-11",
+            hasPicker && ocultarIconoNativo
           )}
         />
 

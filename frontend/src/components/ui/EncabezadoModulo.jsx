@@ -1,11 +1,14 @@
 import { unirClases } from "./unirClases";
 
-// Usa h2 porque el h1 de la página lo pone App.jsx.
+// Usa h2 porque el h1 de la página lo pone App.jsx. El titulo es opcional: si el
+// módulo coincide con el h1 se omite y solo quedan la descripción y las acciones.
 function EncabezadoModulo({ titulo, descripcion, icono, acciones, className }) {
   return (
     <div
       className={unirClases(
-        "flex flex-col gap-3 md:flex-row md:items-end md:justify-between",
+        titulo
+          ? "flex flex-col gap-3 md:flex-row md:items-end md:justify-between"
+          : "flex flex-col gap-3 md:flex-row md:items-center md:justify-between",
         className
       )}
     >
@@ -16,8 +19,8 @@ function EncabezadoModulo({ titulo, descripcion, icono, acciones, className }) {
           </div>
         )}
         <div>
-          <h2 className="text-2xl font-bold text-ink-900">{titulo}</h2>
-          {descripcion && <p className="mt-1 text-sm text-ink-600">{descripcion}</p>}
+          {titulo && <h2 className="text-2xl font-bold text-ink-900">{titulo}</h2>}
+          {descripcion && <p className={unirClases(titulo && "mt-1", "text-sm text-ink-600")}>{descripcion}</p>}
         </div>
       </div>
       {acciones && <div className="flex flex-wrap items-center gap-2">{acciones}</div>}
