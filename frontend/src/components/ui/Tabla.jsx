@@ -65,8 +65,11 @@ function Tabla({
             filas.map((fila, indiceFila) => (
               <tr
                 key={fila.id ?? indiceFila}
+                // Una fila con className propio (p. ej. el fondo de un conflicto) no lleva el
+                // hover: hover:bg-canvas tiene más especificidad y taparía ese fondo.
                 className={unirClases(
-                  "border-b border-line text-ink-900 transition-colors hover:bg-canvas",
+                  "border-b border-line text-ink-900 transition-colors",
+                  !fila.className && "hover:bg-canvas",
                   fila.className
                 )}
               >

@@ -43,6 +43,7 @@ function App() {
 
     setEstudiante(null);
     setVistaActiva("dashboard");
+    setMenuAbierto(false);
     setLogueado(false);
   };
 
@@ -55,6 +56,7 @@ function App() {
       evento.preventDefault();
       setEstudiante(null);
       setVistaActiva("dashboard");
+      setMenuAbierto(false);
       setLogueado(false);
       toast.info(MENSAJE_SESION_EXPIRADA, { toastId: "sesion-expirada" });
     });
