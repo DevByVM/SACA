@@ -10,6 +10,8 @@ import com.saca.api.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.time.LocalDate;
@@ -24,14 +26,17 @@ public class ActividadAcademicaService {
     private final NotaRepository notaRepository;
     private final MateriaInscritaRepository materiaInscritaRepository;
     private final EstudianteRepository estudianteRepository;
+    private final Clock relojAplicacion;
 
     public ActividadAcademicaService(ActividadAcademicaRepository actividadRepository, ActividadAcademicaMapper mapper,
-                                     NotaRepository notaRepository, MateriaInscritaRepository materiaInscritaRepository, EstudianteRepository estudianteRepository) {
+                                     NotaRepository notaRepository, MateriaInscritaRepository materiaInscritaRepository, EstudianteRepository estudianteRepository,
+                                     Clock relojAplicacion) {
         this.actividadRepository = actividadRepository;
         this.mapper = mapper;
         this.notaRepository = notaRepository;
         this.materiaInscritaRepository = materiaInscritaRepository;
         this.estudianteRepository = estudianteRepository;
+        this.relojAplicacion = relojAplicacion;
     }
 
     // Todas las operaciones reciben el id del estudiante autenticado (sub del JWT); una actividad,
@@ -48,6 +53,9 @@ public class ActividadAcademicaService {
         validarFechas(request.fechaInicio(), request.fechaEntrega());
 
         MateriaInscrita materia = buscarMateriaDelEstudiante(request.materiaInscritaId(), estudianteId);
+        // Solo al registrar: editar, completar o reactivar una actividad ya vencida debe seguir siendo posible
+        validarEntregaNoAnteriorAHoy(request.fechaEntrega());
+        validarPorcentajeDisponible(materia.getId(), request.porcentajeEvaluacion(), null);
         ActividadAcademica actividad = mapper.toEntity(request, materia);
         // Una actividad nueva aún no tiene nota propia: un notaId solo podría apuntar a la nota de otra
         // actividad o a una nota sin actividad, cuyo propietario no se puede comprobar
@@ -76,6 +84,7 @@ public class ActividadAcademicaService {
 
         // La materia de destino también debe ser del estudiante: así la actividad no puede pasar a otro
         MateriaInscrita materia = buscarMateriaDelEstudiante(request.materiaInscritaId(), estudianteId);
+        validarPorcentajeDisponible(materia.getId(), request.porcentajeEvaluacion(), actividadId);
         // Solo se admite la nota que esta misma actividad ya tiene enlazada
         if (request.notaObtenida() == null && request.notaId() != null
                 && (actividadExistente.getNota() == null || actividadExistente.getNota().getId() != request.notaId())) {
@@ -159,6 +168,29 @@ public class ActividadAcademicaService {
     private void validarFechas(LocalDateTime fechaInicio, LocalDateTime fechaEntrega) {
         if (fechaInicio.isAfter(fechaEntrega)) {
             throw new ValidacionNegocioException("La fecha de inicio no puede ser posterior a la fecha de entrega");
+        }
+    }
+
+    // Se compara por día: una entrega para hoy a una hora ya pasada sigue siendo válida
+    private void validarEntregaNoAnteriorAHoy(LocalDateTime fechaEntrega) {
+        if (fechaEntrega.toLocalDate().isBefore(LocalDate.now(relojAplicacion))) {
+            throw new ValidacionNegocioException("La fecha de entrega no puede ser anterior a la fecha actual");
+        }
+    }
+
+    // BigDecimal evita que sumas como 33.3 + 33.3 + 33.4 superen 100 por redondeo
+    private void validarPorcentajeDisponible(Long materiaInscritaId, Double porcentajeNuevo, Long actividadExcluida) {
+        if (porcentajeNuevo == null) {
+            return;
+        }
+        BigDecimal registrado = actividadRepository.findByMateriaInscritaId(materiaInscritaId).stream()
+                .filter(actividad -> actividadExcluida == null || actividad.getIdActividad() != actividadExcluida)
+                .map(actividad -> BigDecimal.valueOf(actividad.getPorcentajeEvaluacion()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal disponible = BigDecimal.valueOf(100).subtract(registrado);
+        if (BigDecimal.valueOf(porcentajeNuevo).compareTo(disponible) > 0) {
+            throw new ValidacionNegocioException(
+                    "Solo cuenta con " + disponible.stripTrailingZeros().toPlainString() + "% disponible para esta materia.");
         }
     }
 }

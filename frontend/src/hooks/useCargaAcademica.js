@@ -164,6 +164,7 @@ export function useCargaAcademica(estudiante) {
   // ESTADOS REALES CONECTADOS A LAS APIS
   const [jornadas, setJornadas] = useState([]);
   const [actividadesBase, setActividadesBase] = useState([]);
+  const [completadasBase, setCompletadasBase] = useState([]);
   const [horasPendientes, setHorasPendientes] = useState(0);
   const [ventana, setVentana] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -202,8 +203,13 @@ export function useCargaAcademica(estudiante) {
           return noEstaCompletada && aunNoVence && estaEnProximosSieteDias;
         });
 
+        // Las completadas de la misma ventana solo alimentan el filtro por estado; no suman horas pendientes
+        const actividadesCompletadas = datosActividades.filter(
+          (act) => act.estado === "COMPLETADA" && estaEnProximosDias(act, ahora, limiteProximosDias)
+        );
+
         // Se ordenan por prioridad: entrega más cercana, mayor porcentaje y más horas estimadas
-        const actividadesOrdenadas = [...actividadesPendientes].sort((a, b) => {
+        const compararPorPrioridad = (a, b) => {
           const fechaA = a.fechaEntrega ? new Date(a.fechaEntrega).getTime() : Infinity;
           const fechaB = b.fechaEntrega ? new Date(b.fechaEntrega).getTime() : Infinity;
 
@@ -222,9 +228,11 @@ export function useCargaAcademica(estudiante) {
           const horasB = Number(b.tiempoEstimadoHoras || 0);
 
           return horasB - horasA;
-        });
+        };
+        const actividadesOrdenadas = [...actividadesPendientes].sort(compararPorPrioridad);
 
         setActividadesBase(actividadesOrdenadas);
+        setCompletadasBase([...actividadesCompletadas].sort(compararPorPrioridad));
         setVentana({ desde: ahora, hasta: limiteProximosDias });
 
         // Suma total de horas pendientes de los próximos 7 días
@@ -246,10 +254,10 @@ export function useCargaAcademica(estudiante) {
   }, [estudianteId]);
 
   // Actividades enriquecidas con datos derivados (se conserva el orden)
-  const actividades = useMemo(() => {
+  const [actividades, actividadesCompletadas] = useMemo(() => {
     const ahora = new Date();
 
-    return actividadesBase.map((act) => {
+    const enriquecer = (act) => {
       const fechaReferencia = act.fechaEntrega || act.fechaInicio;
       const jornadaConflicto = encontrarJornadaEnConflicto(fechaReferencia, jornadas);
 
@@ -261,8 +269,10 @@ export function useCargaAcademica(estudiante) {
         jornadaConflicto,
         tieneConflicto: Boolean(jornadaConflicto)
       };
-    });
-  }, [actividadesBase, jornadas]);
+    };
+
+    return [actividadesBase.map(enriquecer), completadasBase.map(enriquecer)];
+  }, [actividadesBase, completadasBase, jornadas]);
 
   const avisosPonderacion = useMemo(
     () => actividades.filter((act) => act.altaPonderacion),
@@ -277,6 +287,7 @@ export function useCargaAcademica(estudiante) {
   return {
     cargando: loading && Boolean(estudianteId),
     actividades,
+    actividadesCompletadas,
     jornadas,
     horasPendientes,
     ventana,

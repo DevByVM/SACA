@@ -17,6 +17,8 @@ public interface ActividadAcademicaRepository extends JpaRepository<ActividadAca
     Optional<ActividadAcademica> findByIdActividadAndMateriaInscritaCicloAcademicoEstudianteId(
             long idActividad, Long estudianteId);
 
+    List<ActividadAcademica> findByMateriaInscritaId(Long materiaInscritaId);
+
     //es necesario especificar un query ya que hay muchas tablas involucradas
     @Query("SELECT aa FROM ActividadAcademica aa " +
             "JOIN aa.materiaInscrita materia " +
