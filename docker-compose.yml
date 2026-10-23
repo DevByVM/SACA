@@ -33,6 +33,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: root_password
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "true"
+      SACA_TOKEN_SECRETO: "${SACA_TOKEN_SECRETO:?Define SACA_TOKEN_SECRETO en el archivo .env (ver .env.example)}"
     ports:
       - "8080:8080"
 
