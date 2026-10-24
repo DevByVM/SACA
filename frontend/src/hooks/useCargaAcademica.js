@@ -90,6 +90,16 @@ export const encontrarJornadaEnConflicto = (fechaEvaluacionStr, jornadas) => {
   return null;
 };
 
+// La jornada usa días con tilde («Miércoles») y los horarios de clase el enum sin tilde («MIERCOLES»)
+const normalizarDia = (dia) => String(dia || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
+
+// Misma regla que ConflictoHorarioService en el backend: mismo día y traslape estricto,
+// así que 07:00–08:40 y 08:40–10:20 no chocan
+export const horarioChocaConJornada = (horario, jornada) =>
+  normalizarDia(horario.diaSemana) === normalizarDia(jornada.diaSemana)
+  && horario.horaInicio.substring(0, 5) < jornada.horaFin.substring(0, 5)
+  && horario.horaFin.substring(0, 5) > jornada.horaInicio.substring(0, 5);
+
 // Semáforo de carga: umbrales <= 20 normal, > 20 y <= 35 elevada, > 35 crítica
 export const obtenerConfigSemaforo = (horasPendientes) => {
   let configSemaforo = {

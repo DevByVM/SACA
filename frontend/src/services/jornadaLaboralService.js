@@ -4,6 +4,12 @@ const API_BASE_URL = `${
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api"
 }/jornadas`;
 
+// Usa el mensaje de validación del backend cuando lo hay (p. ej. horas invertidas)
+const mensajeDeError = async (response, porDefecto) => {
+  const cuerpo = await response.json().catch(() => null);
+  return cuerpo?.message || porDefecto;
+};
+
 export const jornadaService = {
   // 1. POST /api/jornadas
   crear: async (jornada) => {
@@ -12,7 +18,7 @@ export const jornadaService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(jornada),
     });
-    if (!response.ok) throw new Error('Error al crear la jornada');
+    if (!response.ok) throw new Error(await mensajeDeError(response, 'Error al crear la jornada'));
     return response.json();
   },
 
@@ -39,7 +45,7 @@ export const jornadaService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(jornada),
     });
-    if (!response.ok) throw new Error('Error al actualizar la jornada');
+    if (!response.ok) throw new Error(await mensajeDeError(response, 'Error al actualizar la jornada'));
     return response.json();
   }
 };

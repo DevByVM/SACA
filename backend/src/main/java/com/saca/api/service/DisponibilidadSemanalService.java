@@ -10,6 +10,7 @@ import com.saca.api.repository.DisponibilidadSemanalRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
@@ -18,6 +19,8 @@ import java.util.Objects;
 // actúan sobre sus propios bloques; un bloque o ciclo ajeno responde igual que uno inexistente.
  @Service
  public class DisponibilidadSemanalService {
+    private static final int DURACION_MINIMA_MINUTOS = 30;
+
     @Autowired
     private DisponibilidadSemanalRepository repository;
 
@@ -89,6 +92,9 @@ import java.util.Objects;
     private void validarRangoHoras(LocalTime horaInicio, LocalTime horaFin) {
         if (!horaInicio.isBefore(horaFin)) {
             throw new ValidacionNegocioException("La hora de inicio debe ser menor que la hora de fin");
+        }
+        if (Duration.between(horaInicio, horaFin).toMinutes() < DURACION_MINIMA_MINUTOS) {
+            throw new ValidacionNegocioException("El bloque debe durar al menos " + DURACION_MINIMA_MINUTOS + " minutos");
         }
     }
 
