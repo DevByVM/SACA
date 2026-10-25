@@ -1,6 +1,10 @@
 // src/components/GestionJornadaLaboral.jsx
 import React, { useState, useEffect } from 'react';
 import { jornadaService } from '../services/jornadaLaboralService.js';
+import { listarCiclos } from '../api/ciclosApi';
+import { listarHorarios } from '../api/horariosApi';
+import { getActividadesByEstudianteIdAndCicloActivo } from '../api/actividadesApi';
+import { encontrarJornadaEnConflicto, horarioChocaConJornada } from '../hooks/useCargaAcademica';
 import Aviso from './ui/Aviso';
 import Boton from './ui/Boton';
 import Campo from './ui/Campo';
@@ -39,6 +43,32 @@ export const RegistroJornada = ({ estudiante }) => {
   });
 
   const diasDeLaSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+  // SDACAS-8: la jornada se guarda aunque choque; solo se avisa de las clases y actividades
+  // pendientes del ciclo activo que coinciden con ella
+  const [conflictos, setConflictos] = useState([]);
+
+  const buscarConflictos = async (jornada) => {
+    const [ciclos, actividades] = await Promise.all([
+      listarCiclos(estudianteId),
+      getActividadesByEstudianteIdAndCicloActivo(estudianteId),
+    ]);
+    const ciclosActivos = ciclos.filter((ciclo) => ciclo.estado === 'ACTIVO');
+    const horarios = (await Promise.all(
+      ciclosActivos.map((ciclo) => listarHorarios(estudianteId, { cicloAcademicoId: ciclo.id }))
+    )).flat();
+    const ahora = new Date();
+
+    return [
+      ...horarios
+        .filter((horario) => horarioChocaConJornada(horario, jornada))
+        .map((h) => `Clase de ${h.materiaNombre}: ${h.horaInicio.substring(0, 5)}–${h.horaFin.substring(0, 5)}`),
+      ...actividades
+        .filter((a) => a.estado !== 'COMPLETADA' && a.fechaEntrega && new Date(a.fechaEntrega) >= ahora)
+        .filter((a) => encontrarJornadaEnConflicto(a.fechaEntrega, [jornada]))
+        .map((a) => `Entrega de ${a.nombre}: ${new Date(a.fechaEntrega).toLocaleString('es-SV', { dateStyle: 'medium', timeStyle: 'short' })}`),
+    ];
+  };
 
   const cargarJornadas = async () => {
     try {
@@ -89,16 +119,29 @@ export const RegistroJornada = ({ estudiante }) => {
       horaFin: formatearHora(formData.horaFin)
     };
 
+    if (datosJornada.horaInicio >= datosJornada.horaFin) {
+      setError('La hora de inicio debe ser menor que la hora de fin');
+      return;
+    }
+
+    let guardada;
     try {
-      if (idEdicion) {
-        await jornadaService.actualizar(idEdicion, datosJornada);
-      } else {
-        await jornadaService.crear(datosJornada);
-      }
+      guardada = idEdicion
+        ? await jornadaService.actualizar(idEdicion, datosJornada)
+        : await jornadaService.crear(datosJornada);
       resetFormulario();
-      cargarJornadas(); 
+      cargarJornadas();
     } catch (err) {
-      setError(idEdicion ? 'No se pudo actualizar la jornada.' : 'No se pudo guardar la jornada.');
+      setError(err.message || (idEdicion ? 'No se pudo actualizar la jornada.' : 'No se pudo guardar la jornada.'));
+      console.error(err);
+      return;
+    }
+
+    // Si la comprobación falla, la jornada ya está guardada: no se muestra un aviso incompleto
+    try {
+      setConflictos(await buscarConflictos(guardada));
+    } catch (err) {
+      setConflictos([]);
       console.error(err);
     }
   };
@@ -181,6 +224,14 @@ export const RegistroJornada = ({ estudiante }) => {
       {error && (
         <Aviso tono="peligro" className="mb-4">
           {error}
+        </Aviso>
+      )}
+
+      {conflictos.length > 0 && (
+        <Aviso tono="advertencia" className="mb-4" titulo="La jornada guardada coincide con:">
+          <ul className="list-disc pl-5">
+            {conflictos.map((conflicto) => <li key={conflicto}>{conflicto}</li>)}
+          </ul>
         </Aviso>
       )}
 

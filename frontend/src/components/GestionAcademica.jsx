@@ -602,6 +602,8 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
 
       {vista === "actividades" && (
         <div className="space-y-5">
+          <BarraAvanceActividades actividades={actividades} />
+
           <TablaActividades
             materias={materias}
             actividades={actividades}
@@ -996,6 +998,35 @@ function TablaActividades({ actividades, materias, onEdit, onDelete, onComplete,
   );
 }
 
+const esCompletada = (actividad) => actividad.estado === "COMPLETADA";
+
+// SDACAS-23: avance = completadas / total de la misma lista que muestra la tabla (ciclo activo del estudiante)
+function BarraAvanceActividades({ actividades }) {
+  const total = actividades.length;
+  const completadas = actividades.filter(esCompletada).length;
+  const porcentaje = total > 0 ? Math.round((completadas / total) * 100) : 0;
+
+  return (
+    <Tarjeta titulo="Avance general" nivelTitulo={2}>
+      <div
+        role="progressbar"
+        aria-label="Avance general de actividades"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={porcentaje}
+        className="h-3 w-full overflow-hidden rounded-full bg-brand-50"
+      >
+        <div className="h-full rounded-full bg-success-700 transition-all" style={{ width: `${porcentaje}%` }}></div>
+      </div>
+      <p className="mt-2 text-sm text-ink-600">
+        {total > 0
+          ? `${completadas} de ${total} actividades completadas (${porcentaje}\u00A0%)`
+          : "Aún no hay actividades registradas en el ciclo activo."}
+      </p>
+    </Tarjeta>
+  );
+}
+
 function ReporteRendimientoPorMateria({ actividades, materias }) {
   const reportes = materias.map((materia) => {
     const actividadesMateria = actividades.filter(
@@ -1016,9 +1047,7 @@ function ReporteRendimientoPorMateria({ actividades, materias }) {
         ? notasRegistradas.reduce((total, nota) => total + Number(nota), 0) / notasRegistradas.length
         : null;
 
-    const actividadesCompletadas = actividadesMateria.filter(
-      (actividad) => actividad.estado === "COMPLETADA"
-    ).length;
+    const actividadesCompletadas = actividadesMateria.filter(esCompletada).length;
 
     return {
       id: materia.id,

@@ -21,6 +21,23 @@ import Tarjeta from "./ui/Tarjeta";
 // se completan los segundos para que la comparación de texto sea válida.
 const normalizarHora = (hora) => (String(hora).length === 5 ? `${hora}:00` : String(hora));
 
+const minutosDelDia = (hora) => {
+  const [horas, minutos] = String(hora).split(":").map(Number);
+  return horas * 60 + minutos;
+};
+
+const DURACION_MINIMA_MINUTOS = 30;
+
+// Los valores guardados se mantienen; NO_DISPONIBLE y ESTUDIO cubren la distinción que pide SDACAS-7
+const TIPOS_BLOQUE = [
+  { value: "NO_DISPONIBLE", label: "No disponible" },
+  { value: "ESTUDIO", label: "Tiempo de estudio" },
+  { value: "CLASE", label: "Clase" },
+  { value: "LIBRE", label: "Libre" },
+];
+
+const etiquetaTipoBloque = (tipo) => TIPOS_BLOQUE.find((t) => t.value === tipo)?.label ?? tipo;
+
 const disponibilidadInicial = {
   diaSemana: "LUNES",
   horaInicio: "",
@@ -67,6 +84,11 @@ function GestionDisponibilidad({ estudiante }) {
 
     if (normalizarHora(form.horaInicio) >= normalizarHora(form.horaFin)) {
       toast.warning("La hora de inicio debe ser menor que la hora de fin");
+      return;
+    }
+
+    if (minutosDelDia(form.horaFin) - minutosDelDia(form.horaInicio) < DURACION_MINIMA_MINUTOS) {
+      toast.warning(`El bloque debe durar al menos ${DURACION_MINIMA_MINUTOS} minutos`);
       return;
     }
 
@@ -139,7 +161,7 @@ function GestionDisponibilidad({ estudiante }) {
       celdas: [
         disp.diaSemana,
         horario,
-        disp.tipoBloque ? <Insignia>{disp.tipoBloque}</Insignia> : disp.tipoBloque,
+        disp.tipoBloque ? <Insignia>{etiquetaTipoBloque(disp.tipoBloque)}</Insignia> : disp.tipoBloque,
         cicloLabel,
         <div className="flex gap-2">
           <Boton
@@ -222,7 +244,7 @@ function GestionDisponibilidad({ estudiante }) {
             label="Tipo de Bloque"
             value={form.tipoBloque}
             onValorChange={(tipoBloque) => setForm({ ...form, tipoBloque })}
-            options={["CLASE", "ESTUDIO", "LIBRE"]}
+            options={TIPOS_BLOQUE}
           />
           <Campo
             label="Hora Inicio"

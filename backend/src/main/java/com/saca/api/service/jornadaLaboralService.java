@@ -5,6 +5,7 @@ import com.saca.api.exception.ValidacionNegocioException;
 import com.saca.api.repository.JornadaLaboralRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.time.LocalTime;
 import java.util.List;
 
 // Todas las operaciones reciben el id del estudiante autenticado (sub del JWT) y solo
@@ -17,6 +18,7 @@ public class jornadaLaboralService {
 
     // 1. Agregar/Guardar jornada laboral
     public JornadaLaboral guardarJornada(JornadaLaboral jornada, Long estudianteId) {
+        validarHoras(jornada.getHoraInicio(), jornada.getHoraFin());
         validarEstudianteDelCuerpo(jornada.getEstudianteId(), estudianteId);
 
         // Un id en el cuerpo haría que save() sobrescribiera una jornada existente
@@ -45,6 +47,7 @@ public class jornadaLaboralService {
     public JornadaLaboral actualizarJornada(Long id, JornadaLaboral detalles, Long estudianteId) {
         // Buscamos el registro actual en la base de datos
         JornadaLaboral existente = obtenerPorId(id, estudianteId);
+        validarHoras(detalles.getHoraInicio(), detalles.getHoraFin());
         validarEstudianteDelCuerpo(detalles.getEstudianteId(), estudianteId);
 
         // Sincronizamos los datos con los getters del objeto que viene desde React;
@@ -55,6 +58,16 @@ public class jornadaLaboralService {
 
         // Guardamos los cambios actualizados en la base de datos
         return repository.save(existente);
+    }
+
+    // Misma regla y mensaje que la disponibilidad semanal; sin horas, la base de datos rechazaría el registro con un 500
+    private void validarHoras(LocalTime horaInicio, LocalTime horaFin) {
+        if (horaInicio == null || horaFin == null) {
+            throw new ValidacionNegocioException("La hora de inicio y la hora de fin son obligatorias");
+        }
+        if (!horaInicio.isBefore(horaFin)) {
+            throw new ValidacionNegocioException("La hora de inicio debe ser menor que la hora de fin");
+        }
     }
 
     // El frontend envía su propio estudianteId; uno distinto se rechaza en lugar de ignorarse en silencio
