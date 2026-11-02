@@ -119,9 +119,12 @@ CREATE TABLE `horarios_clase` (
   `hora_inicio` time(6) NOT NULL,
   `modalidad` enum('HIBRIDA','PRESENCIAL','VIRTUAL') NOT NULL,
   `materia_inscrita_id` bigint NOT NULL,
+  `actividad_academica_id` bigint DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `FKc1dciwfiwqsb1bwiym0e2pl7f` (`materia_inscrita_id`),
-  CONSTRAINT `FKc1dciwfiwqsb1bwiym0e2pl7f` FOREIGN KEY (`materia_inscrita_id`) REFERENCES `materias_inscritas` (`id`)
+  KEY `FKe302umf9hfwf7ffvneml5bl7y` (`actividad_academica_id`),
+  CONSTRAINT `FKc1dciwfiwqsb1bwiym0e2pl7f` FOREIGN KEY (`materia_inscrita_id`) REFERENCES `materias_inscritas` (`id`),
+  CONSTRAINT `FKe302umf9hfwf7ffvneml5bl7y` FOREIGN KEY (`actividad_academica_id`) REFERENCES `actividades_academicas` (`id_actividad`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

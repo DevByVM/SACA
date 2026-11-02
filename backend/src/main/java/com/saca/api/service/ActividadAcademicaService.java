@@ -26,16 +26,18 @@ public class ActividadAcademicaService {
     private final NotaRepository notaRepository;
     private final MateriaInscritaRepository materiaInscritaRepository;
     private final EstudianteRepository estudianteRepository;
+    private final HorarioClaseRepository horarioClaseRepository;
     private final Clock relojAplicacion;
 
     public ActividadAcademicaService(ActividadAcademicaRepository actividadRepository, ActividadAcademicaMapper mapper,
                                      NotaRepository notaRepository, MateriaInscritaRepository materiaInscritaRepository, EstudianteRepository estudianteRepository,
-                                     Clock relojAplicacion) {
+                                     HorarioClaseRepository horarioClaseRepository, Clock relojAplicacion) {
         this.actividadRepository = actividadRepository;
         this.mapper = mapper;
         this.notaRepository = notaRepository;
         this.materiaInscritaRepository = materiaInscritaRepository;
         this.estudianteRepository = estudianteRepository;
+        this.horarioClaseRepository = horarioClaseRepository;
         this.relojAplicacion = relojAplicacion;
     }
 
@@ -74,7 +76,8 @@ public class ActividadAcademicaService {
     }
 
     @Transactional
-    public ActividadAcademicaResponse actualizar(ActividadAcademicaRequest request, Long actividadId, Long estudianteId) {
+    public ActividadAcademicaResponse actualizar(ActividadAcademicaRequest request, Long actividadId, Long estudianteId,
+                                                 boolean desvincularHorarios) {
 
         //se valida la existencia de la actividad y que sea del estudiante
         ActividadAcademica actividadExistente = buscarActividadDelEstudiante(actividadId, estudianteId);
@@ -85,6 +88,7 @@ public class ActividadAcademicaService {
         // La materia de destino también debe ser del estudiante: así la actividad no puede pasar a otro
         MateriaInscrita materia = buscarMateriaDelEstudiante(request.materiaInscritaId(), estudianteId);
         validarPorcentajeDisponible(materia.getId(), request.porcentajeEvaluacion(), actividadId);
+        boolean debeDesvincularHorarios = validarCambioDeMateria(actividadExistente, materia, desvincularHorarios);
         // Solo se admite la nota que esta misma actividad ya tiene enlazada
         if (request.notaObtenida() == null && request.notaId() != null
                 && (actividadExistente.getNota() == null || actividadExistente.getNota().getId() != request.notaId())) {
@@ -118,13 +122,43 @@ public class ActividadAcademicaService {
             actividadActualizada.setNota(null);
         }
 
+        // Misma transacción que la actualización: si algo falla, los horarios conservan su vínculo
+        if (debeDesvincularHorarios) {
+            horarioClaseRepository.desvincularActividad(actividadExistente);
+        }
+
         ActividadAcademica itemActualizado = actividadRepository.save(actividadActualizada);
         return mapper.toResponse(itemActualizado);
     }
 
     @Transactional
     public void eliminar(Long actividadId, Long estudianteId){
-        actividadRepository.delete(buscarActividadDelEstudiante(actividadId, estudianteId));
+        ActividadAcademica actividad = buscarActividadDelEstudiante(actividadId, estudianteId);
+        // Los horarios vinculados se conservan; sin desvincularlos, la clave foránea impediría el borrado
+        horarioClaseRepository.desvincularActividad(actividad);
+        actividadRepository.delete(actividad);
+    }
+
+    // Un horario solo puede apuntar a una actividad de su misma materia. Mover la actividad a otra
+    // materia rompería esa regla, así que el cambio exige que el estudiante confirme la desvinculación.
+    private boolean validarCambioDeMateria(ActividadAcademica actividad, MateriaInscrita materiaDestino,
+                                           boolean desvincularHorarios) {
+        MateriaInscrita materiaActual = actividad.getMateriaInscrita();
+        if (materiaActual.getId().equals(materiaDestino.getId())) {
+            return false;
+        }
+        long horariosVinculados = horarioClaseRepository.countByActividadAcademica(actividad);
+        if (horariosVinculados == 0) {
+            return false;
+        }
+        if (!desvincularHorarios) {
+            throw new ValidacionNegocioException(
+                    "La actividad tiene " + horariosVinculados
+                            + (horariosVinculados == 1 ? " horario de clase vinculado" : " horarios de clase vinculados")
+                            + " de la materia " + materiaActual.getCodigo() + " - " + materiaActual.getNombre()
+                            + ". Confirma el cambio de materia para desvincularlos.");
+        }
+        return true;
     }
 
     @Transactional(readOnly = true)

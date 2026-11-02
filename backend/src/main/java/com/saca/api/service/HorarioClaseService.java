@@ -9,11 +9,13 @@ import org.springframework.transaction.annotation.Transactional;
 import com.saca.api.dto.request.ActualizarHorarioClaseRequest;
 import com.saca.api.dto.request.CrearHorarioClaseRequest;
 import com.saca.api.dto.response.HorarioClaseResponse;
+import com.saca.api.entity.ActividadAcademica;
 import com.saca.api.entity.HorarioClase;
 import com.saca.api.entity.MateriaInscrita;
 import com.saca.api.exception.RecursoNoEncontradoException;
 import com.saca.api.exception.ValidacionNegocioException;
 import com.saca.api.mapper.HorarioClaseMapper;
+import com.saca.api.repository.ActividadAcademicaRepository;
 import com.saca.api.repository.CicloAcademicoRepository;
 import com.saca.api.repository.HorarioClaseRepository;
 import com.saca.api.repository.MateriaInscritaRepository;
@@ -26,18 +28,21 @@ public class HorarioClaseService {
 	private final CicloAcademicoRepository cicloAcademicoRepository;
 	private final ConflictoHorarioService conflictoHorarioService;
 	private final HorarioClaseMapper horarioClaseMapper;
+	private final ActividadAcademicaRepository actividadAcademicaRepository;
 
 	public HorarioClaseService(
 			HorarioClaseRepository horarioClaseRepository,
 			MateriaInscritaRepository materiaInscritaRepository,
 			CicloAcademicoRepository cicloAcademicoRepository,
 			ConflictoHorarioService conflictoHorarioService,
-			HorarioClaseMapper horarioClaseMapper) {
+			HorarioClaseMapper horarioClaseMapper,
+			ActividadAcademicaRepository actividadAcademicaRepository) {
 		this.horarioClaseRepository = horarioClaseRepository;
 		this.materiaInscritaRepository = materiaInscritaRepository;
 		this.cicloAcademicoRepository = cicloAcademicoRepository;
 		this.conflictoHorarioService = conflictoHorarioService;
 		this.horarioClaseMapper = horarioClaseMapper;
+		this.actividadAcademicaRepository = actividadAcademicaRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -88,7 +93,9 @@ public class HorarioClaseService {
 				request.horaFin(),
 				null);
 
-		HorarioClase horarioClase = horarioClaseMapper.toEntity(request, materiaInscrita);
+		ActividadAcademica actividadAcademica =
+				buscarActividadDeLaMateria(request.actividadAcademicaId(), materiaInscrita, estudianteId);
+		HorarioClase horarioClase = horarioClaseMapper.toEntity(request, materiaInscrita, actividadAcademica);
 		HorarioClase horarioGuardado = horarioClaseRepository.save(horarioClase);
 		return horarioClaseMapper.toResponse(horarioGuardado);
 	}
@@ -109,7 +116,9 @@ public class HorarioClaseService {
 				request.horaFin(),
 				horarioId);
 
-		horarioClaseMapper.updateEntity(horarioClase, request);
+		ActividadAcademica actividadAcademica =
+				buscarActividadDeLaMateria(request.actividadAcademicaId(), materiaInscrita, estudianteId);
+		horarioClaseMapper.updateEntity(horarioClase, request, actividadAcademica);
 		return horarioClaseMapper.toResponse(horarioClase);
 	}
 
@@ -134,6 +143,23 @@ public class HorarioClaseService {
 	private MateriaInscrita buscarMateriaDelEstudiante(Long materiaInscritaId, Long estudianteId) {
 		return materiaInscritaRepository.findByIdAndCicloAcademicoEstudianteId(materiaInscritaId, estudianteId)
 				.orElseThrow(() -> new RecursoNoEncontradoException("No se encontro la materia inscrita solicitada"));
+	}
+
+	// Una actividad ajena o inexistente responde 404, como el resto de recursos de otro estudiante
+	private ActividadAcademica buscarActividadDeLaMateria(
+			Long actividadAcademicaId,
+			MateriaInscrita materiaInscrita,
+			Long estudianteId) {
+		if (actividadAcademicaId == null) {
+			return null;
+		}
+		ActividadAcademica actividadAcademica = actividadAcademicaRepository
+				.findByIdActividadAndMateriaInscritaCicloAcademicoEstudianteId(actividadAcademicaId, estudianteId)
+				.orElseThrow(() -> new RecursoNoEncontradoException("No se encontró la actividad académica solicitada"));
+		if (!actividadAcademica.getMateriaInscrita().getId().equals(materiaInscrita.getId())) {
+			throw new ValidacionNegocioException("La actividad debe pertenecer a la misma materia del horario");
+		}
+		return actividadAcademica;
 	}
 
 	private void validarMateriaPerteneceAEstudiante(Long materiaInscritaId, Long estudianteId) {

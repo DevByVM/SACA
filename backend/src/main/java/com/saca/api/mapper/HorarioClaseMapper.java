@@ -5,15 +5,20 @@ import org.springframework.stereotype.Component;
 import com.saca.api.dto.request.ActualizarHorarioClaseRequest;
 import com.saca.api.dto.request.CrearHorarioClaseRequest;
 import com.saca.api.dto.response.HorarioClaseResponse;
+import com.saca.api.entity.ActividadAcademica;
 import com.saca.api.entity.HorarioClase;
 import com.saca.api.entity.MateriaInscrita;
 
 @Component
 public class HorarioClaseMapper {
 
-	public HorarioClase toEntity(CrearHorarioClaseRequest request, MateriaInscrita materiaInscrita) {
+	public HorarioClase toEntity(
+			CrearHorarioClaseRequest request,
+			MateriaInscrita materiaInscrita,
+			ActividadAcademica actividadAcademica) {
 		HorarioClase horarioClase = new HorarioClase();
 		horarioClase.setMateriaInscrita(materiaInscrita);
+		horarioClase.setActividadAcademica(actividadAcademica);
 		horarioClase.setDiaSemana(request.diaSemana());
 		horarioClase.setHoraInicio(request.horaInicio());
 		horarioClase.setHoraFin(request.horaFin());
@@ -22,7 +27,11 @@ public class HorarioClaseMapper {
 		return horarioClase;
 	}
 
-	public void updateEntity(HorarioClase horarioClase, ActualizarHorarioClaseRequest request) {
+	public void updateEntity(
+			HorarioClase horarioClase,
+			ActualizarHorarioClaseRequest request,
+			ActividadAcademica actividadAcademica) {
+		horarioClase.setActividadAcademica(actividadAcademica);
 		horarioClase.setDiaSemana(request.diaSemana());
 		horarioClase.setHoraInicio(request.horaInicio());
 		horarioClase.setHoraFin(request.horaFin());
@@ -32,6 +41,7 @@ public class HorarioClaseMapper {
 
 	public HorarioClaseResponse toResponse(HorarioClase horarioClase) {
 		MateriaInscrita materiaInscrita = horarioClase.getMateriaInscrita();
+		ActividadAcademica actividadAcademica = horarioClase.getActividadAcademica();
 
 		return new HorarioClaseResponse(
 				horarioClase.getId(),
@@ -42,6 +52,8 @@ public class HorarioClaseMapper {
 				horarioClase.getHoraInicio(),
 				horarioClase.getHoraFin(),
 				horarioClase.getModalidad(),
-				horarioClase.getDocenteTutor());
+				horarioClase.getDocenteTutor(),
+				actividadAcademica == null ? null : actividadAcademica.getIdActividad(),
+				actividadAcademica == null ? null : actividadAcademica.getNombre());
 	}
 }
