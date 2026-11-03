@@ -23,6 +23,17 @@ public interface HorarioClaseRepository extends JpaRepository<HorarioClase, Long
 	List<HorarioClase> findByMateriaInscritaCicloAcademicoEstudianteIdOrderByDiaSemanaAscHoraInicioAsc(
 			Long estudianteId);
 
+	// Calendario (SDACAS-21): carga en una sola consulta la materia, el ciclo y la actividad vinculada
+	@Query("""
+			select horario
+			from HorarioClase horario
+			join fetch horario.materiaInscrita materia
+			join fetch materia.cicloAcademico ciclo
+			left join fetch horario.actividadAcademica
+			where ciclo.estudiante.id = :estudianteId
+			""")
+	List<HorarioClase> findParaCalendario(@Param("estudianteId") Long estudianteId);
+
 	@Query("""
 			select horario
 			from HorarioClase horario
