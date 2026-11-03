@@ -1,131 +1,152 @@
-import { useEffect, useState } from "react";
-import { obtenerCalendarioSemana } from "../services/calendarioService";
+import { useEffect, useMemo, useState } from "react";
+import { obtenerCalendarioPeriodo } from "../services/calendarioService";
+import AgendaEventos from "./calendario/AgendaEventos";
+import { ESTILOS_EVENTO, FILTROS_INICIALES, eventoVisible } from "./calendario/constantes";
+import FiltrosCalendario from "./calendario/FiltrosCalendario";
+import VistaMensual from "./calendario/VistaMensual";
+import VistaSemanal from "./calendario/VistaSemanal";
+import {
+  cuadriculaMes,
+  diasDeLaSemana,
+  fechaLocalHoy,
+  formatearMes,
+  formatearRango,
+  mesDe,
+  primerDiaMes,
+  sumarDias,
+  sumarMeses,
+} from "./calendario/fechas";
 import Aviso from "./ui/Aviso";
 import Boton from "./ui/Boton";
 import EncabezadoModulo from "./ui/EncabezadoModulo";
-import EstadoVacio from "./ui/EstadoVacio";
-import Insignia from "./ui/Insignia";
+import Tarjeta from "./ui/Tarjeta";
 import { unirClases } from "./ui/unirClases";
 
-const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const VISTAS = [
+  { valor: "mes", etiqueta: "Mes" },
+  { valor: "semana", etiqueta: "Semana" },
+  { valor: "agenda", etiqueta: "Agenda" },
+];
 
-// Nombres legibles de los tipos que ya existen en el modelo (TipoActividadAcademica)
-const TIPOS_ACTIVIDAD = {
-  PARCIAL: "Parcial",
-  LABORATORIO: "Laboratorio",
-  PROYECTO: "Proyecto",
-  INVESTIGACION: "Investigación",
-};
-
-const ESTILOS_EVENTO = {
-  CLASE: "border-brand-700 bg-brand-50",
-  ACTIVIDAD: "border-info-700 bg-info-50",
-};
-
-// Las fechas viajan como texto AAAA-MM-DD y se operan en UTC para que la zona horaria del navegador
-// no cambie el día
-function sumarDias(fechaTexto, dias) {
-  const [anio, mes, dia] = fechaTexto.split("-").map(Number);
-  return new Date(Date.UTC(anio, mes - 1, dia + dias)).toISOString().slice(0, 10);
+function Segmentado({ etiqueta, opciones, valor, onCambiar }) {
+  return (
+    <div role="group" aria-label={etiqueta} className="inline-grid auto-cols-fr grid-flow-col gap-1 rounded-xl border border-line bg-surface p-1">
+      {opciones.map((opcion) => (
+        <button
+          key={opcion.valor}
+          type="button"
+          aria-pressed={valor === opcion.valor}
+          onClick={() => onCambiar(opcion.valor)}
+          className={unirClases(
+            "min-h-11 rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700",
+            valor === opcion.valor ? "bg-brand-700 text-white" : "text-ink-900 hover:bg-surface-muted"
+          )}
+        >
+          {opcion.etiqueta}
+        </button>
+      ))}
+    </div>
+  );
 }
 
-function fechaLocalHoy() {
-  const hoy = new Date();
-  return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
-}
-
-const formateadorDiaMes = new Intl.DateTimeFormat("es-SV", { day: "numeric", month: "short", timeZone: "UTC" });
-const formateadorAnio = new Intl.DateTimeFormat("es-SV", { year: "numeric", timeZone: "UTC" });
-
-function formatearFecha(fechaTexto) {
-  const [anio, mes, dia] = fechaTexto.split("-").map(Number);
-  return formateadorDiaMes.format(new Date(Date.UTC(anio, mes - 1, dia)));
-}
-
-function formatearRango(inicio, fin) {
-  const [anio, mes, dia] = fin.split("-").map(Number);
-  return `${formatearFecha(inicio)} – ${formatearFecha(fin)} ${formateadorAnio.format(new Date(Date.UTC(anio, mes - 1, dia)))}`;
-}
-
-const hora = (valor) => (valor ? String(valor).slice(0, 5) : "");
-
-const formatearPorcentaje = (valor) => {
-  const numero = Number(valor ?? 0);
-  return `${Number.isInteger(numero) ? numero : numero.toFixed(1)} %`;
-};
-
-// SDACAS-21: semana de lunes a domingo con las clases del ciclo activo y las actividades académicas.
-// La navegación no tiene límite: una semana sin eventos se muestra vacía.
+// SDACAS-21: calendario académico con vistas mensual, semanal y de agenda. Se pide una cuadrícula
+// mensual completa (6 semanas) por mes visible; la semana y la agenda de cualquier día seleccionado ya
+// están dentro de esos datos, así que filtrar o cambiar de vista no vuelve a consultar.
 function CalendarioAcademico() {
-  // null = semana actual según el servidor; si no, cualquier fecha AAAA-MM-DD de la semana a consultar
-  const [fechaConsulta, setFechaConsulta] = useState(null);
-  const [semana, setSemana] = useState(null);
-  const [cargando, setCargando] = useState(true);
+  const hoy = fechaLocalHoy();
+  const [seleccionada, setSeleccionada] = useState(hoy);
+  const [vista, setVista] = useState("mes");
+  const [modoAgenda, setModoAgenda] = useState("dia");
+  const [filtros, setFiltros] = useState(FILTROS_INICIALES);
+  const [periodo, setPeriodo] = useState(null);
+  const [mesCargado, setMesCargado] = useState(null);
   const [error, setError] = useState("");
+
+  const mes = mesDe(seleccionada);
 
   useEffect(() => {
     let vigente = true;
-    setCargando(true);
+    const { desde, hasta } = cuadriculaMes(mes);
     setError("");
 
-    obtenerCalendarioSemana(fechaConsulta)
+    obtenerCalendarioPeriodo(desde, hasta)
       .then((datos) => {
-        if (vigente) setSemana(datos);
+        if (!vigente) return;
+        setPeriodo(datos);
+        setMesCargado(mes);
       })
       .catch((errorConsulta) => {
         if (vigente) setError(errorConsulta.response?.data?.message || "No se pudo cargar el calendario.");
-      })
-      .finally(() => {
-        if (vigente) setCargando(false);
       });
 
-    // Al cambiar de semana rápido, una respuesta lenta anterior no debe sobrescribir la actual
+    // Al cambiar de mes rápido, una respuesta lenta anterior no debe sobrescribir la del mes actual
     return () => {
       vigente = false;
     };
-  }, [fechaConsulta]);
+  }, [mes]);
 
-  const hoy = fechaLocalHoy();
-  const dias = semana
-    ? DIAS.map((nombre, indice) => {
-      const fecha = sumarDias(semana.inicio, indice);
-      return { nombre, fecha, eventos: semana.eventos.filter((evento) => evento.fecha === fecha) };
-    })
-    : [];
+  const listo = periodo !== null && mesCargado === mes;
+
+  const { eventosPorFecha, conteosPorFecha, resumenPorFecha, totalVisibles } = useMemo(() => {
+    const eventos = new Map();
+    const conteos = new Map();
+    const resumen = new Map();
+    let total = 0;
+    if (listo) {
+      for (const evento of periodo.eventos) {
+        if (!eventoVisible(evento, filtros)) continue;
+        total++;
+        if (!eventos.has(evento.fecha)) eventos.set(evento.fecha, []);
+        eventos.get(evento.fecha).push(evento);
+        const conteo = conteos.get(evento.fecha) ?? { clases: 0, actividades: 0 };
+        if (evento.tipo === "CLASE") conteo.clases++;
+        else conteo.actividades++;
+        conteos.set(evento.fecha, conteo);
+      }
+      for (const dia of periodo.dias) resumen.set(dia.fecha, dia);
+    }
+    return { eventosPorFecha: eventos, conteosPorFecha: conteos, resumenPorFecha: resumen, totalVisibles: total };
+  }, [listo, periodo, filtros]);
+
+  // Al cambiar de mes se selecciona hoy si es el mes actual y, si no, el día 1
+  const irAMes = (meses) => {
+    const nuevoMes = sumarMeses(mes, meses);
+    setSeleccionada(nuevoMes === mesDe(hoy) ? hoy : primerDiaMes(nuevoMes));
+  };
+  const navegaPorMes = vista === "mes";
+  const anterior = () => (navegaPorMes ? irAMes(-1) : setSeleccionada(sumarDias(seleccionada, -7)));
+  const siguiente = () => (navegaPorMes ? irAMes(1) : setSeleccionada(sumarDias(seleccionada, 7)));
+
+  const semana = diasDeLaSemana(seleccionada);
+  const titulo = navegaPorMes ? formatearMes(mes) : formatearRango(semana[0], semana[6]);
+  const unidad = navegaPorMes ? "Mes" : "Semana";
+  const mesSinEventos = listo && periodo.eventos.every((evento) => mesDe(evento.fecha) !== mes);
 
   return (
-    <section className="space-y-5">
+    <section className="space-y-4">
       <EncabezadoModulo
-        descripcion="Clases del ciclo activo y actividades académicas de cada semana, de lunes a domingo."
+        descripcion="Clases del ciclo activo y actividades académicas por mes, semana o agenda."
         icono="fa-regular fa-calendar"
       />
 
-      <div className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-lg font-bold text-ink-900" aria-live="polite">
-          {semana ? formatearRango(semana.inicio, semana.fin) : "Cargando semana..."}
-        </p>
-        <div className="grid grid-cols-3 gap-2 sm:flex">
-          <Boton
-            variante="secundario"
-            icono="fa-solid fa-chevron-left"
-            disabled={!semana}
-            onClick={() => setFechaConsulta(sumarDias(semana.inicio, -7))}
-          >
-            Semana anterior
-          </Boton>
-          <Boton variante="secundario" disabled={!semana} onClick={() => setFechaConsulta(null)}>
-            Esta semana
-          </Boton>
-          <Boton
-            variante="secundario"
-            disabled={!semana}
-            onClick={() => setFechaConsulta(sumarDias(semana.inicio, 7))}
-          >
-            Semana siguiente
-            <i className="fa-solid fa-chevron-right" aria-hidden="true"></i>
-          </Boton>
+      <div className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+        <p className="text-lg font-bold text-ink-900" aria-live="polite">{titulo}</p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="grid grid-cols-3 gap-2 sm:flex">
+            <Boton variante="secundario" icono="fa-solid fa-chevron-left" onClick={anterior} aria-label={`${unidad} anterior`}>
+              <span className="hidden sm:inline">Anterior</span>
+            </Boton>
+            <Boton variante="secundario" onClick={() => setSeleccionada(hoy)}>Hoy</Boton>
+            <Boton variante="secundario" onClick={siguiente} aria-label={`${unidad} siguiente`}>
+              <span className="hidden sm:inline">Siguiente</span>
+              <i className="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </Boton>
+          </div>
+          <Segmentado etiqueta="Vista del calendario" opciones={VISTAS} valor={vista} onCambiar={setVista} />
         </div>
       </div>
+
+      <FiltrosCalendario filtros={filtros} onCambiar={setFiltros} />
 
       <div className="flex flex-wrap items-center gap-4 text-sm text-ink-600" aria-label="Leyenda del calendario">
         <span className="flex items-center gap-2">
@@ -140,96 +161,86 @@ function CalendarioAcademico() {
           <span className={unirClases("h-4 w-4 rounded border-l-4 opacity-60", ESTILOS_EVENTO.ACTIVIDAD)} aria-hidden="true"></span>
           Completada o calificada
         </span>
+        <span className="flex items-center gap-2">
+          <i className="fa-solid fa-triangle-exclamation text-danger-700" aria-hidden="true"></i>
+          Concentración de evaluaciones
+        </span>
       </div>
 
       {error && <Aviso tono="peligro">{error}</Aviso>}
 
-      {semana?.actividadesSinFecha > 0 && (
+      {listo && periodo.actividadesSinFecha > 0 && (
         <Aviso tono="advertencia">
-          {semana.actividadesSinFecha === 1
+          {periodo.actividadesSinFecha === 1
             ? "1 actividad no tiene fecha de entrega ni de inicio y no aparece en el calendario."
-            : `${semana.actividadesSinFecha} actividades no tienen fecha de entrega ni de inicio y no aparecen en el calendario.`}
+            : `${periodo.actividadesSinFecha} actividades no tienen fecha de entrega ni de inicio y no aparecen en el calendario.`}
         </Aviso>
       )}
 
-      {cargando && !semana ? (
-        <EstadoVacio cargando mensaje="Cargando calendario..." />
-      ) : semana && (
-        <>
-          {semana.eventos.length === 0 && (
-            <EstadoVacio icono="fa-regular fa-calendar" mensaje="No hay clases ni actividades en esta semana." />
-          )}
-
-          <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-7" aria-busy={cargando}>
-            {dias.map((dia) => (
-              <li
-                key={dia.fecha}
-                className={unirClases(
-                  "flex min-w-0 flex-col rounded-xl border bg-surface p-3 shadow-sm",
-                  dia.fecha === hoy ? "border-brand-700 ring-1 ring-brand-700" : "border-line"
-                )}
-              >
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <h2 className="text-sm font-bold text-ink-900">
-                    {dia.nombre} <span className="font-normal text-ink-600">{formatearFecha(dia.fecha)}</span>
-                  </h2>
-                  {dia.fecha === hoy && <Insignia tono="marca">Hoy</Insignia>}
-                </div>
-                {dia.eventos.length === 0 ? (
-                  <p className="text-xs text-ink-600">Sin eventos</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {dia.eventos.map((evento) => <EventoCalendario key={evento.id} evento={evento} />)}
-                  </ul>
-                )}
-              </li>
-            ))}
-          </ol>
-        </>
-      )}
-    </section>
-  );
-}
-
-function EventoCalendario({ evento }) {
-  const esClase = evento.tipo === "CLASE";
-  const atenuada = !esClase && (evento.completada || evento.calificada);
-
-  return (
-    <li
-      className={unirClases(
-        "rounded-lg border-l-4 p-2 text-xs text-ink-900",
-        ESTILOS_EVENTO[evento.tipo],
-        atenuada && "opacity-60"
-      )}
-    >
-      <div className="flex flex-wrap items-center gap-1">
-        <Insignia tono={esClase ? "marca" : "info"}>{esClase ? "Clase" : TIPOS_ACTIVIDAD[evento.tipoActividad] ?? evento.tipoActividad}</Insignia>
-        {!esClase && <span className="font-semibold">{formatearPorcentaje(evento.porcentajeEvaluacion)}</span>}
-      </div>
-
-      <p className="mt-1 font-mono">
-        {esClase
-          ? `${hora(evento.horaInicio)}–${hora(evento.horaFin)}`
-          : `${evento.ubicadaPorFechaInicio ? "Inicio" : "Entrega"} ${hora(evento.horaInicio)}`}
-      </p>
-      <p className="break-words font-semibold">{evento.titulo}</p>
-      <p className="break-words text-ink-600">
-        {esClase ? `${evento.materiaCodigo} · ${evento.modalidad}` : `${evento.materiaCodigo} - ${evento.materiaNombre}`}
-      </p>
-
-      {esClase && evento.docenteTutor && <p className="break-words text-ink-600">{evento.docenteTutor}</p>}
-      {esClase && evento.actividadVinculadaNombre && (
-        <p className="break-words text-ink-600">Actividad: {evento.actividadVinculadaNombre}</p>
+      {navegaPorMes && mesSinEventos && (
+        <Aviso tono="info">No hay clases ni actividades en {formatearMes(mes).toLowerCase()}.</Aviso>
       )}
 
-      {!esClase && (
-        <div className="mt-1 flex flex-wrap gap-1">
-          <Insignia tono={evento.completada ? "exito" : "neutro"}>{evento.estado}</Insignia>
-          {evento.calificada && <Insignia tono="exito">Calificada: {evento.notaObtenida}</Insignia>}
+      {listo && totalVisibles === 0 && periodo.eventos.length > 0 && (
+        <Aviso tono="info">Ningún evento coincide con los filtros seleccionados.</Aviso>
+      )}
+
+      {vista === "mes" && (
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+          <Tarjeta className="p-3 sm:p-4" aria-busy={!listo}>
+            <VistaMensual
+              seleccionada={seleccionada}
+              hoy={hoy}
+              conteosPorFecha={conteosPorFecha}
+              resumenPorFecha={resumenPorFecha}
+              onSeleccionar={setSeleccionada}
+            />
+          </Tarjeta>
+          <Tarjeta
+            titulo="Agenda"
+            nivelTitulo={2}
+            icono="fa-solid fa-list-ul"
+            acciones={
+              <Segmentado
+                etiqueta="Periodo de la agenda"
+                opciones={[{ valor: "dia", etiqueta: "Día" }, { valor: "semana", etiqueta: "Semana" }]}
+                valor={modoAgenda}
+                onCambiar={setModoAgenda}
+              />
+            }
+          >
+            <AgendaEventos
+              fechas={modoAgenda === "dia" ? [seleccionada] : semana}
+              hoy={hoy}
+              eventosPorFecha={eventosPorFecha}
+              resumenPorFecha={resumenPorFecha}
+              cargando={!listo}
+            />
+          </Tarjeta>
         </div>
       )}
-    </li>
+
+      {vista === "semana" && (
+        <VistaSemanal
+          seleccionada={seleccionada}
+          hoy={hoy}
+          eventosPorFecha={eventosPorFecha}
+          onSeleccionar={setSeleccionada}
+        />
+      )}
+
+      {vista === "agenda" && (
+        <Tarjeta titulo={`Agenda de la semana · ${formatearRango(semana[0], semana[6])}`} nivelTitulo={2} icono="fa-solid fa-list-ul">
+          <AgendaEventos
+            fechas={semana}
+            hoy={hoy}
+            eventosPorFecha={eventosPorFecha}
+            resumenPorFecha={resumenPorFecha}
+            cargando={!listo}
+          />
+        </Tarjeta>
+      )}
+    </section>
   );
 }
 

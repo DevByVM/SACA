@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.saca.api.config.EstudianteAutenticado;
 import com.saca.api.dto.CalendarioDTO;
+import com.saca.api.dto.response.CalendarioPeriodoResponse;
 import com.saca.api.dto.response.CalendarioSemanaResponse;
 import com.saca.api.service.CalendarioService;
 
@@ -68,5 +69,14 @@ public class CalendarioController {
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
         return service.obtenerSemana(EstudianteAutenticado.id(jwt), fecha);
+    }
+
+    // Periodo de hasta 42 días (cuadrícula mensual) con los eventos y un resumen por día
+    @GetMapping("/periodo")
+    public CalendarioPeriodoResponse obtenerPeriodo(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        return service.obtenerPeriodo(EstudianteAutenticado.id(jwt), desde, hasta);
     }
 }

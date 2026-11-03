@@ -28,6 +28,16 @@ public interface ActividadAcademicaRepository extends JpaRepository<ActividadAca
             "AND ciclo.estado = ACTIVO")
     List<ActividadAcademica> findActividadesCicloActivoPorEstudiante(@Param("idEstudiante") Long idEstudiante);
 
+    // Calendario (SDACAS-21): mismas actividades que la consulta anterior, con materia, ciclo y nota
+    // cargados en la misma consulta para no lanzar una por cada actividad
+    @Query("SELECT aa FROM ActividadAcademica aa " +
+            "JOIN FETCH aa.materiaInscrita materia " +
+            "JOIN FETCH materia.cicloAcademico ciclo " +
+            "LEFT JOIN FETCH aa.nota " +
+            "WHERE ciclo.estudiante.id = :idEstudiante " +
+            "AND ciclo.estado = ACTIVO")
+    List<ActividadAcademica> findParaCalendario(@Param("idEstudiante") Long idEstudiante);
+
     @Query("SELECT aa FROM ActividadAcademica aa " +
             "JOIN aa.materiaInscrita materia " +
             "JOIN materia.cicloAcademico ciclo " +

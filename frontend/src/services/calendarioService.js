@@ -22,3 +22,9 @@ export const obtenerCalendarioSemana = async (fecha) => {
   });
   return response.data;
 };
+
+// Periodo de hasta 42 días (cuadrícula mensual) con eventos y resumen diario
+export const obtenerCalendarioPeriodo = async (desde, hasta) => {
+  const response = await clienteHttp.get(`${API}/periodo`, { params: { desde, hasta } });
+  return response.data;
+};
