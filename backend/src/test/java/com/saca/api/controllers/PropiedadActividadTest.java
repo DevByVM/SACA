@@ -2,6 +2,7 @@ package com.saca.api.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.saca.api.entity.ActividadAcademica;
 import com.saca.api.entity.CicloAcademico;
 import com.saca.api.entity.EstadoCiclo;
@@ -387,7 +388,12 @@ class PropiedadActividadTest {
 
         assertThat(estado(alCrear)).isEqualTo(404);
         assertThat(estado(alActualizar)).isEqualTo(404);
-        assertThat(alCrear.getResponse().getContentAsString()).doesNotContain("4.5");
+        JsonNode error = json(alCrear);
+        assertThat(error.get("message").asText()).isEqualTo("No se encontró la nota solicitada");
+        // La respuesta no revela el valor de la nota huérfana; se excluye el timestamp, que puede contener
+        // «4.5» por casualidad (por ejemplo, 14:13:34.58)
+        ((ObjectNode) error).remove("timestamp");
+        assertThat(error.toString()).doesNotContain("4.5");
         transaccion.executeWithoutResult(estado -> assertThat(
                 actividadRepository.findById(actividadB.getIdActividad()).orElseThrow().getNota()).isNull());
     }

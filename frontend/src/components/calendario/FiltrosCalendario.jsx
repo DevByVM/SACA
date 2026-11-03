@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import { unirClases } from "../ui/unirClases";
 import { FILTROS_INICIALES, TIPOS_ACTIVIDAD } from "./constantes";
+import GrupoOpciones from "./GrupoOpciones";
 
 const OPCIONES_TIPO = [["CLASE", "Clase"], ...Object.entries(TIPOS_ACTIVIDAD)];
 const OPCIONES_ESTADO = [["PENDIENTE", "Pendiente"], ["COMPLETADA", "Completada"], ["CALIFICADA", "Calificada"]];
@@ -8,41 +9,6 @@ const OPCIONES_ESTADO = [["PENDIENTE", "Pendiente"], ["COMPLETADA", "Completada"
 // Un filtro aplicado es una opción desmarcada: restringe lo que se muestra
 const contarAplicados = (filtros) =>
   [...Object.values(filtros.tipos), ...Object.values(filtros.estados)].filter((activo) => !activo).length;
-
-function GrupoOpciones({ titulo, opciones, valores, onAlternar, columnas, ultimaAncha = false }) {
-  const idTitulo = useId();
-  return (
-    <div className="min-w-0">
-      <p id={idTitulo} className="mb-1 text-xs font-bold uppercase tracking-wide text-ink-600">{titulo}</p>
-      <div
-        role="group"
-        aria-labelledby={idTitulo}
-        className={unirClases("grid gap-1 rounded-lg border border-line bg-surface-muted p-1 lg:inline-flex lg:flex-wrap", columnas)}
-      >
-        {opciones.map(([clave, etiqueta]) => {
-          const activo = valores[clave];
-          return (
-            <button
-              key={clave}
-              type="button"
-              aria-pressed={activo}
-              onClick={() => onAlternar(clave)}
-              className={unirClases(
-                "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-md px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 lg:min-h-8 lg:px-2.5",
-                activo ? "bg-surface text-brand-700 shadow-sm ring-1 ring-brand-200" : "text-ink-600 hover:bg-surface hover:text-ink-900",
-                // Con dos columnas en móvil, una última opción impar ocupa la fila completa para no dejar un hueco
-                ultimaAncha && "max-sm:last:odd:col-span-2"
-              )}
-            >
-              <i className={unirClases("text-xs", activo ? "fa-solid fa-check" : "fa-regular fa-circle opacity-60")} aria-hidden="true"></i>
-              {etiqueta}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 // En escritorio los filtros se muestran siempre en una tarjeta compacta; en tablet y móvil se pliegan
 // tras un botón con el número de filtros aplicados para que el calendario quede arriba

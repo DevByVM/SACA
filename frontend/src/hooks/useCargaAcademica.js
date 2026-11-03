@@ -60,29 +60,24 @@ export const obtenerPrioridad = (actividad, ahora = new Date()) => {
   return "Baja";
 };
 
-// Detección de choque con la jornada laboral (misma lógica de verificarChoqueHorario).
-// Devuelve la jornada con la que choca, o null si no hay choque.
+// Detección de choque de una entrega con la jornada laboral. Devuelve la jornada con la que choca, o null.
+// Se revisan todas las jornadas de ese día (puede haber dos turnos) y cada una se trata como [inicio, fin):
+// una entrega a la hora de entrada coincide con el trabajo y una a la hora de salida ya no.
 export const encontrarJornadaEnConflicto = (fechaEvaluacionStr, jornadas) => {
   if (!fechaEvaluacionStr || !jornadas.length) return null;
 
   const fechaEval = new Date(fechaEvaluacionStr);
-  const diaEvalTexto = DIAS_TEXTO[fechaEval.getDay()];
+  if (Number.isNaN(fechaEval.getTime())) return null;
 
-  // Extraemos la hora en formato "HH:MM"
-  const horaEval = fechaEval.toTimeString().split(' ')[0].substring(0, 5);
+  const diaEval = normalizarDia(DIAS_TEXTO[fechaEval.getDay()]);
+  // Hora local en formato "HH:MM"
+  const horaEval = fechaEval.toTimeString().substring(0, 5);
 
-  // Buscamos si trabaja ese día
-  const jornadaDeEseDia = jornadas.find(j => j.diaSemana.toLowerCase() === diaEvalTexto.toLowerCase());
-
-  if (jornadaDeEseDia) {
-    const trabajaDesde = jornadaDeEseDia.horaInicio.substring(0, 5);
-    const trabajaHasta = jornadaDeEseDia.horaFin.substring(0, 5);
-
-    if (horaEval >= trabajaDesde && horaEval <= trabajaHasta) {
-      return jornadaDeEseDia; // Hay conflicto con el horario laboral
-    }
-  }
-  return null;
+  return jornadas.find((jornada) =>
+    normalizarDia(jornada.diaSemana) === diaEval
+    && horaEval >= jornada.horaInicio.substring(0, 5)
+    && horaEval < jornada.horaFin.substring(0, 5)
+  ) ?? null;
 };
 
 // La jornada usa días con tilde («Miércoles») y los horarios de clase el enum sin tilde («MIERCOLES»)

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { obtenerCalendarioPeriodo } from "../services/calendarioService";
+import { obtenerCalendarioPeriodo, obtenerFranjasCalendario } from "../services/calendarioService";
 import AgendaEventos from "./calendario/AgendaEventos";
-import { ESTILOS_EVENTO, FILTROS_INICIALES, eventoVisible } from "./calendario/constantes";
+import { ESTILOS_EVENTO, FILTROS_INICIALES, FRANJAS_INICIALES, TIPOS_FRANJA, eventoVisible } from "./calendario/constantes";
+import FiltroFranjas from "./calendario/FiltroFranjas";
 import FiltrosCalendario from "./calendario/FiltrosCalendario";
 import VistaMensual from "./calendario/VistaMensual";
 import VistaSemanal from "./calendario/VistaSemanal";
@@ -61,6 +62,10 @@ function CalendarioAcademico() {
   const [periodo, setPeriodo] = useState(null);
   const [mesCargado, setMesCargado] = useState(null);
   const [error, setError] = useState("");
+  // SDACAS-32: franjas de jornada laboral y disponibilidad, con su propio filtro y su propio error
+  const [franjas, setFranjas] = useState(null);
+  const [errorFranjas, setErrorFranjas] = useState(false);
+  const [filtroFranjas, setFiltroFranjas] = useState(FRANJAS_INICIALES);
 
   const mes = mesDe(seleccionada);
 
@@ -77,6 +82,16 @@ function CalendarioAcademico() {
       })
       .catch((errorConsulta) => {
         if (vigente) setError(errorConsulta.response?.data?.message || "No se pudo cargar el calendario.");
+      });
+
+    // Petición aparte: si falla, las clases y actividades se siguen mostrando
+    setErrorFranjas(false);
+    obtenerFranjasCalendario(desde, hasta)
+      .then((datos) => {
+        if (vigente) setFranjas({ mes, lista: datos.franjas });
+      })
+      .catch(() => {
+        if (vigente) setErrorFranjas(true);
       });
 
     // Al cambiar de mes rápido, una respuesta lenta anterior no debe sobrescribir la del mes actual
@@ -108,6 +123,19 @@ function CalendarioAcademico() {
     return { eventosPorFecha: eventos, conteosPorFecha: conteos, resumenPorFecha: resumen, totalVisibles: total };
   }, [listo, periodo, filtros]);
 
+  const franjasListas = franjas !== null && franjas.mes === mes;
+  const franjasPorFecha = useMemo(() => {
+    const porFecha = new Map();
+    if (franjasListas) {
+      for (const franja of franjas.lista) {
+        if (!filtroFranjas[franja.tipo]) continue;
+        if (!porFecha.has(franja.fecha)) porFecha.set(franja.fecha, []);
+        porFecha.get(franja.fecha).push(franja);
+      }
+    }
+    return porFecha;
+  }, [franjasListas, franjas, filtroFranjas]);
+
   // Al cambiar de mes se selecciona hoy si es el mes actual y, si no, el día 1
   const irAMes = (meses) => {
     const nuevoMes = sumarMeses(mes, meses);
@@ -121,6 +149,8 @@ function CalendarioAcademico() {
   const titulo = navegaPorMes ? formatearMes(mes) : formatearRango(semana[0], semana[6]);
   const unidad = navegaPorMes ? "Mes" : "Semana";
   const mesSinEventos = listo && periodo.eventos.every((evento) => mesDe(evento.fecha) !== mes);
+  // Franjas registradas en la semana mostrada, sin aplicar el filtro, para el estado vacío
+  const franjasDeLaSemana = franjasListas ? franjas.lista.filter((franja) => semana.includes(franja.fecha)).length : null;
 
   return (
     <section className="space-y-4">
@@ -148,6 +178,10 @@ function CalendarioAcademico() {
 
       <FiltrosCalendario filtros={filtros} onCambiar={setFiltros} />
 
+      {vista === "semana" && (
+        <FiltroFranjas valores={filtroFranjas} onCambiar={setFiltroFranjas} franjasDeLaSemana={franjasDeLaSemana} />
+      )}
+
       <div className="flex flex-wrap items-center gap-4 text-sm text-ink-600" aria-label="Leyenda del calendario">
         <span className="flex items-center gap-2">
           <span className={unirClases("h-4 w-4 rounded border-l-4", ESTILOS_EVENTO.CLASE)} aria-hidden="true"></span>
@@ -165,9 +199,21 @@ function CalendarioAcademico() {
           <i className="fa-solid fa-triangle-exclamation text-danger-700" aria-hidden="true"></i>
           Concentración de evaluaciones
         </span>
+        {vista === "semana" && Object.entries(TIPOS_FRANJA).map(([clave, tipo]) => (
+          <span key={clave} className="flex items-center gap-2">
+            <span className={unirClases("h-4 w-4 rounded border border-dashed", tipo.estilo)} aria-hidden="true"></span>
+            {tipo.etiqueta}
+          </span>
+        ))}
       </div>
 
       {error && <Aviso tono="peligro">{error}</Aviso>}
+
+      {vista === "semana" && errorFranjas && (
+        <Aviso tono="advertencia">
+          No se pudieron cargar la jornada laboral ni la disponibilidad. Las clases y actividades se muestran igualmente.
+        </Aviso>
+      )}
 
       {listo && periodo.actividadesSinFecha > 0 && (
         <Aviso tono="advertencia">
@@ -225,6 +271,7 @@ function CalendarioAcademico() {
           seleccionada={seleccionada}
           hoy={hoy}
           eventosPorFecha={eventosPorFecha}
+          franjasPorFecha={franjasPorFecha}
           onSeleccionar={setSeleccionada}
         />
       )}

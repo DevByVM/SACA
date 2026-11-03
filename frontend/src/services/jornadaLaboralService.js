@@ -10,6 +10,12 @@ const mensajeDeError = async (response, porDefecto) => {
   return cuerpo?.message || porDefecto;
 };
 
+// El error conserva el código HTTP para que la pantalla distinga un rechazo de validación (400) de un fallo
+export const esRechazoDeValidacion = (error) => error?.status === 400;
+
+const errorHttp = async (response, porDefecto) =>
+  Object.assign(new Error(await mensajeDeError(response, porDefecto)), { status: response.status });
+
 export const jornadaService = {
   // 1. POST /api/jornadas
   crear: async (jornada) => {
@@ -18,7 +24,7 @@ export const jornadaService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(jornada),
     });
-    if (!response.ok) throw new Error(await mensajeDeError(response, 'Error al crear la jornada'));
+    if (!response.ok) throw await errorHttp(response, 'Error al crear la jornada');
     return response.json();
   },
 
@@ -45,7 +51,7 @@ export const jornadaService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(jornada),
     });
-    if (!response.ok) throw new Error(await mensajeDeError(response, 'Error al actualizar la jornada'));
+    if (!response.ok) throw await errorHttp(response, 'Error al actualizar la jornada');
     return response.json();
   }
 };

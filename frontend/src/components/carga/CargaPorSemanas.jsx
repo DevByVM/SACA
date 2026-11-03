@@ -9,6 +9,7 @@ import {
   HORAS_ESCALA_MAXIMA
 } from '../../hooks/useCargaAcademica.js';
 import Aviso from '../ui/Aviso';
+import IndicadorTiempoDisponible from './IndicadorTiempoDisponible';
 import Boton from '../ui/Boton';
 import EstadoVacio from '../ui/EstadoVacio';
 import Insignia from '../ui/Insignia';
@@ -108,7 +109,7 @@ function ActividadDesglose({ actividad, cerrada = false }) {
   );
 }
 
-function DesgloseSemana({ semana, id }) {
+function DesgloseSemana({ semana, id, cacheTiempo }) {
   const idTitulo = `${id}-titulo`;
   const { carga } = semana;
   const { pendientes, cerradas } = useMemo(() => desglosar(carga), [carga]);
@@ -130,6 +131,8 @@ function DesgloseSemana({ semana, id }) {
     return (
       <div id={id} role="region" aria-labelledby={idTitulo} aria-live="polite" className="mt-4 rounded-xl border border-line bg-surface-muted p-3 sm:p-4">
         {encabezado}
+        {/* SDACAS-32: el tiempo disponible no forma parte del análisis superior, así que no se duplica */}
+        <IndicadorTiempoDisponible semana={semana} cache={cacheTiempo} />
         <Aviso tono="info" icono="fa-solid fa-arrow-up" className="mt-3">
           El detalle de esta semana (horas, exigencia evaluativa y actividades pendientes) está en el análisis de carga de
           la parte superior. Selecciona una semana próxima para ver su desglose.
@@ -156,6 +159,8 @@ function DesgloseSemana({ semana, id }) {
           </div>
         ))}
       </dl>
+
+      <IndicadorTiempoDisponible semana={semana} cache={cacheTiempo} />
 
       <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-ink-900">
         {carga.motivos.map((motivo) => <li key={motivo}>{motivo}</li>)}
@@ -192,9 +197,12 @@ function CargaPorSemanas({ onIrAAcademico }) {
   const [seleccionada, setSeleccionada] = useState(null);
   const botones = useRef([]);
   const idDesglose = useId();
+  // Tiempo disponible ya consultado por semana (SDACAS-32); se vacía al recargar las semanas
+  const [cacheTiempo] = useState(() => new Map());
 
   const cargar = useCallback(async () => {
     setEstado('cargando');
+    cacheTiempo.clear();
     try {
       const respuesta = await obtenerCargaPorSemanas();
       setDatos(respuesta);
@@ -203,7 +211,7 @@ function CargaPorSemanas({ onIrAAcademico }) {
     } catch {
       setEstado('error');
     }
-  }, []);
+  }, [cacheTiempo]);
 
   useEffect(() => {
     cargar();
@@ -338,7 +346,7 @@ function CargaPorSemanas({ onIrAAcademico }) {
           </Aviso>
         )}
 
-        {semana && <DesgloseSemana semana={semana} id={idDesglose} />}
+        {semana && <DesgloseSemana semana={semana} id={idDesglose} cacheTiempo={cacheTiempo} />}
       </>
     );
   }

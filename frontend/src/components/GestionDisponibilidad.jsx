@@ -8,8 +8,10 @@ import {
   eliminarDisponibilidad,
   listarCiclos
 } from "../services/disponibilidadService"; // <- Ajusta esta ruta según tu estructura
+import Aviso from "./ui/Aviso";
 import Boton from "./ui/Boton";
 import Campo from "./ui/Campo";
+import DialogoConfirmacion from "./ui/DialogoConfirmacion";
 import EncabezadoModulo from "./ui/EncabezadoModulo";
 import Insignia from "./ui/Insignia";
 import Modal from "./ui/Modal";
@@ -28,21 +30,34 @@ const minutosDelDia = (hora) => {
 
 const DURACION_MINIMA_MINUTOS = 30;
 
-// Los valores guardados se mantienen; NO_DISPONIBLE y ESTUDIO cubren la distinción que pide SDACAS-7
-const TIPOS_BLOQUE = [
+// Tipos que se ofrecen para registrar bloques (SDACAS-7 y SDACAS-32). Las clases universitarias se
+// registran en Gestión Académica → Horarios, no como bloques de disponibilidad.
+const TIPOS_VIGENTES = [
   { value: "NO_DISPONIBLE", label: "No disponible" },
   { value: "ESTUDIO", label: "Tiempo de estudio" },
-  { value: "CLASE", label: "Clase" },
-  { value: "LIBRE", label: "Libre" },
 ];
 
-const etiquetaTipoBloque = (tipo) => TIPOS_BLOQUE.find((t) => t.value === tipo)?.label ?? tipo;
+// Tipos anteriores que pueden existir en registros guardados. Se conservan y se muestran, pero no se
+// ofrecen para bloques nuevos; cualquier otro valor desconocido también se trata como tipo anterior.
+const NOMBRES_TIPOS_ANTERIORES = { CLASE: "Clase", LIBRE: "Libre", TRABAJO: "Trabajo" };
 
+const esTipoVigente = (tipo) => TIPOS_VIGENTES.some((t) => t.value === tipo);
+
+const nombreTipoAnterior = (tipo) => NOMBRES_TIPOS_ANTERIORES[tipo] ?? (tipo || "Sin tipo");
+
+const etiquetaTipoBloque = (tipo) =>
+  TIPOS_VIGENTES.find((t) => t.value === tipo)?.label ?? `${nombreTipoAnterior(tipo)} (tipo anterior)`;
+
+const AYUDA_TIPO_BLOQUE =
+  "«Tiempo de estudio»: tiempo que reservas para estudiar. «No disponible»: tiempo personal en el que no puedes estudiar. " +
+  "Registra tus clases universitarias en Gestión Académica → Horarios.";
+
+// El tipo empieza vacío para que el estudiante lo elija; el selector es obligatorio
 const disponibilidadInicial = {
   diaSemana: "LUNES",
   horaInicio: "",
   horaFin: "",
-  tipoBloque: "CLASE",
+  tipoBloque: "",
   cicloId: "",
 };
 
@@ -54,8 +69,11 @@ function GestionDisponibilidad({ estudiante }) {
   const [ciclos, setCiclos] = useState([]);
 
   const [form, setForm] = useState(disponibilidadInicial);
-  const [editando, setEditando] = useState({ tipo: null, id: null });
+  // tipoOriginal permite conservar un tipo anterior al editar y avisar de la conversión
+  const [editando, setEditando] = useState({ tipo: null, id: null, tipoOriginal: null });
   const [formularioAbierto, setFormularioAbierto] = useState(false);
+  const [bloqueAEliminar, setBloqueAEliminar] = useState(null);
+  const [eliminando, setEliminando] = useState(false);
 
   const cargarDatos = useCallback(async () => {
     if (!estudianteId.trim()) return;
@@ -82,6 +100,13 @@ function GestionDisponibilidad({ estudiante }) {
   async function guardarDisponibilidad(event) {
     event.preventDefault();
 
+    // Un bloque nuevo solo puede ser de un tipo vigente; al editar se admite conservar su tipo anterior
+    const conservaTipoAnterior = editando.tipoOriginal !== null && form.tipoBloque === editando.tipoOriginal;
+    if (!form.tipoBloque || (!esTipoVigente(form.tipoBloque) && !conservaTipoAnterior)) {
+      toast.warning("Selecciona el tipo de bloque: «Tiempo de estudio» o «No disponible»");
+      return;
+    }
+
     if (normalizarHora(form.horaInicio) >= normalizarHora(form.horaFin)) {
       toast.warning("La hora de inicio debe ser menor que la hora de fin");
       return;
@@ -106,7 +131,7 @@ function GestionDisponibilidad({ estudiante }) {
       }
 
       setForm(disponibilidadInicial);
-      setEditando({ tipo: null, id: null });
+      setEditando({ tipo: null, id: null, tipoOriginal: null });
       setFormularioAbierto(false);
       toast.success("Disponibilidad guardada correctamente");
       await cargarDatos();
@@ -116,19 +141,25 @@ function GestionDisponibilidad({ estudiante }) {
     }
   }
 
-  async function eliminar(id) {
+  // Se elimina solo después de confirmar en el diálogo
+  async function confirmarEliminacion() {
+    if (!bloqueAEliminar) return;
     try {
-      await eliminarDisponibilidad(id, estudianteId);
+      setEliminando(true);
+      await eliminarDisponibilidad(bloqueAEliminar.id, estudianteId);
       toast.success("Registro eliminado");
+      setBloqueAEliminar(null);
       await cargarDatos();
     } catch (error) {
       const mensajeBackend = error.response?.data?.message || error.message || "No se pudo eliminar el registro";
       toast.error(mensajeBackend);
+    } finally {
+      setEliminando(false);
     }
   }
 
   function editarDisponibilidad(disponibilidad) {
-    setEditando({ tipo: "disponibilidad", id: disponibilidad.id });
+    setEditando({ tipo: "disponibilidad", id: disponibilidad.id, tipoOriginal: disponibilidad.tipoBloque });
     setForm({
       diaSemana: disponibilidad.diaSemana,
       horaInicio: disponibilidad.horaInicio,
@@ -140,16 +171,25 @@ function GestionDisponibilidad({ estudiante }) {
   }
 
   function nuevoRegistro() {
-    setEditando({ tipo: null, id: null });
+    setEditando({ tipo: null, id: null, tipoOriginal: null });
     setForm(disponibilidadInicial);
     setFormularioAbierto(true);
   }
 
   function cerrarFormulario() {
     setFormularioAbierto(false);
-    setEditando({ tipo: null, id: null });
+    setEditando({ tipo: null, id: null, tipoOriginal: null });
     setForm(disponibilidadInicial);
   }
+
+  // Al editar un bloque de tipo anterior, su tipo se ofrece como opción para conservarlo sin cambios
+  const tipoAnteriorEditado =
+    editando.tipoOriginal !== null && !esTipoVigente(editando.tipoOriginal) ? editando.tipoOriginal : null;
+  const opcionesTipo = tipoAnteriorEditado
+    ? [...TIPOS_VIGENTES, { value: tipoAnteriorEditado, label: `${nombreTipoAnterior(tipoAnteriorEditado)} (tipo anterior, conservar)` }]
+    : TIPOS_VIGENTES;
+  const convierteTipoAnterior = tipoAnteriorEditado !== null && esTipoVigente(form.tipoBloque);
+  const bloquesAnteriores = disponibilidades.filter((disp) => !esTipoVigente(disp.tipoBloque));
 
   const filas = disponibilidades.map((disp) => {
     const cicloAsociado = ciclos.find((c) => Number(c.id) === Number(disp.cicloId));
@@ -161,7 +201,11 @@ function GestionDisponibilidad({ estudiante }) {
       celdas: [
         disp.diaSemana,
         horario,
-        disp.tipoBloque ? <Insignia>{etiquetaTipoBloque(disp.tipoBloque)}</Insignia> : disp.tipoBloque,
+        esTipoVigente(disp.tipoBloque) ? (
+          <Insignia>{etiquetaTipoBloque(disp.tipoBloque)}</Insignia>
+        ) : (
+          <Insignia icono="fa-solid fa-clock-rotate-left">{etiquetaTipoBloque(disp.tipoBloque)}</Insignia>
+        ),
         cicloLabel,
         <div className="flex gap-2">
           <Boton
@@ -176,7 +220,7 @@ function GestionDisponibilidad({ estudiante }) {
             variante="peligro"
             tamano="sm"
             aria-label={`Eliminar bloque del ${disp.diaSemana}, ${horario}`}
-            onClick={() => eliminar(disp.id)}
+            onClick={() => setBloqueAEliminar(disp)}
           >
             Eliminar
           </Boton>
@@ -209,6 +253,19 @@ function GestionDisponibilidad({ estudiante }) {
           )
         }
       >
+        {bloquesAnteriores.length > 0 && (
+          <Aviso tono="info" className="mb-4" titulo="Bloques de tipos anteriores">
+            <p>
+              {bloquesAnteriores.length === 1
+                ? "Tienes 1 bloque de un tipo anterior"
+                : `Tienes ${bloquesAnteriores.length} bloques de tipos anteriores`}{" "}
+              ({[...new Set(bloquesAnteriores.map((disp) => nombreTipoAnterior(disp.tipoBloque)))].join(", ")}). No intervienen en el
+              tiempo de estudio ni en el calendario, pero siguen ocupando su franja: no puedes registrar otro bloque que se
+              cruce con ellos. Edítalos para convertirlos en «Tiempo de estudio» o «No disponible», o elimínalos. Las clases
+              universitarias se registran en Gestión Académica → Horarios.
+            </p>
+          </Aviso>
+        )}
         <Tabla
           columnas={["Día", "Horario", "Tipo de Bloque", "Ciclo", { titulo: "Acciones", className: "whitespace-nowrap" }]}
           filas={filas}
@@ -244,8 +301,25 @@ function GestionDisponibilidad({ estudiante }) {
             label="Tipo de Bloque"
             value={form.tipoBloque}
             onValorChange={(tipoBloque) => setForm({ ...form, tipoBloque })}
-            options={TIPOS_BLOQUE}
+            options={opcionesTipo}
+            ayuda={AYUDA_TIPO_BLOQUE}
           />
+          {tipoAnteriorEditado && (
+            <Aviso tono="info">
+              {convierteTipoAnterior ? (
+                <p>
+                  Al guardar, el bloque pasará de «{nombreTipoAnterior(tipoAnteriorEditado)}» a «
+                  {etiquetaTipoBloque(form.tipoBloque)}».
+                </p>
+              ) : (
+                <p>
+                  Este bloque usa el tipo anterior «{nombreTipoAnterior(tipoAnteriorEditado)}», que se conserva si no lo
+                  cambias. Para convertirlo, elige «Tiempo de estudio» o «No disponible». Si eran clases universitarias,
+                  regístralas en Gestión Académica → Horarios y elimina este bloque.
+                </p>
+              )}
+            </Aviso>
+          )}
           <Campo
             label="Hora Inicio"
             type="time"
@@ -266,6 +340,25 @@ function GestionDisponibilidad({ estudiante }) {
           </div>
         </form>
       </Modal>
+
+      <DialogoConfirmacion
+        abierto={bloqueAEliminar !== null}
+        titulo="¿Eliminar bloque de disponibilidad?"
+        mensaje={
+          bloqueAEliminar && (
+            <>
+              Se eliminará el bloque del{" "}
+              <span className="font-bold text-ink-900">{bloqueAEliminar.diaSemana}</span> de{" "}
+              {bloqueAEliminar.horaInicio} a {bloqueAEliminar.horaFin} ({etiquetaTipoBloque(bloqueAEliminar.tipoBloque)}). Esta
+              acción no se puede deshacer.
+            </>
+          )
+        }
+        textoConfirmar="Eliminar"
+        procesando={eliminando}
+        onConfirmar={confirmarEliminacion}
+        onCancelar={() => setBloqueAEliminar(null)}
+      />
     </section>
   );
 }
