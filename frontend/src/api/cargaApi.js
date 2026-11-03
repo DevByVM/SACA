@@ -4,3 +4,8 @@ import { apiRequest } from './client'
 export function obtenerCargaSemanal() {
   return apiRequest('/carga/semanal')
 }
+
+// SDACAS-26: semanas desde la actual hasta el fin del ciclo activo, cada una con su carga
+export function obtenerCargaPorSemanas() {
+  return apiRequest('/carga/semanas')
+}

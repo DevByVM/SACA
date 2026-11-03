@@ -65,6 +65,13 @@ public class CargaAcademicaService {
 
 	// Cálculo puro: recibe las actividades de los ciclos activos y la ventana [desde, hasta]
 	public CargaSemanalResponse calcular(List<ActividadAcademica> actividades, LocalDateTime desde, LocalDateTime hasta) {
+		return calcular(actividades, desde, hasta, "en los próximos 7 días");
+	}
+
+	// Mismo cálculo para otra ventana (SDACAS-26: semanas del ciclo); la descripción solo cambia el texto
+	// de los motivos, por ejemplo «en la semana del 9/11 al 15/11»
+	public CargaSemanalResponse calcular(List<ActividadAcademica> actividades, LocalDateTime desde, LocalDateTime hasta,
+			String descripcionVentana) {
 		List<ActividadAcademica> pendientes = new ArrayList<>();
 		List<ActividadAcademica> noPendientes = new ArrayList<>();
 		int sinFecha = 0;
@@ -110,7 +117,7 @@ public class CargaAcademicaService {
 				nivelGeneral,
 				horas,
 				exigencia,
-				explicar(horas, exigencia, evaluaciones, ambosRequierenAtencion),
+				explicar(horas, exigencia, evaluaciones, ambosRequierenAtencion, descripcionVentana),
 				pendientes.stream().map(actividadAcademicaMapper::toResponse).toList(),
 				noPendientes.stream().map(actividadAcademicaMapper::toResponse).toList(),
 				sinFecha,
@@ -180,9 +187,10 @@ public class CargaAcademicaService {
 			IndicadorHorasResponse horas,
 			IndicadorExigenciaResponse exigencia,
 			List<ActividadAcademica> evaluaciones,
-			boolean ambosRequierenAtencion) {
+			boolean ambosRequierenAtencion,
+			String descripcionVentana) {
 		List<String> motivos = new ArrayList<>();
-		String horasTexto = numero(horas.horasPendientes()) + " h pendientes en los próximos 7 días";
+		String horasTexto = numero(horas.horasPendientes()) + " h pendientes " + descripcionVentana;
 
 		motivos.add(switch (horas.nivel()) {
 			case CRITICA -> "Carga horaria crítica: " + horasTexto + " (más de " + numero(HORAS_CRITICA) + " h).";
@@ -192,7 +200,7 @@ public class CargaAcademicaService {
 
 		String pesoTexto = numero(exigencia.pesoAcumulado()) + " % de peso acumulado";
 		if (evaluaciones.isEmpty()) {
-			motivos.add("Exigencia evaluativa normal: no hay evaluaciones con porcentaje en los próximos 7 días.");
+			motivos.add("Exigencia evaluativa normal: no hay evaluaciones con porcentaje " + descripcionVentana + ".");
 		} else if (exigencia.nivel() == NivelCarga.NORMAL) {
 			motivos.add("Exigencia evaluativa normal: " + pesoTexto + " y ninguna evaluación de "
 					+ numero(PESO_ALTO) + " % o más.");
