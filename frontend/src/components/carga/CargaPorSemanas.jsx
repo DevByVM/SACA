@@ -116,14 +116,31 @@ function DesgloseSemana({ semana, id }) {
     ? `Esta semana · desde hoy hasta el ${diaMes(semana.fin)}`
     : `Semana del ${diaMes(semana.inicio)} al ${diaMes(semana.fin)}`;
 
+  const encabezado = (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <h3 id={idTitulo} className="text-base font-bold text-ink-900">{titulo}</h3>
+      <Insignia tono={TONOS_NIVEL[carga.nivelGeneral]} className="text-sm">
+        Carga {NIVELES_SEMANA[carga.nivelGeneral].toLowerCase()}
+      </Insignia>
+    </div>
+  );
+
+  // La semana actual ya se analiza en detalle arriba (SDACAS-20): aquí solo se remite a ese análisis
+  if (semana.semanaActual) {
+    return (
+      <div id={id} role="region" aria-labelledby={idTitulo} aria-live="polite" className="mt-4 rounded-xl border border-line bg-surface-muted p-3 sm:p-4">
+        {encabezado}
+        <Aviso tono="info" icono="fa-solid fa-arrow-up" className="mt-3">
+          El detalle de esta semana (horas, exigencia evaluativa y actividades pendientes) está en el análisis de carga de
+          la parte superior. Selecciona una semana próxima para ver su desglose.
+        </Aviso>
+      </div>
+    );
+  }
+
   return (
     <div id={id} role="region" aria-labelledby={idTitulo} aria-live="polite" className="mt-4 rounded-xl border border-line bg-surface-muted p-3 sm:p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 id={idTitulo} className="text-base font-bold text-ink-900">{titulo}</h3>
-        <Insignia tono={TONOS_NIVEL[carga.nivelGeneral]} className="text-sm">
-          Carga {NIVELES_SEMANA[carga.nivelGeneral].toLowerCase()}
-        </Insignia>
-      </div>
+      {encabezado}
 
       <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {[
@@ -155,7 +172,7 @@ function DesgloseSemana({ semana, id }) {
         <EstadoVacio
           className="mt-2 bg-surface"
           icono="fa-regular fa-calendar-check"
-          mensaje={semana.semanaActual ? 'No quedan actividades por entregar esta semana.' : 'No hay actividades programadas para esta semana.'}
+          mensaje="No hay actividades programadas para esta semana."
         />
       ) : (
         <ul className="mt-2 space-y-2">
