@@ -30,6 +30,7 @@ import DialogoConfirmacion from "./ui/DialogoConfirmacion";
 import EncabezadoModulo from "./ui/EncabezadoModulo";
 import Insignia from "./ui/Insignia";
 import Modal from "./ui/Modal";
+import ReporteRendimientoPorMateria from "./ReporteRendimientoPorMateria";
 import Selector from "./ui/Selector";
 import Tarjeta from "./ui/Tarjeta";
 import CampoUi from "./ui/Campo";
@@ -182,6 +183,8 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       }
 
       if (vistaObjetivo === "actividades") {
+        // El reporte de rendimiento permite elegir entre los ciclos del estudiante
+        await cargarColeccion("ciclos", () => listarCiclos(estudianteId), setCiclos);
         await cargarColeccion("materias", () => listarMaterias(estudianteId), setMaterias);
         await cargarColeccion(
           "actividades",
@@ -696,8 +699,8 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
           />
 
           <ReporteRendimientoPorMateria
+            ciclos={ciclos}
             actividades={actividades}
-            materias={materias}
           />
         </div>
       )}
@@ -879,7 +882,7 @@ function FormularioActividades({ materias, form, setForm, onSubmit, onCancel, fe
       <CampoUi label="Fecha inicio" type="datetime-local" value={form.fechaInicio} onValorChange={(fechaInicio) => setForm({ ...form, fechaInicio })} />
       <CampoUi label="Fecha Entrega" type="datetime-local" min={fechaEntregaMinima} value={form.fechaEntrega} onValorChange={(fechaEntrega) => setForm({ ...form, fechaEntrega })} />
       <CampoUi label="Tiempo estimado (horas)" type="number" value={form.tiempoEstimadoHoras} onValorChange={(tiempoEstimadoHoras) => setForm({ ...form, tiempoEstimadoHoras })} />
-      <CampoUi label="Nota obtenida" type="number" required={false} value={form.notaObtenida} onValorChange={(notaObtenida) => setForm({ ...form, notaObtenida })} />
+      <CampoUi label="Nota obtenida" type="number" step="0.01" min="0" max="10" required={false} value={form.notaObtenida} onValorChange={(notaObtenida) => setForm({ ...form, notaObtenida })} />
       <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:col-span-2 sm:flex-row sm:justify-end">
         <Boton variante="secundario" onClick={onCancel}>
           Cancelar
@@ -1004,12 +1007,6 @@ const TONOS_PRIORIDAD_ACTIVIDAD = {
   "Sin fecha": "neutro",
 };
 
-const TONOS_RENDIMIENTO = {
-  "Sin actividades": "neutro",
-  "Con rendimiento registrado": "exito",
-  "Pendiente de notas": "advertencia",
-};
-
 function TablaActividades({ actividades, materias, onEdit, onDelete, onComplete, onReactivate }) {
   const obtenerNombreMateria = (materiaId) => {
     const materiaSeleccionada = materias.find((materia) => String(materia.id) === String(materiaId));
@@ -1091,9 +1088,9 @@ function TablaActividades({ actividades, materias, onEdit, onDelete, onComplete,
               actividad.nombre,
               actividad.fechaEntrega,
               actividad.tiempoEstimadoHoras ? `${actividad.tiempoEstimadoHoras} hrs` : "Sin dato",
-              // Como en la tabla anterior, una nota 0 se muestra como «Sin dato»
+              // Una nota 0 es una calificación registrada y se muestra como tal
               actividad.notaObtenida !== null && actividad.notaObtenida !== undefined
-                ? actividad.notaObtenida || "Sin dato"
+                ? String(actividad.notaObtenida)
                 : "Sin nota",
               <Insignia tono={estado === "COMPLETADA" ? "exito" : "info"}>{estado}</Insignia>,
               <div className="flex gap-2">
@@ -1146,77 +1143,6 @@ function BarraAvanceActividades({ actividades }) {
           ? `${completadas} de ${total} actividades completadas (${porcentaje}\u00A0%)`
           : "Aún no hay actividades registradas en el ciclo activo."}
       </p>
-    </Tarjeta>
-  );
-}
-
-function ReporteRendimientoPorMateria({ actividades, materias }) {
-  const reportes = materias.map((materia) => {
-    const actividadesMateria = actividades.filter(
-      (actividad) => String(actividad.materiaInscritaId) === String(materia.id)
-    );
-
-    const porcentajeEvaluado = actividadesMateria.reduce(
-      (total, actividad) => total + Number(actividad.porcentajeEvaluacion || 0),
-      0
-    );
-
-    const notasRegistradas = actividadesMateria
-      .map((actividad) => actividad.notaObtenida)
-      .filter((nota) => nota !== null && nota !== undefined && nota !== "");
-
-    const promedioNotas =
-      notasRegistradas.length > 0
-        ? notasRegistradas.reduce((total, nota) => total + Number(nota), 0) / notasRegistradas.length
-        : null;
-
-    const actividadesCompletadas = actividadesMateria.filter(esCompletada).length;
-
-    return {
-      id: materia.id,
-      codigo: materia.codigo,
-      nombre: materia.nombre,
-      totalActividades: actividadesMateria.length,
-      actividadesCompletadas,
-      porcentajeEvaluado,
-      promedioNotas,
-    };
-  });
-
-  return (
-    <Tarjeta titulo="Reporte de rendimiento por materia" nivelTitulo={2}>
-      <TablaUi
-        columnas={[
-          { titulo: "Materia", className: "min-w-48" },
-          { titulo: "Actividades", alinear: "derecha" },
-          { titulo: "Completadas", alinear: "derecha" },
-          { titulo: "Porcentaje evaluado", alinear: "derecha" },
-          { titulo: "Promedio de notas", alinear: "derecha" },
-          "Estado",
-        ]}
-        mensajeVacio="No hay materias registradas para generar el reporte."
-        filas={reportes.map((reporte) => {
-          const estado = reporte.totalActividades === 0
-            ? "Sin actividades"
-            : reporte.promedioNotas !== null
-            ? "Con rendimiento registrado"
-            : "Pendiente de notas";
-
-          return {
-            id: reporte.id,
-            celdas: [
-              <>{reporte.codigo} - {reporte.nombre}</>,
-              reporte.totalActividades,
-              reporte.actividadesCompletadas,
-              `${reporte.porcentajeEvaluado}%`,
-              reporte.promedioNotas !== null
-                ? reporte.promedioNotas.toFixed(2)
-                : "Sin notas",
-              <Insignia tono={TONOS_RENDIMIENTO[estado]}>{estado}</Insignia>,
-            ],
-          };
-        })}
-      />
     </Tarjeta>
   );
 }

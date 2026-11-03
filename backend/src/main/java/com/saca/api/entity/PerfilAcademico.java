@@ -1,5 +1,6 @@
 package com.saca.api.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -31,6 +32,10 @@ public class PerfilAcademico {
 
     @Column(name = "plan_estudio", length = 50)
     private String planEstudio;
+
+    // Nullable a propósito: sin configurar, el reporte de rendimiento no estima ni clasifica
+    @Column(name = "nota_minima_aprobacion", precision = 4, scale = 2)
+    private BigDecimal notaMinimaAprobacion;
 
     public PerfilAcademico() {}
 
@@ -80,5 +85,13 @@ public class PerfilAcademico {
 
     public void setPlanEstudio(String planEstudio) {
         this.planEstudio = planEstudio;
+    }
+
+    public BigDecimal getNotaMinimaAprobacion() {
+        return notaMinimaAprobacion;
+    }
+
+    public void setNotaMinimaAprobacion(BigDecimal notaMinimaAprobacion) {
+        this.notaMinimaAprobacion = notaMinimaAprobacion;
     }
 }

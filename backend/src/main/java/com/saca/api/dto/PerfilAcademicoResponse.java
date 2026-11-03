@@ -1,5 +1,6 @@
 package com.saca.api.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class PerfilAcademicoResponse {
@@ -8,6 +9,7 @@ public class PerfilAcademicoResponse {
     private String facultad;
     private LocalDate fechaIngreso;
     private String planEstudio;
+    private BigDecimal notaMinimaAprobacion;
 
     public PerfilAcademicoResponse() {}
 
@@ -41,5 +43,13 @@ public class PerfilAcademicoResponse {
 
     public void setPlanEstudio(String planEstudio) {
         this.planEstudio = planEstudio;
+    }
+
+    public BigDecimal getNotaMinimaAprobacion() {
+        return notaMinimaAprobacion;
+    }
+
+    public void setNotaMinimaAprobacion(BigDecimal notaMinimaAprobacion) {
+        this.notaMinimaAprobacion = notaMinimaAprobacion;
     }
 }

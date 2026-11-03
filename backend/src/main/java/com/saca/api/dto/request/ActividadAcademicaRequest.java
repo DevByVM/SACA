@@ -20,6 +20,8 @@ public record ActividadAcademicaRequest(
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
         LocalDateTime fechaEntrega,
 
+        // Sin @NotNull, un porcentaje vacío llegaba al campo primitivo de la entidad y respondía 500
+        @NotNull(message = "El porcentaje de evaluación es obligatorio")
         @Min(value = 1, message = "El minimo de porcentaje es 1")
         @Max(value = 100, message = "El maximo de porcentaje es 100")
         Double porcentajeEvaluacion,

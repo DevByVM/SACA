@@ -192,6 +192,7 @@ CREATE TABLE `perfil_academico` (
   `facultad` varchar(120) DEFAULT NULL,
   `fecha_ingreso` date DEFAULT NULL,
   `plan_estudio` varchar(50) DEFAULT NULL,
+  `nota_minima_aprobacion` decimal(4,2) DEFAULT NULL,
   `estudiante_id` bigint NOT NULL,
   PRIMARY KEY (`id_perfil`),
   UNIQUE KEY `UKfh8nfgta7oc35cnqifigxlfyj` (`estudiante_id`),

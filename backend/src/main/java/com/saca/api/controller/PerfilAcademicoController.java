@@ -11,6 +11,8 @@ import com.saca.api.dto.ActualizarPerfilAcademicoRequest;
 import com.saca.api.dto.PerfilAcademicoResponse;
 import com.saca.api.service.PerfilAcademicoService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/perfil-academico")
 public class PerfilAcademicoController {
@@ -27,7 +29,7 @@ public class PerfilAcademicoController {
     @PutMapping
     public ResponseEntity<String> actualizar(
             @AuthenticationPrincipal Jwt jwt,
-            @RequestBody ActualizarPerfilAcademicoRequest request
+            @Valid @RequestBody ActualizarPerfilAcademicoRequest request
     ) {
         return ResponseEntity.ok(
                 service.guardarOActualizar(EstudianteAutenticado.id(jwt), request)
