@@ -12,9 +12,11 @@ import org.springframework.web.bind.annotation.*;
 
 import com.saca.api.config.EstudianteAutenticado;
 import com.saca.api.dto.CalendarioDTO;
+import com.saca.api.dto.response.CalendarioFranjasResponse;
 import com.saca.api.dto.response.CalendarioPeriodoResponse;
 import com.saca.api.dto.response.CalendarioSemanaResponse;
 import com.saca.api.service.CalendarioService;
+import com.saca.api.service.FranjasCalendarioService;
 
 /**
  * Controlador encargado de gestionar las solicitudes
@@ -33,6 +35,9 @@ public class CalendarioController {
      */
     @Autowired
     private CalendarioService service;
+
+    @Autowired
+    private FranjasCalendarioService franjasCalendarioService;
 
     /**
      * Obtiene el calendario semanal de un estudiante.
@@ -78,5 +83,15 @@ public class CalendarioController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
         return service.obtenerPeriodo(EstudianteAutenticado.id(jwt), desde, hasta);
+    }
+
+    // SDACAS-32: franjas de jornada laboral y disponibilidad del mismo periodo; se piden aparte para que la
+    // respuesta de /periodo no cambie
+    @GetMapping("/franjas")
+    public CalendarioFranjasResponse obtenerFranjas(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        return franjasCalendarioService.obtenerFranjas(EstudianteAutenticado.id(jwt), desde, hasta);
     }
 }

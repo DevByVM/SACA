@@ -82,6 +82,16 @@ public class CalendarioService {
                 .toList();
     }
 
+    // Rango de las consultas por periodo del calendario (eventos y franjas): mismo límite y mismos mensajes
+    public static void validarPeriodo(LocalDate desde, LocalDate hasta) {
+        if (desde.isAfter(hasta)) {
+            throw new ValidacionNegocioException("La fecha inicial no puede ser posterior a la fecha final");
+        }
+        if (ChronoUnit.DAYS.between(desde, hasta) + 1 > MAXIMO_DIAS_PERIODO) {
+            throw new ValidacionNegocioException("El periodo no puede superar " + MAXIMO_DIAS_PERIODO + " días");
+        }
+    }
+
     // SDACAS-21: semana de lunes a domingo que contiene la fecha indicada (sin fecha, la semana actual)
     @Transactional(readOnly = true)
     public CalendarioSemanaResponse obtenerSemana(Long estudianteId, LocalDate fecha) {
@@ -95,12 +105,7 @@ public class CalendarioService {
     // posterior al último día), por eso el límite es de 42 días
     @Transactional(readOnly = true)
     public CalendarioPeriodoResponse obtenerPeriodo(Long estudianteId, LocalDate desde, LocalDate hasta) {
-        if (desde.isAfter(hasta)) {
-            throw new ValidacionNegocioException("La fecha inicial no puede ser posterior a la fecha final");
-        }
-        if (ChronoUnit.DAYS.between(desde, hasta) + 1 > MAXIMO_DIAS_PERIODO) {
-            throw new ValidacionNegocioException("El periodo no puede superar " + MAXIMO_DIAS_PERIODO + " días");
-        }
+        validarPeriodo(desde, hasta);
         return calcularPeriodo(
                 desde,
                 hasta,

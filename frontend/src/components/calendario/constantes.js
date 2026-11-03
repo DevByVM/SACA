@@ -26,3 +26,14 @@ export function eventoVisible(evento, filtros) {
     || (filtros.estados.COMPLETADA && evento.completada)
     || (filtros.estados.CALIFICADA && evento.calificada);
 }
+
+// SDACAS-32: franjas de tiempo de la vista semanal. La jornada laboral y los bloques «No disponible» son
+// tiempo restringido; «Tiempo de estudio» es tiempo reservado. Borde discontinuo y fondo propio para no
+// confundirlas con clases (borde izquierdo de marca) ni con actividades (borde izquierdo azul).
+export const TIPOS_FRANJA = {
+  JORNADA_LABORAL: { etiqueta: "Jornada laboral", icono: "fa-solid fa-briefcase", estilo: "border-warning-700 bg-warning-50 text-warning-700" },
+  NO_DISPONIBLE: { etiqueta: "No disponible", icono: "fa-solid fa-ban", estilo: "border-ink-500 bg-surface-muted text-ink-600" },
+  ESTUDIO: { etiqueta: "Tiempo de estudio", icono: "fa-solid fa-book-open-reader", estilo: "border-success-700 bg-success-50 text-success-700" },
+};
+
+export const FRANJAS_INICIALES = { JORNADA_LABORAL: true, NO_DISPONIBLE: true, ESTUDIO: true };

@@ -1,17 +1,23 @@
 import Insignia from "../ui/Insignia";
 import { unirClases } from "../ui/unirClases";
 import EventoCalendario from "./EventoCalendario";
+import FranjaCalendario from "./FranjaCalendario";
 import { DIAS_SEMANA, diasDeLaSemana, formatearFecha } from "./fechas";
 
 // Cuadrícula de lunes a domingo de la semana que contiene la fecha seleccionada.
 // Pulsar el encabezado de un día lo selecciona para la agenda.
-function VistaSemanal({ seleccionada, hoy, eventosPorFecha, onSeleccionar }) {
+// SDACAS-32: encima de los eventos se muestran las franjas de jornada laboral y disponibilidad del día;
+// los eventos conservan su representación.
+const SIN_FRANJAS = new Map();
+
+function VistaSemanal({ seleccionada, hoy, eventosPorFecha, franjasPorFecha = SIN_FRANJAS, onSeleccionar }) {
   const dias = diasDeLaSemana(seleccionada);
 
   return (
     <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-7">
       {dias.map((fecha, indice) => {
         const eventos = eventosPorFecha.get(fecha) ?? [];
+        const franjas = franjasPorFecha.get(fecha) ?? [];
         return (
           <li
             key={fecha}
@@ -36,8 +42,15 @@ function VistaSemanal({ seleccionada, hoy, eventosPorFecha, onSeleccionar }) {
               </h2>
               {fecha === hoy && <Insignia tono="marca">Hoy</Insignia>}
             </div>
+            {franjas.length > 0 && (
+              <ul className="mb-2 space-y-1" aria-label={`Franjas de tiempo del ${DIAS_SEMANA[indice].toLowerCase()}`}>
+                {franjas.map((franja) => (
+                  <FranjaCalendario key={`${franja.tipo}-${franja.origenId}`} franja={franja} />
+                ))}
+              </ul>
+            )}
             {eventos.length === 0 ? (
-              <p className="text-xs text-ink-600">Sin eventos</p>
+              <p className="text-xs text-ink-600">{franjas.length > 0 ? "Sin clases ni actividades" : "Sin eventos"}</p>
             ) : (
               <ul className="space-y-2">
                 {eventos.map((evento) => <EventoCalendario key={evento.id} evento={evento} />)}

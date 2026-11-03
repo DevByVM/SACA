@@ -28,3 +28,9 @@ export const obtenerCalendarioPeriodo = async (desde, hasta) => {
   const response = await clienteHttp.get(`${API}/periodo`, { params: { desde, hasta } });
   return response.data;
 };
+
+// SDACAS-32: franjas de jornada laboral y disponibilidad (No disponible y Tiempo de estudio) del periodo
+export const obtenerFranjasCalendario = async (desde, hasta) => {
+  const response = await clienteHttp.get(`${API}/franjas`, { params: { desde, hasta } });
+  return response.data;
+};
