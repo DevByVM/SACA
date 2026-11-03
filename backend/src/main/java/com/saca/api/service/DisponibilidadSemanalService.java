@@ -90,6 +90,10 @@ import java.util.Objects;
 
     // Misma regla que los horarios de clase: no se admiten bloques vacíos ni que crucen la medianoche
     private void validarRangoHoras(LocalTime horaInicio, LocalTime horaFin) {
+        // Mismo mensaje que la jornada laboral; sin esta comprobación la comparación fallaba con un 500
+        if (horaInicio == null || horaFin == null) {
+            throw new ValidacionNegocioException("La hora de inicio y la hora de fin son obligatorias");
+        }
         if (!horaInicio.isBefore(horaFin)) {
             throw new ValidacionNegocioException("La hora de inicio debe ser menor que la hora de fin");
         }

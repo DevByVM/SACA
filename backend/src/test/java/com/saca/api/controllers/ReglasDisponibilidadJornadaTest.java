@@ -117,6 +117,32 @@ class ReglasDisponibilidadJornadaTest {
         assertThat(disponibilidadRepository.findById(id).orElseThrow().getHoraFin()).isEqualTo(LocalTime.of(11, 0));
     }
 
+    // SDACAS-32: misma respuesta que la jornada laboral; antes la comparación de horas nulas terminaba en un 500
+    @Test
+    void unBloqueSinHorasSeRechazaConUnMensajeYNoConUnError500() throws Exception {
+        MvcResult resultado = como(post("/api/disponibilidades"),
+                "{\"diaSemana\":\"LUNES\",\"tipoBloque\":\"ESTUDIO\",\"cicloId\":%d,\"estudianteId\":%d}"
+                        .formatted(ciclo.getId(), estudiante.getId()));
+
+        assertThat(estado(resultado)).isEqualTo(400);
+        assertThat(mensaje(resultado)).isEqualTo("La hora de inicio y la hora de fin son obligatorias");
+        assertThat(disponibilidadRepository.findByEstudianteId(estudiante.getId())).isEmpty();
+    }
+
+    @Test
+    void alEditarUnBloqueSinHoraDeFinSeRechazaYNoSeModifica() throws Exception {
+        MvcResult creado = como(post("/api/disponibilidades"), bloque("JUEVES", "10:00", "11:00", "ESTUDIO"));
+        long id = json(creado).get("id").asLong();
+
+        MvcResult editado = como(put("/api/disponibilidades/" + id),
+                "{\"diaSemana\":\"JUEVES\",\"horaInicio\":\"10:00\",\"tipoBloque\":\"ESTUDIO\",\"cicloId\":%d,\"estudianteId\":%d}"
+                        .formatted(ciclo.getId(), estudiante.getId()));
+
+        assertThat(estado(editado)).isEqualTo(400);
+        assertThat(mensaje(editado)).isEqualTo("La hora de inicio y la hora de fin son obligatorias");
+        assertThat(disponibilidadRepository.findById(id).orElseThrow().getHoraFin()).isEqualTo(LocalTime.of(11, 0));
+    }
+
     @Test
     void laValidacionDeInicioAnteriorAlFinSeConserva() throws Exception {
         MvcResult resultado = como(post("/api/disponibilidades"), bloque("JUEVES", "12:00", "09:00", "ESTUDIO"));
