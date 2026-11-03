@@ -4,7 +4,8 @@ import {
   obtenerIdActividad,
   formatearFechaEntrega,
   formatearFechaCorta,
-  formatearPorcentaje
+  formatearPorcentaje,
+  NIVELES_CARGA
 } from '../hooks/useCargaAcademica.js';
 import Aviso from './ui/Aviso';
 import Boton from './ui/Boton';
@@ -35,7 +36,9 @@ function PanelControlAcademico({ estudiante, onNavegar }) {
     semaforo,
     porcentajeCarga,
     avisosPonderacion,
-    avisosConflicto
+    avisosConflicto,
+    indicadorHoras,
+    exigencia
   } = useCargaAcademica(estudiante);
 
   const irA = (vista) => () => {
@@ -131,6 +134,11 @@ function PanelControlAcademico({ estudiante, onNavegar }) {
             <div className="min-w-0">
               <p className="text-xs font-semibold">Estado de carga</p>
               <p className="text-lg font-bold leading-tight">{semaforo.texto}</p>
+              {indicadorHoras && exigencia && (
+                <p className="text-xs">
+                  Horas: {NIVELES_CARGA[indicadorHoras.nivel]} · Exigencia: {NIVELES_CARGA[exigencia.nivel]}
+                </p>
+              )}
             </div>
           </div>
           <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-surface-muted">

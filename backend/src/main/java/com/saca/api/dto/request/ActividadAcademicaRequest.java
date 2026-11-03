@@ -26,6 +26,8 @@ public record ActividadAcademicaRequest(
         @Max(value = 100, message = "El maximo de porcentaje es 100")
         Double porcentajeEvaluacion,
 
+        // Igual que el porcentaje: un valor nulo llegaba al campo primitivo de la entidad y respondía 500
+        @NotNull(message = "El tiempo estimado de horas es obligatorio")
         @Min(value = 1, message = "La cantidad de horas no puede ser menor a 1")
         Double tiempoEstimadoHoras,
 

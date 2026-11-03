@@ -5,6 +5,8 @@ import {
   formatearFechaEntrega,
   formatearFechaCorta,
   formatearPorcentaje,
+  obtenerConfigSemaforo,
+  NIVELES_CARGA,
   UMBRAL_HORAS_ELEVADA,
   UMBRAL_HORAS_CRITICA,
   HORAS_ESCALA_MAXIMA
@@ -12,6 +14,7 @@ import {
 import Aviso from './ui/Aviso';
 import EncabezadoModulo from './ui/EncabezadoModulo';
 import EstadoVacio from './ui/EstadoVacio';
+import Insignia from './ui/Insignia';
 import Selector from './ui/Selector';
 import Tabla from './ui/Tabla';
 import Tarjeta from './ui/Tarjeta';
@@ -36,6 +39,14 @@ const TONOS_SEMAFORO = {
   'Carga Elevada': { caja: 'border-warning-200 bg-warning-50 text-warning-700', icono: 'text-warning-700', barra: 'bg-warning-700' },
   'Sobrecarga Crítica': { caja: 'border-danger-200 bg-danger-50 text-danger-700', icono: 'text-danger-700', barra: 'bg-danger-700' }
 };
+const TONOS_NIVEL = { NORMAL: 'exito', ELEVADA: 'advertencia', CRITICA: 'peligro' };
+
+// A diferencia de formatearPorcentaje, muestra también el 0 %
+const formatearPorcentajeIndicador = (valor) => {
+  const numero = Number(valor ?? 0);
+  return `${Number.isInteger(numero) ? numero : numero.toFixed(1)}%`;
+};
+
 const OPCIONES_PRIORIDAD = ['Alta', 'Media', 'Baja', 'Sin fecha'];
 
 const OPCIONES_ESTADO = [
@@ -59,7 +70,12 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
     ventana,
     semaforo,
     porcentajeCarga,
-    avisosConflicto
+    avisosConflicto,
+    indicadorHoras,
+    exigencia,
+    motivos,
+    actividadesSinFecha,
+    actividadesSinPorcentaje
   } = useCargaAcademica(estudiante);
 
   // Filtros de la lista priorizada
@@ -155,16 +171,18 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
 
   const margenTexto =
     horasPendientes > UMBRAL_HORAS_CRITICA
-      ? `Superas el umbral crítico (${UMBRAL_HORAS_CRITICA} hrs) por ${(horasPendientes - UMBRAL_HORAS_CRITICA).toFixed(1)} hrs.`
+      ? `Superas el umbral crítico de horas (${UMBRAL_HORAS_CRITICA} hrs) por ${(horasPendientes - UMBRAL_HORAS_CRITICA).toFixed(1)} hrs.`
       : horasPendientes > UMBRAL_HORAS_ELEVADA
-        ? `Te quedan ${(UMBRAL_HORAS_CRITICA - horasPendientes).toFixed(1)} hrs antes de Sobrecarga Crítica (más de ${UMBRAL_HORAS_CRITICA} hrs).`
-        : `Te quedan ${(UMBRAL_HORAS_ELEVADA - horasPendientes).toFixed(1)} hrs antes de Carga Elevada (más de ${UMBRAL_HORAS_ELEVADA} hrs).`;
+        ? `Te quedan ${(UMBRAL_HORAS_CRITICA - horasPendientes).toFixed(1)} hrs antes de una carga horaria crítica (más de ${UMBRAL_HORAS_CRITICA} hrs).`
+        : `Te quedan ${(UMBRAL_HORAS_ELEVADA - horasPendientes).toFixed(1)} hrs antes de una carga horaria elevada (más de ${UMBRAL_HORAS_ELEVADA} hrs).`;
 
   const maxHorasDia = Math.max(...horasPorFecha.map((dia) => dia.horas), 0);
   const diaMasCargado = maxHorasDia > 0 ? horasPorFecha.find((dia) => dia.horas === maxHorasDia) : null;
   const totalHorasMaterias = horasPorMateria.reduce((suma, materia) => suma + materia.horas, 0);
 
   const tonoSemaforo = TONOS_SEMAFORO[semaforo.texto];
+  // La barra muestra solo las horas: se colorea con su propio nivel, no con el general
+  const tonoHoras = TONOS_SEMAFORO[obtenerConfigSemaforo(indicadorHoras?.nivel).texto];
 
   const filasActividades = actividadesFiltradas.map((act) => {
     const porcentajeTexto = formatearPorcentaje(act.porcentajeEvaluacion);
@@ -246,7 +264,7 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
           <div className="relative">
             <div className="h-3 w-full overflow-hidden rounded-full bg-surface">
               <div
-                className={unirClases('h-full transition-all duration-500', tonoSemaforo?.barra ?? semaforo.barra)}
+                className={unirClases('h-full transition-all duration-500', tonoHoras?.barra ?? semaforo.barra)}
                 style={{ width: `${porcentajeCarga}%` }}
               ></div>
             </div>
@@ -284,6 +302,75 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
           {margenTexto}
         </p>
       </div>
+
+      {/* INDICADORES DE LA CLASIFICACIÓN (SDACAS-20) */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Tarjeta
+          titulo="Carga horaria"
+          nivelTitulo={2}
+          icono="fa-regular fa-clock"
+          acciones={indicadorHoras && <Insignia tono={TONOS_NIVEL[indicadorHoras.nivel]}>{NIVELES_CARGA[indicadorHoras.nivel]}</Insignia>}
+        >
+          <p className="text-3xl font-bold text-ink-900">{horasPendientes.toFixed(1)} hrs</p>
+          <p className="mt-1 text-sm text-ink-600">
+            Tiempo estimado de las actividades pendientes. Normal hasta {UMBRAL_HORAS_ELEVADA} hrs, elevada con más de {UMBRAL_HORAS_ELEVADA} y crítica con más de {UMBRAL_HORAS_CRITICA}.
+          </p>
+        </Tarjeta>
+
+        <Tarjeta
+          titulo="Exigencia evaluativa"
+          nivelTitulo={2}
+          icono="fa-solid fa-scale-balanced"
+          acciones={exigencia && <Insignia tono={TONOS_NIVEL[exigencia.nivel]}>{NIVELES_CARGA[exigencia.nivel]}</Insignia>}
+        >
+          {exigencia && (
+            <>
+              <dl className="grid grid-cols-3 gap-3 text-sm">
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-ink-600">Peso acumulado</dt>
+                  <dd className="mt-1 text-2xl font-bold text-ink-900">{formatearPorcentajeIndicador(exigencia.pesoAcumulado)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-ink-600">Alto peso</dt>
+                  <dd className="mt-1 text-2xl font-bold text-ink-900">{exigencia.evaluacionesAltoPeso}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-ink-600">Concentración</dt>
+                  <dd className="mt-1 text-2xl font-bold text-ink-900">{exigencia.concentracion ? 'Sí' : 'No'}</dd>
+                </div>
+              </dl>
+              <p className="mt-2 text-sm text-ink-600">
+                Suma de porcentajes de las evaluaciones pendientes de todas tus materias; indica la presión de la semana, no la nota de una materia.
+                Alto peso: {formatearPorcentajeIndicador(exigencia.umbralAltoPeso)} o más.
+              </p>
+            </>
+          )}
+        </Tarjeta>
+      </div>
+
+      <Tarjeta titulo="¿Por qué este estado de carga?" nivelTitulo={2} icono="fa-solid fa-circle-info">
+        <ul className="list-disc space-y-1 pl-5 text-sm text-ink-900">
+          {motivos.map((motivo) => <li key={motivo}>{motivo}</li>)}
+        </ul>
+        {(actividadesSinFecha > 0 || actividadesSinPorcentaje > 0) && (
+          <Aviso tono="advertencia" className="mt-4">
+            {actividadesSinFecha > 0 && (
+              <p>
+                {actividadesSinFecha === 1
+                  ? '1 actividad pendiente no tiene fecha y no se incluye en la carga.'
+                  : `${actividadesSinFecha} actividades pendientes no tienen fecha y no se incluyen en la carga.`}
+              </p>
+            )}
+            {actividadesSinPorcentaje > 0 && (
+              <p>
+                {actividadesSinPorcentaje === 1
+                  ? '1 actividad de esta semana no tiene porcentaje: cuenta en las horas, pero no en la exigencia evaluativa.'
+                  : `${actividadesSinPorcentaje} actividades de esta semana no tienen porcentaje: cuentan en las horas, pero no en la exigencia evaluativa.`}
+              </p>
+            )}
+          </Aviso>
+        )}
+      </Tarjeta>
 
       {/* COMPOSICIÓN DE LA CARGA */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
