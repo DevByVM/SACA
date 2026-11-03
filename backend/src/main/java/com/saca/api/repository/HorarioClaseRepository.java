@@ -3,9 +3,11 @@ package com.saca.api.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.saca.api.entity.ActividadAcademica;
 import com.saca.api.entity.DiaSemana;
 import com.saca.api.entity.HorarioClase;
 
@@ -35,4 +37,15 @@ public interface HorarioClaseRepository extends JpaRepository<HorarioClase, Long
 			@Param("cicloAcademicoId") Long cicloAcademicoId,
 			@Param("diaSemana") DiaSemana diaSemana,
 			@Param("horarioIdExcluir") Long horarioIdExcluir);
+
+	long countByActividadAcademica(ActividadAcademica actividadAcademica);
+
+	// Sin clearAutomatically: quien llama sigue usando la actividad ya cargada (y su nota perezosa)
+	@Modifying(flushAutomatically = true)
+	@Query("""
+			update HorarioClase horario
+			set horario.actividadAcademica = null
+			where horario.actividadAcademica = :actividad
+			""")
+	int desvincularActividad(@Param("actividad") ActividadAcademica actividad);
 }

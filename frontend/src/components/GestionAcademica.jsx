@@ -26,9 +26,11 @@ import {
   actualizarActividad
 } from "../api/actividadesApi";
 import Boton from "./ui/Boton";
+import DialogoConfirmacion from "./ui/DialogoConfirmacion";
 import EncabezadoModulo from "./ui/EncabezadoModulo";
 import Insignia from "./ui/Insignia";
 import Modal from "./ui/Modal";
+import ReporteRendimientoPorMateria from "./ReporteRendimientoPorMateria";
 import Selector from "./ui/Selector";
 import Tarjeta from "./ui/Tarjeta";
 import CampoUi from "./ui/Campo";
@@ -56,6 +58,8 @@ const horarioInicial = {
   horaFin: "",
   modalidad: "PRESENCIAL",
   docenteTutor: "",
+  actividadAcademicaId: "",
+  actividadNombre: "",
 };
 
 const actividadInicial = {
@@ -91,6 +95,14 @@ function fechaLocalHoy() {
   return `${hoy.getFullYear()}-${mes}-${dia}`;
 }
 
+function mensajeCambioMateria(pendiente) {
+  if (!pendiente) return "";
+  const { cantidad, materia } = pendiente;
+  return cantidad === 1
+    ? `Esta actividad tiene 1 horario de clase vinculado de la materia ${materia}. Si continúas, el horario se conservará pero quedará sin actividad asociada.`
+    : `Esta actividad tiene ${cantidad} horarios de clase vinculados de la materia ${materia}. Si continúas, los horarios se conservarán pero quedarán sin actividad asociada.`;
+}
+
 function formatFechaLocalDateTime(value) {
   if (!value) return null;
 
@@ -116,6 +128,9 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
   const [actividades, setActividades] = useState([]);
   const [actividadForm, setActividadForm] = useState(actividadInicial);
   const [formularioAbierto, setFormularioAbierto] = useState(false);
+  // Cambio de materia pendiente de confirmar: { payload, cantidad, materia }
+  const [cambioMateriaPendiente, setCambioMateriaPendiente] = useState(null);
+  const [procesandoCambioMateria, setProcesandoCambioMateria] = useState(false);
 
   const coleccionesCargadas = useRef(new Set());
   const solicitudesEnCurso = useRef(new Map());
@@ -159,9 +174,17 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       if (vistaObjetivo === "horarios") {
         await cargarColeccion("materias", () => listarMaterias(estudianteId), setMaterias);
         await cargarColeccion("horarios", () => listarHorarios(estudianteId), setHorarios);
+        // Para el selector opcional de actividad del formulario de horarios
+        await cargarColeccion(
+          "actividades",
+          () => getActividadesByEstudianteIdAndCicloActivo(estudianteId),
+          setActividades
+        );
       }
 
       if (vistaObjetivo === "actividades") {
+        // El reporte de rendimiento permite elegir entre los ciclos del estudiante
+        await cargarColeccion("ciclos", () => listarCiclos(estudianteId), setCiclos);
         await cargarColeccion("materias", () => listarMaterias(estudianteId), setMaterias);
         await cargarColeccion(
           "actividades",
@@ -244,9 +267,16 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
 
   async function guardarHorario(event) {
     event.preventDefault();
+    // actividadNombre solo sirve para mostrar el vínculo actual en el formulario; no se envía
     const payload = {
-      ...horarioForm,
       materiaInscritaId: Number(horarioForm.materiaInscritaId),
+      diaSemana: horarioForm.diaSemana,
+      horaInicio: horarioForm.horaInicio,
+      horaFin: horarioForm.horaFin,
+      modalidad: horarioForm.modalidad,
+      docenteTutor: horarioForm.docenteTutor,
+      // Sin actividad elegida se envía null, que también quita un vínculo existente
+      actividadAcademicaId: horarioForm.actividadAcademicaId ? Number(horarioForm.actividadAcademicaId) : null,
     };
 
     await guardar(async () => {
@@ -318,9 +348,42 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
           : null,
     };
 
+    if (editando.tipo === "actividad") {
+      const actividadOriginal = actividades.find((actividad) => actividad.idActividad === editando.id);
+      const materiaOriginalId = Number(actividadOriginal?.materiaInscritaId);
+
+      if (actividadOriginal && materiaOriginalId !== materiaSeleccionadaId) {
+        let horariosVinculados;
+        try {
+          horariosVinculados = (await listarHorarios(estudianteId, { materiaInscritaId: materiaOriginalId }))
+            .filter((horario) => horario.actividadAcademicaId === editando.id);
+        } catch (error) {
+          // Sin saber si hay horarios vinculados no se guarda: el cambio podría desvincularlos sin aviso
+          toast.error(error.message || "No se pudieron consultar los horarios vinculados a la actividad.");
+          return;
+        }
+
+        if (horariosVinculados.length > 0) {
+          const materiaOriginal = materias.find((materia) => Number(materia.id) === materiaOriginalId);
+          setCambioMateriaPendiente({
+            payload,
+            cantidad: horariosVinculados.length,
+            materia: materiaOriginal
+              ? `${materiaOriginal.codigo} - ${materiaOriginal.nombre}`
+              : horariosVinculados[0].materiaNombre,
+          });
+          return;
+        }
+      }
+    }
+
+    await guardarActividadConfirmada(payload);
+  }
+
+  async function guardarActividadConfirmada(payload, { desvincularHorarios = false } = {}) {
     await guardar(async () => {
       const actividadGuardada = editando.tipo === "actividad"
-        ? await actualizarActividad(editando.id, payload)
+        ? await actualizarActividad(editando.id, payload, { desvincularHorarios })
         : await crearActividad(payload);
 
       setActividades((actuales) => editando.tipo === "actividad"
@@ -328,8 +391,25 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
         : [actividadGuardada, ...actuales]);
       if (editando.tipo !== "actividad") onActividadesActualizadas?.();
       coleccionesCargadas.current.add("actividades");
+      // Los horarios muestran el nombre de su actividad y pueden haber perdido el vínculo
+      invalidarHorarios();
       setActividadForm(actividadInicial);
     }, "Actividad academica guardada");
+  }
+
+  async function confirmarCambioMateria() {
+    setProcesandoCambioMateria(true);
+    try {
+      await guardarActividadConfirmada(cambioMateriaPendiente.payload, { desvincularHorarios: true });
+    } finally {
+      setProcesandoCambioMateria(false);
+      setCambioMateriaPendiente(null);
+    }
+  }
+
+  function invalidarHorarios() {
+    coleccionesCargadas.current.delete("horarios");
+    setHorarios([]);
   }
 
   async function guardar(accion, texto) {
@@ -379,6 +459,8 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       }
       if (tipo === "actividad") {
         setActividades((actuales) => actuales.filter((actividad) => actividad.idActividad !== id));
+        // El backend desvincula los horarios de la actividad eliminada
+        invalidarHorarios();
         onActividadesActualizadas?.();
       }
     }, "Registro eliminado");
@@ -485,6 +567,8 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       horaFin: horario.horaFin,
       modalidad: horario.modalidad,
       docenteTutor: horario.docenteTutor ?? "",
+      actividadAcademicaId: horario.actividadAcademicaId ?? "",
+      actividadNombre: horario.actividadNombre ?? "",
     });
     setFormularioAbierto(true);
   }
@@ -524,7 +608,8 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
   }
 
   useEffect(() => {
-    if (!formularioAbierto) return undefined;
+    // Con la confirmación de cambio de materia abierta, Escape solo debe cancelar esa confirmación
+    if (!formularioAbierto || cambioMateriaPendiente) return undefined;
 
     function cerrarConEscape(event) {
       if (event.key === "Escape") {
@@ -535,7 +620,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
 
     window.addEventListener("keydown", cerrarConEscape);
     return () => window.removeEventListener("keydown", cerrarConEscape);
-  }, [formularioAbierto]);
+  }, [formularioAbierto, cambioMateriaPendiente]);
 
   const titulosFormulario = {
     ciclos: { nuevo: "Nuevo ciclo académico", editar: "Editar ciclo académico" },
@@ -614,8 +699,8 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
           />
 
           <ReporteRendimientoPorMateria
+            ciclos={ciclos}
             actividades={actividades}
-            materias={materias}
           />
         </div>
       )}
@@ -649,6 +734,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
         {vista === "horarios" && (
           <FormularioHorario
             materias={materias}
+            actividades={actividades}
             form={horarioForm}
             setForm={setHorarioForm}
             onSubmit={guardarHorario}
@@ -666,6 +752,17 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
           />
         )}
       </Modal>
+
+      {/* Va después del formulario para quedar encima; cancelar deja el formulario abierto y sin guardar */}
+      <DialogoConfirmacion
+        abierto={Boolean(cambioMateriaPendiente)}
+        titulo="¿Cambiar la materia de la actividad?"
+        mensaje={mensajeCambioMateria(cambioMateriaPendiente)}
+        textoConfirmar="Cambiar materia y desvincular"
+        onConfirmar={confirmarCambioMateria}
+        onCancelar={() => setCambioMateriaPendiente(null)}
+        procesando={procesandoCambioMateria}
+      />
     </section>
   );
 }
@@ -717,15 +814,42 @@ function FormularioMateria({ ciclos, form, setForm, onSubmit, onCancel }) {
   );
 }
 
-function FormularioHorario({ materias, form, setForm, onSubmit, onCancel }) {
+function FormularioHorario({ materias, actividades, form, setForm, onSubmit, onCancel }) {
+  const opcionesActividad = actividades
+    .filter((actividad) => form.materiaInscritaId && String(actividad.materiaInscritaId) === String(form.materiaInscritaId))
+    .map((actividad) => ({ value: actividad.idActividad, label: actividad.nombre }));
+
+  // Solo se cargan las actividades del ciclo activo: un vínculo con otra actividad se sigue mostrando
+  if (form.actividadAcademicaId && !opcionesActividad.some((opcion) => String(opcion.value) === String(form.actividadAcademicaId))) {
+    opcionesActividad.unshift({ value: form.actividadAcademicaId, label: form.actividadNombre || "Actividad vinculada" });
+  }
+
+  const ayudaActividad = !form.materiaInscritaId
+    ? "Selecciona primero la materia."
+    : opcionesActividad.length === 0
+      ? "La materia no tiene actividades registradas en el ciclo activo."
+      : "Elige «Sin actividad asociada» para quitar el vínculo.";
+
   return (
     <form className="grid gap-4 sm:grid-cols-2" onSubmit={onSubmit}>
       <Selector
         className="sm:col-span-2"
         label="Materia"
         value={form.materiaInscritaId}
-        onValorChange={(materiaInscritaId) => setForm({ ...form, materiaInscritaId })}
+        // La actividad debe ser de la misma materia: al cambiarla se quita la elegida
+        onValorChange={(materiaInscritaId) => setForm({ ...form, materiaInscritaId, actividadAcademicaId: "", actividadNombre: "" })}
         options={materias.map((materia) => ({ value: materia.id, label: `${materia.codigo} - ${materia.nombre}` }))}
+      />
+      <Selector
+        className="sm:col-span-2"
+        label="Actividad asociada (opcional)"
+        required={false}
+        placeholder="Sin actividad asociada"
+        value={form.actividadAcademicaId}
+        disabled={opcionesActividad.length === 0}
+        onValorChange={(actividadAcademicaId) => setForm({ ...form, actividadAcademicaId })}
+        options={opcionesActividad}
+        ayuda={ayudaActividad}
       />
       <Selector label="Dia" value={form.diaSemana} onValorChange={(diaSemana) => setForm({ ...form, diaSemana })} options={["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"]} />
       <Selector label="Modalidad" value={form.modalidad} onValorChange={(modalidad) => setForm({ ...form, modalidad })} options={["PRESENCIAL", "VIRTUAL", "HIBRIDA"]} />
@@ -758,7 +882,7 @@ function FormularioActividades({ materias, form, setForm, onSubmit, onCancel, fe
       <CampoUi label="Fecha inicio" type="datetime-local" value={form.fechaInicio} onValorChange={(fechaInicio) => setForm({ ...form, fechaInicio })} />
       <CampoUi label="Fecha Entrega" type="datetime-local" min={fechaEntregaMinima} value={form.fechaEntrega} onValorChange={(fechaEntrega) => setForm({ ...form, fechaEntrega })} />
       <CampoUi label="Tiempo estimado (horas)" type="number" value={form.tiempoEstimadoHoras} onValorChange={(tiempoEstimadoHoras) => setForm({ ...form, tiempoEstimadoHoras })} />
-      <CampoUi label="Nota obtenida" type="number" required={false} value={form.notaObtenida} onValorChange={(notaObtenida) => setForm({ ...form, notaObtenida })} />
+      <CampoUi label="Nota obtenida" type="number" step="0.01" min="0" max="10" required={false} value={form.notaObtenida} onValorChange={(notaObtenida) => setForm({ ...form, notaObtenida })} />
       <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:col-span-2 sm:flex-row sm:justify-end">
         <Boton variante="secundario" onClick={onCancel}>
           Cancelar
@@ -849,6 +973,7 @@ function TablaHorarios({ horarios, onEdit, onDelete }) {
           { titulo: "Dia", className: "whitespace-nowrap font-semibold" },
           { titulo: "Horario", className: "whitespace-nowrap" },
           { titulo: "Materia", className: "min-w-40" },
+          { titulo: "Actividad", className: "min-w-40" },
           { titulo: "Modalidad", className: "whitespace-nowrap" },
           "Acciones",
         ]}
@@ -858,6 +983,7 @@ function TablaHorarios({ horarios, onEdit, onDelete }) {
             horario.diaSemana,
             `${horario.horaInicio} - ${horario.horaFin}`,
             horario.materiaNombre,
+            horario.actividadNombre || <span className="text-ink-600">Sin actividad</span>,
             horario.modalidad,
             <div className="flex gap-2">
               <Boton variante="secundario" tamano="sm" onClick={() => onEdit(horario)}>
@@ -879,12 +1005,6 @@ const TONOS_PRIORIDAD_ACTIVIDAD = {
   Media: "advertencia",
   Baja: "neutro",
   "Sin fecha": "neutro",
-};
-
-const TONOS_RENDIMIENTO = {
-  "Sin actividades": "neutro",
-  "Con rendimiento registrado": "exito",
-  "Pendiente de notas": "advertencia",
 };
 
 function TablaActividades({ actividades, materias, onEdit, onDelete, onComplete, onReactivate }) {
@@ -968,9 +1088,9 @@ function TablaActividades({ actividades, materias, onEdit, onDelete, onComplete,
               actividad.nombre,
               actividad.fechaEntrega,
               actividad.tiempoEstimadoHoras ? `${actividad.tiempoEstimadoHoras} hrs` : "Sin dato",
-              // Como en la tabla anterior, una nota 0 se muestra como «Sin dato»
+              // Una nota 0 es una calificación registrada y se muestra como tal
               actividad.notaObtenida !== null && actividad.notaObtenida !== undefined
-                ? actividad.notaObtenida || "Sin dato"
+                ? String(actividad.notaObtenida)
                 : "Sin nota",
               <Insignia tono={estado === "COMPLETADA" ? "exito" : "info"}>{estado}</Insignia>,
               <div className="flex gap-2">
@@ -1023,77 +1143,6 @@ function BarraAvanceActividades({ actividades }) {
           ? `${completadas} de ${total} actividades completadas (${porcentaje}\u00A0%)`
           : "Aún no hay actividades registradas en el ciclo activo."}
       </p>
-    </Tarjeta>
-  );
-}
-
-function ReporteRendimientoPorMateria({ actividades, materias }) {
-  const reportes = materias.map((materia) => {
-    const actividadesMateria = actividades.filter(
-      (actividad) => String(actividad.materiaInscritaId) === String(materia.id)
-    );
-
-    const porcentajeEvaluado = actividadesMateria.reduce(
-      (total, actividad) => total + Number(actividad.porcentajeEvaluacion || 0),
-      0
-    );
-
-    const notasRegistradas = actividadesMateria
-      .map((actividad) => actividad.notaObtenida)
-      .filter((nota) => nota !== null && nota !== undefined && nota !== "");
-
-    const promedioNotas =
-      notasRegistradas.length > 0
-        ? notasRegistradas.reduce((total, nota) => total + Number(nota), 0) / notasRegistradas.length
-        : null;
-
-    const actividadesCompletadas = actividadesMateria.filter(esCompletada).length;
-
-    return {
-      id: materia.id,
-      codigo: materia.codigo,
-      nombre: materia.nombre,
-      totalActividades: actividadesMateria.length,
-      actividadesCompletadas,
-      porcentajeEvaluado,
-      promedioNotas,
-    };
-  });
-
-  return (
-    <Tarjeta titulo="Reporte de rendimiento por materia" nivelTitulo={2}>
-      <TablaUi
-        columnas={[
-          { titulo: "Materia", className: "min-w-48" },
-          { titulo: "Actividades", alinear: "derecha" },
-          { titulo: "Completadas", alinear: "derecha" },
-          { titulo: "Porcentaje evaluado", alinear: "derecha" },
-          { titulo: "Promedio de notas", alinear: "derecha" },
-          "Estado",
-        ]}
-        mensajeVacio="No hay materias registradas para generar el reporte."
-        filas={reportes.map((reporte) => {
-          const estado = reporte.totalActividades === 0
-            ? "Sin actividades"
-            : reporte.promedioNotas !== null
-            ? "Con rendimiento registrado"
-            : "Pendiente de notas";
-
-          return {
-            id: reporte.id,
-            celdas: [
-              <>{reporte.codigo} - {reporte.nombre}</>,
-              reporte.totalActividades,
-              reporte.actividadesCompletadas,
-              `${reporte.porcentajeEvaluado}%`,
-              reporte.promedioNotas !== null
-                ? reporte.promedioNotas.toFixed(2)
-                : "Sin notas",
-              <Insignia tono={TONOS_RENDIMIENTO[estado]}>{estado}</Insignia>,
-            ],
-          };
-        })}
-      />
     </Tarjeta>
   );
 }

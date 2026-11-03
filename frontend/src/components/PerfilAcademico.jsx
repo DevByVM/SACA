@@ -25,7 +25,8 @@ function PerfilAcademico({ estudiante }) {
     carrera: "",
     facultad: "",
     fechaIngreso: "",
-    planEstudio: ""
+    planEstudio: "",
+    notaMinimaAprobacion: ""
   });
 
   const cargarDatos = useCallback(async () => {
@@ -46,7 +47,9 @@ function PerfilAcademico({ estudiante }) {
           carrera: dataAcademico.carrera || "",
           facultad: dataAcademico.facultad || "",
           fechaIngreso: dataAcademico.fechaIngreso || "",
-          planEstudio: dataAcademico.planEstudio || ""
+          planEstudio: dataAcademico.planEstudio || "",
+          // Se compara con null para no confundir una nota mínima 0 con un campo vacío
+          notaMinimaAprobacion: dataAcademico.notaMinimaAprobacion ?? ""
         });
       }
 
@@ -135,10 +138,19 @@ const guardarAcademico = async (e) => {
     return;
   }
 
+  const notaMinimaTexto = String(academico.notaMinimaAprobacion).trim();
+  const notaMinima = notaMinimaTexto === "" ? null : Number(notaMinimaTexto);
+
+  if (notaMinima !== null && (Number.isNaN(notaMinima) || notaMinima < 0 || notaMinima > 10)) {
+    toast.warning("La nota mínima de aprobación debe estar entre 0 y 10");
+    return;
+  }
+
   try {
     const res = await actualizarPerfilAcademico(
       estudiante.id,
-      academico
+      // Vacío se envía como null: el estudiante puede quitar la nota mínima configurada
+      { ...academico, notaMinimaAprobacion: notaMinima }
     );
 
     if (
@@ -150,7 +162,7 @@ const guardarAcademico = async (e) => {
     }
 
   } catch (e) {
-    toast.error("Error al actualizar perfil académico");
+    toast.error(e.response?.data?.message || "Error al actualizar perfil académico");
   }
 };
 
@@ -182,6 +194,7 @@ const guardarAcademico = async (e) => {
               ["Facultad", academico.facultad || "No registrada"],
               ["Fecha de ingreso", academico.fechaIngreso || "No registrada"],
               ["Plan de estudio", academico.planEstudio || "No registrado"],
+              ["Nota mínima de aprobación", academico.notaMinimaAprobacion !== "" ? String(academico.notaMinimaAprobacion) : "No configurada"],
             ].map(([etiqueta, valor]) => (
               <div key={etiqueta} className="rounded-lg bg-surface-muted p-3">
                 <dt className="font-semibold text-ink-900">{etiqueta}</dt>
@@ -284,6 +297,18 @@ const guardarAcademico = async (e) => {
             required={false}
             value={academico.planEstudio}
             onChange={handleAcadChange}
+          />
+          <Campo
+            label="Nota mínima de aprobación"
+            type="number"
+            step="0.01"
+            min="0"
+            max="10"
+            name="notaMinimaAprobacion"
+            required={false}
+            value={academico.notaMinimaAprobacion}
+            onChange={handleAcadChange}
+            ayuda="La que exige tu programa académico (0 a 10). Se usa para estimar la nota necesaria en el reporte de rendimiento."
           />
         </div>
 

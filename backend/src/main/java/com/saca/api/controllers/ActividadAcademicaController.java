@@ -52,9 +52,11 @@ public class ActividadAcademicaController {
         return ResponseEntity.noContent().build();
     }
 
+    // desvincularHorarios=true confirma que, si la materia cambia, sus horarios vinculados se desvinculan
     @PutMapping("/{actividadId}")
-    public ResponseEntity<ActividadAcademicaResponse> actualizar(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ActividadAcademicaRequest request, @PathVariable Long actividadId) {
-        ActividadAcademicaResponse response = service.actualizar(request, actividadId, EstudianteAutenticado.id(jwt));
+    public ResponseEntity<ActividadAcademicaResponse> actualizar(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ActividadAcademicaRequest request, @PathVariable Long actividadId,
+                                                                 @RequestParam(defaultValue = "false") boolean desvincularHorarios) {
+        ActividadAcademicaResponse response = service.actualizar(request, actividadId, EstudianteAutenticado.id(jwt), desvincularHorarios);
         return ResponseEntity.ok(response);
     }
 

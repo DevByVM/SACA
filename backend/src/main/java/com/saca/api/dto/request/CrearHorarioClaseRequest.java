@@ -25,5 +25,7 @@ public record CrearHorarioClaseRequest(
 		ModalidadClase modalidad,
 
 		@Size(max = 120, message = "El docente o tutor no debe superar 120 caracteres")
-		String docenteTutor) {
+		String docenteTutor,
+
+		Long actividadAcademicaId) {
 }

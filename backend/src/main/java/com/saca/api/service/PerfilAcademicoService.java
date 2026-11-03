@@ -34,6 +34,7 @@ public class PerfilAcademicoService {
         dto.setFacultad(p.getFacultad());
         dto.setFechaIngreso(p.getFechaIngreso());
         dto.setPlanEstudio(p.getPlanEstudio());
+        dto.setNotaMinimaAprobacion(p.getNotaMinimaAprobacion());
 
         return dto;
     }
@@ -54,10 +55,22 @@ public class PerfilAcademicoService {
         PerfilAcademico perfil = existente.orElse(new PerfilAcademico());
 
         perfil.setEstudiante(estudiante);
-        perfil.setCarrera(request.getCarrera());
-        perfil.setFacultad(request.getFacultad());
-        perfil.setFechaIngreso(request.getFechaIngreso());
-        perfil.setPlanEstudio(request.getPlanEstudio());
+        // Solo se actualiza lo que viene en la petición: un campo omitido conserva su valor guardado
+        if (request.isCarreraIndicada()) {
+            perfil.setCarrera(request.getCarrera());
+        }
+        if (request.isFacultadIndicada()) {
+            perfil.setFacultad(request.getFacultad());
+        }
+        if (request.isFechaIngresoIndicada()) {
+            perfil.setFechaIngreso(request.getFechaIngreso());
+        }
+        if (request.isPlanEstudioIndicado()) {
+            perfil.setPlanEstudio(request.getPlanEstudio());
+        }
+        if (request.isNotaMinimaAprobacionIndicada()) {
+            perfil.setNotaMinimaAprobacion(request.getNotaMinimaAprobacion());
+        }
 
         repository.save(perfil);
 

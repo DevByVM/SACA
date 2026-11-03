@@ -22,5 +22,8 @@ public record ActualizarHorarioClaseRequest(
 		ModalidadClase modalidad,
 
 		@Size(max = 120, message = "El docente o tutor no debe superar 120 caracteres")
-		String docenteTutor) {
+		String docenteTutor,
+
+		// null quita la asociación existente
+		Long actividadAcademicaId) {
 }

@@ -43,6 +43,11 @@ public class HorarioClase {
 	@Column(name = "docente_tutor", length = 120)
 	private String docenteTutor;
 
+	// Opcional: la clase puede dedicarse a una actividad concreta de la misma materia (p. ej. un laboratorio)
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "actividad_academica_id")
+	private ActividadAcademica actividadAcademica;
+
 	public HorarioClase() {
 	}
 
@@ -100,5 +105,13 @@ public class HorarioClase {
 
 	public void setDocenteTutor(String docenteTutor) {
 		this.docenteTutor = docenteTutor;
+	}
+
+	public ActividadAcademica getActividadAcademica() {
+		return actividadAcademica;
+	}
+
+	public void setActividadAcademica(ActividadAcademica actividadAcademica) {
+		this.actividadAcademica = actividadAcademica;
 	}
 }

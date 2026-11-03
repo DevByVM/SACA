@@ -14,5 +14,7 @@ public record HorarioClaseResponse(
 		LocalTime horaInicio,
 		LocalTime horaFin,
 		ModalidadClase modalidad,
-		String docenteTutor) {
+		String docenteTutor,
+		Long actividadAcademicaId,
+		String actividadNombre) {
 }

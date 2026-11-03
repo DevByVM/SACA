@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { jornadaService } from '../services/jornadaLaboralService.js';
-import { obtenerPorCicloActivoYEstdiante } from '../services/actividadService.js';
+import { obtenerCargaSemanal } from '../api/cargaApi.js';
 
 // =====================================================================
 // Constantes compartidas
@@ -9,30 +9,25 @@ import { obtenerPorCicloActivoYEstdiante } from '../services/actividadService.js
 // Aviso de alta ponderación (Dashboard): porcentaje de evaluación mínimo
 export const UMBRAL_ALTA_PONDERACION = 15;
 
-// Semáforo de carga (horas pendientes)
+// Escala de la barra de horas; los umbrales coinciden con CargaAcademicaService y la clasificación la decide el backend
 export const UMBRAL_HORAS_ELEVADA = 20;
 export const UMBRAL_HORAS_CRITICA = 35;
 export const HORAS_ESCALA_MAXIMA = 40;
+
+export const NIVELES_CARGA = {
+  NORMAL: 'Normal',
+  ELEVADA: 'Elevada',
+  CRITICA: 'Crítica'
+};
+
+// Referencia estable para no recalcular los useMemo mientras no haya datos
+const SIN_ACTIVIDADES = [];
 
 const DIAS_TEXTO = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 // =====================================================================
 // Utilidades compartidas (puras)
 // =====================================================================
-
-// Una actividad es "próxima" si su fecha de referencia cae entre el momento actual y exactamente 7 días después.
-// Usa fechaEntrega; si no existe, usa fechaInicio. Si ambas faltan, se excluye.
-const estaEnProximosDias = (act, desde, hasta) => {
-  const fechaReferencia = act.fechaEntrega
-    ? new Date(act.fechaEntrega)
-    : act.fechaInicio
-      ? new Date(act.fechaInicio)
-      : null;
-
-  if (!fechaReferencia) return false;
-
-  return fechaReferencia >= desde && fechaReferencia <= hasta;
-};
 
 export const obtenerIdActividad = (act) => act.idActividad || act.id;
 
@@ -100,26 +95,11 @@ export const horarioChocaConJornada = (horario, jornada) =>
   && horario.horaInicio.substring(0, 5) < jornada.horaFin.substring(0, 5)
   && horario.horaFin.substring(0, 5) > jornada.horaInicio.substring(0, 5);
 
-// Semáforo de carga: umbrales <= 20 normal, > 20 y <= 35 elevada, > 35 crítica
-export const obtenerConfigSemaforo = (horasPendientes) => {
-  let configSemaforo = {
-    bg: 'bg-emerald-50/60 border-emerald-200 text-emerald-800',
-    icon: 'fa-circle-check text-emerald-500',
-    texto: 'Carga Normal',
-    mensaje: 'Tu carga académica de los próximos 7 días es completamente manejable.',
-    barra: 'bg-emerald-500'
-  };
-
-  if (horasPendientes > UMBRAL_HORAS_ELEVADA && horasPendientes <= UMBRAL_HORAS_CRITICA) {
-    configSemaforo = {
-      bg: 'bg-amber-50/60 border-amber-200 text-amber-800',
-      icon: 'fa-triangle-exclamation text-amber-500',
-      texto: 'Carga Elevada',
-      mensaje: 'Organiza tus actividades con cuidado.',
-      barra: 'bg-amber-500'
-    };
-  } else if (horasPendientes > UMBRAL_HORAS_CRITICA) {
-    configSemaforo = {
+// Semáforo de la carga general (SDACAS-20): el nivel lo calcula el backend combinando horas y exigencia
+// evaluativa. Los textos se conservan porque Panel y Tablero los usan como clave de sus colores.
+export const obtenerConfigSemaforo = (nivelGeneral) => {
+  if (nivelGeneral === 'CRITICA') {
+    return {
       bg: 'bg-rose-50/60 border-rose-200 text-rose-800',
       icon: 'fa-circle-exclamation text-rose-500',
       texto: 'Sobrecarga Crítica',
@@ -128,7 +108,23 @@ export const obtenerConfigSemaforo = (horasPendientes) => {
     };
   }
 
-  return configSemaforo;
+  if (nivelGeneral === 'ELEVADA') {
+    return {
+      bg: 'bg-amber-50/60 border-amber-200 text-amber-800',
+      icon: 'fa-triangle-exclamation text-amber-500',
+      texto: 'Carga Elevada',
+      mensaje: 'Organiza tus actividades con cuidado.',
+      barra: 'bg-amber-500'
+    };
+  }
+
+  return {
+    bg: 'bg-emerald-50/60 border-emerald-200 text-emerald-800',
+    icon: 'fa-circle-check text-emerald-500',
+    texto: 'Carga Normal',
+    mensaje: 'Tu carga académica de los próximos 7 días es completamente manejable.',
+    barra: 'bg-emerald-500'
+  };
 };
 
 // =====================================================================
@@ -173,86 +169,23 @@ export function useCargaAcademica(estudiante) {
   const estudianteId = estudiante?.id;
   // ESTADOS REALES CONECTADOS A LAS APIS
   const [jornadas, setJornadas] = useState([]);
-  const [actividadesBase, setActividadesBase] = useState([]);
-  const [completadasBase, setCompletadasBase] = useState([]);
-  const [horasPendientes, setHorasPendientes] = useState(0);
-  const [ventana, setVentana] = useState(null);
+  const [carga, setCarga] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!estudianteId) return; 
+    if (!estudianteId) return;
 
     const cargarDatosSaca = async () => {
       try {
         setLoading(true);
 
-        // 1. Consume API de jornadas
-        const datosJornadas = await jornadaService.listarPorEstudiante(estudianteId);
+        // Las jornadas solo alimentan los avisos de conflicto; la carga la calcula el backend (SDACAS-20)
+        const [datosJornadas, datosCarga] = await Promise.all([
+          jornadaService.listarPorEstudiante(estudianteId),
+          obtenerCargaSemanal()
+        ]);
         setJornadas(datosJornadas);
-
-        // 2. Consume la API 
-        const datosActividades = await obtenerPorCicloActivoYEstdiante(estudianteId);
-        
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-
-        // Ventana de los próximos 7 días: desde este momento hasta exactamente 7 días después
-        const ahora = new Date();
-        const limiteProximosDias = new Date(ahora);
-        limiteProximosDias.setDate(limiteProximosDias.getDate() + 7);
-
-        // Se consideran solo actividades pendientes con entrega en los próximos 7 días
-        const actividadesPendientes = datosActividades.filter((act) => {
-          const estado = act.estado || "ACTIVO";
-          const fechaEntrega = act.fechaEntrega ? new Date(act.fechaEntrega) : null;
-
-          const noEstaCompletada = estado !== "COMPLETADA";
-          const aunNoVence = fechaEntrega ? fechaEntrega >= hoy : true;
-          const estaEnProximosSieteDias = estaEnProximosDias(act, ahora, limiteProximosDias);
-
-          return noEstaCompletada && aunNoVence && estaEnProximosSieteDias;
-        });
-
-        // Las completadas de la misma ventana solo alimentan el filtro por estado; no suman horas pendientes
-        const actividadesCompletadas = datosActividades.filter(
-          (act) => act.estado === "COMPLETADA" && estaEnProximosDias(act, ahora, limiteProximosDias)
-        );
-
-        // Se ordenan por prioridad: entrega más cercana, mayor porcentaje y más horas estimadas
-        const compararPorPrioridad = (a, b) => {
-          const fechaA = a.fechaEntrega ? new Date(a.fechaEntrega).getTime() : Infinity;
-          const fechaB = b.fechaEntrega ? new Date(b.fechaEntrega).getTime() : Infinity;
-
-          if (fechaA !== fechaB) {
-            return fechaA - fechaB;
-          }
-
-          const porcentajeA = Number(a.porcentajeEvaluacion || 0);
-          const porcentajeB = Number(b.porcentajeEvaluacion || 0);
-
-          if (porcentajeA !== porcentajeB) {
-            return porcentajeB - porcentajeA;
-          }
-
-          const horasA = Number(a.tiempoEstimadoHoras || 0);
-          const horasB = Number(b.tiempoEstimadoHoras || 0);
-
-          return horasB - horasA;
-        };
-        const actividadesOrdenadas = [...actividadesPendientes].sort(compararPorPrioridad);
-
-        setActividadesBase(actividadesOrdenadas);
-        setCompletadasBase([...actividadesCompletadas].sort(compararPorPrioridad));
-        setVentana({ desde: ahora, hasta: limiteProximosDias });
-
-        // Suma total de horas pendientes de los próximos 7 días
-        const totalHrs = actividadesOrdenadas.reduce(
-          (sum, act) => sum + Number(act.tiempoEstimadoHoras || 0),
-          0
-        );
-
-        setHorasPendientes(totalHrs);
-
+        setCarga(datosCarga);
       } catch (error) {
         console.error("Error al sincronizar el Semáforo Horario SACA:", error);
       } finally {
@@ -262,6 +195,15 @@ export function useCargaAcademica(estudiante) {
 
     cargarDatosSaca();
   }, [estudianteId]);
+
+  // El backend ya devuelve las actividades de la ventana ordenadas por entrega, porcentaje y horas
+  const actividadesBase = carga?.actividadesPendientes ?? SIN_ACTIVIDADES;
+  const completadasBase = carga?.actividadesNoPendientes ?? SIN_ACTIVIDADES;
+  const horasPendientes = Number(carga?.horas?.horasPendientes ?? 0);
+  const ventana = useMemo(
+    () => (carga ? { desde: new Date(carga.desde), hasta: new Date(carga.hasta) } : null),
+    [carga]
+  );
 
   // Actividades enriquecidas con datos derivados (se conserva el orden)
   const [actividades, actividadesCompletadas] = useMemo(() => {
@@ -301,9 +243,16 @@ export function useCargaAcademica(estudiante) {
     jornadas,
     horasPendientes,
     ventana,
-    semaforo: obtenerConfigSemaforo(horasPendientes),
+    semaforo: obtenerConfigSemaforo(carga?.nivelGeneral),
     porcentajeCarga: Math.min((horasPendientes / HORAS_ESCALA_MAXIMA) * 100, 100),
     avisosPonderacion,
-    avisosConflicto
+    avisosConflicto,
+    // SDACAS-20: indicadores independientes y explicación de la clasificación general
+    nivelGeneral: carga?.nivelGeneral ?? null,
+    indicadorHoras: carga?.horas ?? null,
+    exigencia: carga?.exigencia ?? null,
+    motivos: carga?.motivos ?? SIN_ACTIVIDADES,
+    actividadesSinFecha: carga?.actividadesSinFecha ?? 0,
+    actividadesSinPorcentaje: carga?.actividadesSinPorcentaje ?? 0
   };
 }

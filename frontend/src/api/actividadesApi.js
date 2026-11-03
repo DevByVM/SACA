@@ -20,8 +20,10 @@ export function eliminarActividad(actividadId) {
     method: 'DELETE',
   })
 }
-export function actualizarActividad(actividadId, payload) {
-  return apiRequest(`/actividades/${actividadId}`, {
+// desvincularHorarios confirma que, si cambia la materia, sus horarios vinculados quedan sin actividad
+export function actualizarActividad(actividadId, payload, { desvincularHorarios = false } = {}) {
+  const consulta = desvincularHorarios ? '?desvincularHorarios=true' : ''
+  return apiRequest(`/actividades/${actividadId}${consulta}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   })
