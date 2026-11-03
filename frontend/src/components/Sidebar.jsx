@@ -44,7 +44,8 @@ function Sidebar({
   cerrarSesion
 }) {
   return (
-    <aside className="flex w-full flex-col justify-between border-b border-line bg-surface md:min-h-screen md:w-64 md:border-b-0 md:border-r">
+    // En escritorio ocupa la altura de la ventana; si las opciones no caben, el menú se desplaza por dentro
+    <aside className="flex w-full flex-col justify-between border-b border-line bg-surface md:h-full md:w-64 md:overflow-y-auto md:border-b-0 md:border-r">
 
       <div className="absolute bottom-0 left-0 top-0 hidden w-[4px] bg-brand-700 md:block"></div>
 

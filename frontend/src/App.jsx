@@ -100,7 +100,9 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-canvas flex flex-col md:flex-row w-full overflow-x-hidden font-sans text-ink-900">
+    // En escritorio la ventana no se desplaza: el menú queda fijo a toda la altura y solo <main> tiene scroll.
+    // En móvil se conserva el desplazamiento normal de la página con el menú plegable arriba.
+    <div className="min-h-screen bg-canvas flex flex-col md:h-screen md:flex-row md:overflow-hidden w-full overflow-x-hidden font-sans text-ink-900">
 
       <div className="border-b border-line bg-surface p-4 md:hidden">
         <Boton
@@ -118,7 +120,7 @@ function App() {
 
       <div
         id="menu-principal"
-        className={unirClases(menuAbierto ? "block" : "hidden", "md:flex")}
+        className={unirClases(menuAbierto ? "block" : "hidden", "md:flex md:h-full md:shrink-0")}
         onKeyDown={cerrarMenuConEscape}
       >
         <Sidebar
@@ -128,7 +130,7 @@ function App() {
         />
       </div>
 
-      <main className="relative z-20 min-w-0 flex-1">
+      <main className="relative z-20 min-w-0 flex-1 md:h-full md:overflow-y-auto">
 
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
 
