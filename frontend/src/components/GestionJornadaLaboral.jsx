@@ -1,6 +1,6 @@
 // src/components/GestionJornadaLaboral.jsx
 import React, { useState, useEffect } from 'react';
-import { jornadaService } from '../services/jornadaLaboralService.js';
+import { esRechazoDeValidacion, jornadaService } from '../services/jornadaLaboralService.js';
 import { listarCiclos } from '../api/ciclosApi';
 import { listarHorarios } from '../api/horariosApi';
 import { getActividadesByEstudianteIdAndCicloActivo } from '../api/actividadesApi';
@@ -124,6 +124,13 @@ export const RegistroJornada = ({ estudiante }) => {
       return;
     }
 
+    // Misma duración mínima que valida el backend (SDACAS-32); los cruces y duplicados los informa el backend
+    const minutos = (hora) => Number(hora.substring(0, 2)) * 60 + Number(hora.substring(3, 5));
+    if (minutos(datosJornada.horaFin) - minutos(datosJornada.horaInicio) < 30) {
+      setError('La jornada debe durar al menos 30 minutos');
+      return;
+    }
+
     let guardada;
     try {
       guardada = idEdicion
@@ -133,7 +140,8 @@ export const RegistroJornada = ({ estudiante }) => {
       cargarJornadas();
     } catch (err) {
       setError(err.message || (idEdicion ? 'No se pudo actualizar la jornada.' : 'No se pudo guardar la jornada.'));
-      console.error(err);
+      // Un cruce, un duplicado o un día inválido ya se explican en pantalla; solo se registran los fallos inesperados
+      if (!esRechazoDeValidacion(err)) console.error(err);
       return;
     }
 
