@@ -11,6 +11,7 @@ import {
   UMBRAL_HORAS_CRITICA,
   HORAS_ESCALA_MAXIMA
 } from '../hooks/useCargaAcademica.js';
+import CargaPorSemanas from './carga/CargaPorSemanas';
 import Aviso from './ui/Aviso';
 import EncabezadoModulo from './ui/EncabezadoModulo';
 import EstadoVacio from './ui/EstadoVacio';
@@ -582,6 +583,9 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
           />
         )}
       </Tarjeta>
+
+      {/* CARGA POR SEMANA HASTA EL FIN DEL CICLO (SDACAS-26) */}
+      <CargaPorSemanas onIrAAcademico={onNavegar ? irA('academico') : undefined} />
 
       {/* ENLACES A OTRAS VISTAS */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
