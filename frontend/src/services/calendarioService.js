@@ -14,3 +14,11 @@ export const obtenerCalendario =
 
     return response.data;
   };
+
+// SDACAS-21: semana (lunes a domingo) que contiene la fecha AAAA-MM-DD; sin fecha, la semana actual
+export const obtenerCalendarioSemana = async (fecha) => {
+  const response = await clienteHttp.get(`${API}/semana`, {
+    params: fecha ? { fecha } : undefined,
+  });
+  return response.data;
+};
