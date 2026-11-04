@@ -2,6 +2,7 @@ package com.saca.api.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.saca.api.CarnetsDePrueba;
 import com.saca.api.entity.Estudiante;
 import com.saca.api.repository.EstudianteRepository;
 import com.saca.api.service.TokenService;
@@ -247,8 +248,8 @@ class EndurecimientoEtapa6Test {
     void loginYRegistroSiguenSiendoPublicosYLasRutasPrivadasExigenToken() throws Exception {
         String unico = UUID.randomUUID().toString().substring(0, 8);
         assertThat(mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON).content("""
-                {"nombre":"Otro Estudiante","carnet":"OT%s","correoInstitucional":"otro.%s@ues.edu.sv","contrasenia":"Segura123"}
-                """.formatted(unico, unico))).andReturn().getResponse().getStatus()).isEqualTo(200);
+                {"nombre":"Otro Estudiante","carnet":"%s","correoInstitucional":"otro.%s@ues.edu.sv","contrasenia":"Segura123"}
+                """.formatted(CarnetsDePrueba.nuevo("OT"), unico))).andReturn().getResponse().getStatus()).isEqualTo(200);
         assertThat(puedeIniciarSesion(CLAVE)).isTrue();
 
         assertThat(mockMvc.perform(get("/api/auth/perfil")).andReturn().getResponse().getStatus()).isEqualTo(401);

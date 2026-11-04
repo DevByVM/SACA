@@ -10,6 +10,9 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
 
     boolean existsByCarnet(String carnet);
 
+    // SDACAS-3: la unicidad del carnet no distingue mayúsculas, con independencia de la intercalación de la base
+    boolean existsByCarnetIgnoreCase(String carnet);
+
     boolean existsByCorreoInstitucional(String correoInstitucional);
 
     Optional<Estudiante> findByCarnet(String carnet);

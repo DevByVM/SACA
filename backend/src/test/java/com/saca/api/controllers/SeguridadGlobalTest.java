@@ -2,6 +2,7 @@ package com.saca.api.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.saca.api.CarnetsDePrueba;
 import com.saca.api.config.ManejadorErroresSeguridad;
 import com.saca.api.config.TokenConfig;
 import com.saca.api.entity.Estudiante;
@@ -278,8 +279,8 @@ class SeguridadGlobalTest {
     void loginYRegistroFuncionanSinToken() throws Exception {
         String unico = UUID.randomUUID().toString().substring(0, 8);
         mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON).content("""
-                {"nombre":"Publico Nuevo","carnet":"PN%s","correoInstitucional":"publico.%s@ues.edu.sv","contrasenia":"Segura123"}
-                """.formatted(unico, unico)))
+                {"nombre":"Publico Nuevo","carnet":"%s","correoInstitucional":"publico.%s@ues.edu.sv","contrasenia":"Segura123"}
+                """.formatted(CarnetsDePrueba.nuevo("PN"), unico)))
                 .andExpect(status().isOk());
 
         String login = mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""

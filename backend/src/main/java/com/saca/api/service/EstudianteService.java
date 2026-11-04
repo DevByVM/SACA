@@ -2,7 +2,9 @@ package com.saca.api.service;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -29,6 +31,12 @@ public class EstudianteService {
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
+    // SDACAS-3: formato oficial del carnet (dos letras y cinco números), validado después de pasar a mayúsculas
+    private static final Pattern FORMATO_CARNET = Pattern.compile("^[A-Z]{2}[0-9]{5}$");
+    static final String MENSAJE_CARNET_OBLIGATORIO = "Carnet obligatorio";
+    static final String MENSAJE_FORMATO_CARNET = "El carnet debe tener dos letras y cinco números, por ejemplo AP23001";
+    static final String MENSAJE_CARNET_Y_CORREO_FIJOS = "El carnet y el correo institucional no se pueden modificar desde el perfil";
+
     private boolean nombreValido(String nombre) {
     return nombre != null
             && nombre.matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+(?: [a-zA-ZáéíóúÁÉÍÓÚñÑ]+)*$");
@@ -38,7 +46,7 @@ public class EstudianteService {
 
         String nombre = normalizarTexto(request.getNombre());
         String correoInstitucional = normalizarCorreo(request.getCorreoInstitucional());
-        String carnet = normalizarTexto(request.getCarnet());
+        String carnet = normalizarCarnet(request.getCarnet());
 
         if (nombre.isBlank()) {
             throw new ValidacionNegocioException("Nombre obligatorio");
@@ -52,7 +60,13 @@ public class EstudianteService {
             throw new ValidacionNegocioException("Correo institucional inválido");
         }
 
-        if (repository.existsByCarnet(carnet)) {
+        String errorCarnet = validarFormatoCarnet(carnet);
+        if (errorCarnet != null) {
+            throw new ValidacionNegocioException(errorCarnet);
+        }
+
+        // AP23001 y ap23001 son el mismo carnet
+        if (repository.existsByCarnetIgnoreCase(carnet)) {
             throw new ValidacionNegocioException("Carnet ya registrado");
         }
 
@@ -160,9 +174,13 @@ public class EstudianteService {
         }
 
         String nombre = normalizarTexto(request.getNombre());
-        String carnet = normalizarTexto(request.getCarnet());
-        String correoInstitucional =
-                normalizarCorreo(request.getCorreoInstitucional());
+
+        // SDACAS-3: el correo deriva del carnet y ninguno de los dos se modifica desde el perfil. Si se envían, deben
+        // coincidir con los guardados (sin distinguir mayúsculas); así un carnet anterior vacío, null o sin el
+        // formato oficial se conserva tal cual
+        if (modificaCarnetOCorreo(estudianteOpt.get(), request)) {
+            return MENSAJE_CARNET_Y_CORREO_FIJOS;
+        }
 
         if (nombre.isBlank()) {
             return "Nombre obligatorio";
@@ -170,28 +188,6 @@ public class EstudianteService {
 
         if (!nombreValido(nombre)) {
             return "El nombre solo puede contener letras, espacios, guiones y apóstrofes";
-        }
-
-        if (!correoInstitucional.endsWith("@ues.edu.sv")) {
-            return "Correo institucional inválido";
-        }
-
-        Optional<Estudiante> carnetExistente =
-                repository.findByCarnet(carnet);
-
-        if (carnetExistente.isPresent()
-                && !carnetExistente.get().getId().equals(id)) {
-
-            return "Carnet ya registrado";
-        }
-
-        Optional<Estudiante> correoExistente =
-                repository.findByCorreoInstitucional(correoInstitucional);
-
-        if (correoExistente.isPresent()
-                && !correoExistente.get().getId().equals(id)) {
-
-            return "Correo ya registrado";
         }
 
         if (request.getContrasenia() != null
@@ -216,8 +212,6 @@ public class EstudianteService {
         Estudiante estudiante = estudianteOpt.get();
 
         estudiante.setNombre(nombre);
-        estudiante.setCarnet(carnet);
-        estudiante.setCorreoInstitucional(correoInstitucional);
 
         if (request.getContrasenia() != null
                 && !request.getContrasenia().isBlank()) {
@@ -243,6 +237,28 @@ public class EstudianteService {
 
     private String normalizarTexto(String texto) {
         return texto == null ? "" : texto.trim();
+    }
+
+    private String normalizarCarnet(String carnet) {
+        return normalizarTexto(carnet).toUpperCase(Locale.ROOT);
+    }
+
+    // Un campo ausente (null) no cuenta como modificación; null y vacío son el mismo carnet ausente
+    private boolean modificaCarnetOCorreo(Estudiante estudiante, ActualizarPerfilRequest request) {
+        boolean cambiaCarnet = request.getCarnet() != null
+                && !normalizarCarnet(request.getCarnet()).equals(normalizarCarnet(estudiante.getCarnet()));
+        boolean cambiaCorreo = request.getCorreoInstitucional() != null
+                && !normalizarCorreo(request.getCorreoInstitucional())
+                        .equals(normalizarCorreo(estudiante.getCorreoInstitucional()));
+        return cambiaCarnet || cambiaCorreo;
+    }
+
+    // Devuelve el mensaje de error o null si el carnet (ya normalizado) es válido
+    private static String validarFormatoCarnet(String carnet) {
+        if (carnet.isEmpty()) {
+            return MENSAJE_CARNET_OBLIGATORIO;
+        }
+        return FORMATO_CARNET.matcher(carnet).matches() ? null : MENSAJE_FORMATO_CARNET;
     }
 
     private boolean contraseniaValida(String contrasenia) {

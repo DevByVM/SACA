@@ -2,6 +2,7 @@ package com.saca.api.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.saca.api.CarnetsDePrueba;
 import com.saca.api.config.TokenConfig;
 import com.saca.api.entity.Estudiante;
 import com.saca.api.entity.PerfilAcademico;
@@ -21,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -88,7 +90,7 @@ class PerfilSeguridadTest {
         String unico = UUID.randomUUID().toString().substring(0, 8);
         Estudiante estudiante = new Estudiante();
         estudiante.setNombre(nombre);
-        estudiante.setCarnet("PF" + unico);
+        estudiante.setCarnet(CarnetsDePrueba.nuevo("PF"));
         estudiante.setCorreoInstitucional("perfil." + unico + "@ues.edu.sv");
         estudiante.setContrasenia(passwordEncoder.encode(clave));
         estudiante.setCuentaActiva(true);
@@ -263,13 +265,16 @@ class PerfilSeguridadTest {
                 {"nombre":"Estudiante Uno","carnet":"%s","correoInstitucional":"%s","contrasenia":""}
                 """.formatted(b.getCarnet(), a.getCorreoInstitucional());
 
+        // SDACAS-3: el carnet y el correo no se modifican desde el perfil, ni siquiera hacia los de otro estudiante
+        String camposFijos = "El carnet y el correo institucional no se pueden modificar desde el perfil";
         assertThat(mockMvc.perform(json(conToken(put("/api/auth/perfil"), tokenDe(a)), robarCorreo))
-                .andReturn().getResponse().getContentAsString()).isEqualTo("Correo ya registrado");
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8)).isEqualTo(camposFijos);
         assertThat(mockMvc.perform(json(conToken(put("/api/auth/perfil"), tokenDe(a)), robarCarnet))
-                .andReturn().getResponse().getContentAsString()).isEqualTo("Carnet ya registrado");
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8)).isEqualTo(camposFijos);
 
-        assertThat(estudianteRepository.findById(a.getId()).orElseThrow().getCorreoInstitucional())
-                .isEqualTo(a.getCorreoInstitucional());
+        Estudiante aGuardado = estudianteRepository.findById(a.getId()).orElseThrow();
+        assertThat(aGuardado.getCorreoInstitucional()).isEqualTo(a.getCorreoInstitucional());
+        assertThat(aGuardado.getCarnet()).isEqualTo(a.getCarnet());
         assertBSinCambios();
     }
 
@@ -334,8 +339,8 @@ class PerfilSeguridadTest {
     void loginYRegistroFuncionanSinToken() throws Exception {
         String unico = UUID.randomUUID().toString().substring(0, 8);
         String registro = mockMvc.perform(json(post("/api/auth/registro"), """
-                {"nombre":"Nuevo Estudiante","carnet":"NV%s","correoInstitucional":"nuevo.%s@ues.edu.sv","contrasenia":"Segura123"}
-                """.formatted(unico, unico)))
+                {"nombre":"Nuevo Estudiante","carnet":"%s","correoInstitucional":"nuevo.%s@ues.edu.sv","contrasenia":"Segura123"}
+                """.formatted(CarnetsDePrueba.nuevo("NV"), unico)))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(registro).isEqualTo("Usuario registrado correctamente");
 

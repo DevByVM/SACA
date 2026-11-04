@@ -14,6 +14,7 @@ import { toast } from "react-toastify";
 import Boton from "./ui/Boton";
 import Campo from "./ui/Campo";
 import Tarjeta from "./ui/Tarjeta";
+import { AYUDA_CARNET, MENSAJE_FORMATO_CARNET, carnetValido, normalizarCarnet } from "../utils/carnet";
 
 /**
  * Componente Login
@@ -119,10 +120,17 @@ function Login({ onLoginSuccess }) {
     const handleRegistro = async (e) => {
         e.preventDefault();
 
+        // SDACAS-3: mismo formato que valida el backend; se aceptan minúsculas y se envía en mayúsculas
+        const carnet = normalizarCarnet(form.carnet);
+        if (carnet && !carnetValido(carnet)) {
+            toast.error(MENSAJE_FORMATO_CARNET);
+            return;
+        }
+
         try {
 
             // Envía todos los datos del formulario al backend
-            const respuesta = await registrar(form);
+            const respuesta = await registrar({ ...form, carnet });
 
             if (respuesta !== "Usuario registrado correctamente") {
                 throw new Error(respuesta || "No se pudo completar el registro");
@@ -207,6 +215,8 @@ function Login({ onLoginSuccess }) {
                                 required={false}
                                 value={form.carnet}
                                 onChange={handleChange}
+                                ayuda={AYUDA_CARNET}
+                                autoComplete="off"
                             />
                         </>
                     )}
