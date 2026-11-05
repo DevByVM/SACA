@@ -22,18 +22,16 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-// SDACAS-3 (E1): carnet con el formato oficial (dos letras y cinco números), normalizado a mayúsculas antes de
-// validar y de comprobar la unicidad en el registro. El correo deriva del carnet, así que ninguno de los dos se
-// modifica desde el perfil; un carnet anterior (sin el formato, vacío o null) se conserva tal cual.
+// El correo deriva del carnet, así que ninguno de los dos se modifica desde el perfil; un carnet
+// anterior (sin el formato, vacío o null) se conserva tal cual. El formato y la normalización del carnet en el
+// registro se prueban en RegistroActivacionTest.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class RegistroCarnetTest {
 
-    private static final String FORMATO_INVALIDO = "El carnet debe tener dos letras y cinco números, por ejemplo AP23001";
     private static final String CARNET_Y_CORREO_FIJOS = "El carnet y el correo institucional no se pueden modificar desde el perfil";
 
     @Autowired
@@ -54,22 +52,8 @@ class RegistroCarnetTest {
         return "carnet." + UUID.randomUUID().toString().substring(0, 8) + "@ues.edu.sv";
     }
 
-    private MvcResult registrar(String carnet, String correo) throws Exception {
-        Map<String, Object> cuerpo = new HashMap<>(Map.of(
-                "nombre", "Estudiante Carnet", "correoInstitucional", correo, "contrasenia", "Segura123"));
-        if (carnet != null) {
-            cuerpo.put("carnet", carnet);
-        }
-        return mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(cuerpo))).andReturn();
-    }
-
     private static String texto(MvcResult resultado) throws Exception {
         return resultado.getResponse().getContentAsString(StandardCharsets.UTF_8);
-    }
-
-    private String mensaje(MvcResult resultado) throws Exception {
-        return objectMapper.readTree(texto(resultado)).get("message").asText();
     }
 
     private Estudiante guardarConCarnet(String carnet) {
@@ -102,95 +86,6 @@ class RegistroCarnetTest {
 
     private String carnetGuardado(Long id) {
         return estudianteRepository.findById(id).orElseThrow().getCarnet();
-    }
-
-    // ================= registro
-
-    @Test
-    void unCarnetConElFormatoOficialSeRegistra() throws Exception {
-        String carnet = CarnetsDePrueba.nuevo("RC");
-        String correo = correoUnico();
-
-        MvcResult resultado = registrar(carnet, correo);
-
-        assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
-        assertThat(texto(resultado)).isEqualTo("Usuario registrado correctamente");
-        assertThat(estudianteRepository.findByCorreoInstitucional(correo).orElseThrow().getCarnet()).isEqualTo(carnet);
-    }
-
-    @Test
-    void lasMinusculasYMayusculasMixtasSeGuardanEnMayusculas() throws Exception {
-        String enMinusculas = CarnetsDePrueba.nuevo("RC");
-        String mixto = CarnetsDePrueba.nuevo("RC");
-        String correoMinusculas = correoUnico();
-        String correoMixto = correoUnico();
-
-        assertThat(registrar(enMinusculas.toLowerCase(Locale.ROOT), correoMinusculas).getResponse().getStatus()).isEqualTo(200);
-        assertThat(registrar("r" + mixto.substring(1), correoMixto).getResponse().getStatus()).isEqualTo(200);
-
-        assertThat(estudianteRepository.findByCorreoInstitucional(correoMinusculas).orElseThrow().getCarnet()).isEqualTo(enMinusculas);
-        assertThat(estudianteRepository.findByCorreoInstitucional(correoMixto).orElseThrow().getCarnet()).isEqualTo(mixto);
-    }
-
-    @Test
-    void losEspaciosAlrededorDelCarnetSeIgnoran() throws Exception {
-        String carnet = CarnetsDePrueba.nuevo("RC");
-        String correo = correoUnico();
-
-        assertThat(registrar("  " + carnet + " ", correo).getResponse().getStatus()).isEqualTo(200);
-        assertThat(estudianteRepository.findByCorreoInstitucional(correo).orElseThrow().getCarnet()).isEqualTo(carnet);
-    }
-
-    @Test
-    void unCarnetConOtroFormatoSeRechazaYNoCreaLaCuenta() throws Exception {
-        for (String invalido : new String[] {
-                "12", "A123456", "ABC1234", "RC1234", "RC123456", "R C1234", "RC 12345", "RC-1234",
-                "ÑA12345", "RC12A45", "1234567", "RCABCDE"}) {
-            String correo = correoUnico();
-
-            MvcResult resultado = registrar(invalido, correo);
-
-            assertThat(resultado.getResponse().getStatus()).as(invalido).isEqualTo(400);
-            assertThat(mensaje(resultado)).as(invalido).isEqualTo(FORMATO_INVALIDO);
-            assertThat(estudianteRepository.findByCorreoInstitucional(correo)).as(invalido).isEmpty();
-        }
-    }
-
-    @Test
-    void unCarnetVacioOAusenteEsObligatorio() throws Exception {
-        for (String vacio : new String[] {"", "   ", null}) {
-            String correo = correoUnico();
-
-            MvcResult resultado = registrar(vacio, correo);
-
-            assertThat(resultado.getResponse().getStatus()).isEqualTo(400);
-            assertThat(mensaje(resultado)).isEqualTo("Carnet obligatorio");
-            assertThat(estudianteRepository.findByCorreoInstitucional(correo)).isEmpty();
-        }
-    }
-
-    @Test
-    void dosCarnetsQueSoloDifierenEnMayusculasSonElMismo() throws Exception {
-        String carnet = CarnetsDePrueba.nuevo("RC");
-        assertThat(registrar(carnet, correoUnico()).getResponse().getStatus()).isEqualTo(200);
-        String correo = correoUnico();
-
-        MvcResult duplicado = registrar(carnet.toLowerCase(Locale.ROOT), correo);
-
-        assertThat(duplicado.getResponse().getStatus()).isEqualTo(400);
-        assertThat(mensaje(duplicado)).isEqualTo("Carnet ya registrado");
-        assertThat(estudianteRepository.findByCorreoInstitucional(correo)).isEmpty();
-    }
-
-    @Test
-    void unCarnetAnteriorGuardadoEnMinusculasTambienCuentaComoRepetido() throws Exception {
-        String carnet = CarnetsDePrueba.nuevo("RC");
-        guardarConCarnet(carnet.toLowerCase(Locale.ROOT));
-
-        MvcResult duplicado = registrar(carnet, correoUnico());
-
-        assertThat(duplicado.getResponse().getStatus()).isEqualTo(400);
-        assertThat(mensaje(duplicado)).isEqualTo("Carnet ya registrado");
     }
 
     // ================= perfil: el carnet y el correo no se modifican

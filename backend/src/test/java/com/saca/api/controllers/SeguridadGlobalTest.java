@@ -60,7 +60,8 @@ class SeguridadGlobalTest {
     private static final String ID_INEXISTENTE = "999999";
 
     // Únicas rutas que pueden responder sin token, con su método
-    private static final Set<String> RUTAS_PUBLICAS = Set.of("POST /api/auth/login", "POST /api/auth/registro");
+    private static final Set<String> RUTAS_PUBLICAS = Set.of("POST /api/auth/login", "POST /api/auth/registro",
+            "POST /api/auth/activacion", "POST /api/auth/activacion/consultar", "POST /api/auth/reenviar-activacion");
 
     @Autowired
     private MockMvc mockMvc;
@@ -218,6 +219,7 @@ class SeguridadGlobalTest {
     void unaRutaPublicaConOtroMetodoNoEsPublica() throws Exception {
         assertRespuesta401Json(mockMvc.perform(get("/api/auth/login")).andReturn());
         assertRespuesta401Json(mockMvc.perform(get("/api/auth/registro")).andReturn());
+        assertRespuesta401Json(mockMvc.perform(get("/api/auth/activacion")).andReturn());
     }
 
     // GreetingController ya no existe: sin token 401 y con token 404, como cualquier ruta inexistente
@@ -275,17 +277,26 @@ class SeguridadGlobalTest {
 
     // ---- rutas públicas
 
+    // Sin token se llega al controlador. Aquí no hay SMTP configurado, así que el registro responde 503 (no 401);
+    // el flujo completo de registro y activación se prueba en RegistroActivacionTest
     @Test
-    void loginYRegistroFuncionanSinToken() throws Exception {
-        String unico = UUID.randomUUID().toString().substring(0, 8);
+    void loginRegistroYActivacionFuncionanSinToken() throws Exception {
         mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON).content("""
-                {"nombre":"Publico Nuevo","carnet":"%s","correoInstitucional":"publico.%s@ues.edu.sv","contrasenia":"Segura123"}
-                """.formatted(CarnetsDePrueba.nuevo("PN"), unico)))
+                {"carnet":"%s"}
+                """.formatted(CarnetsDePrueba.nuevo("PN"))))
+                .andExpect(status().isServiceUnavailable());
+        mockMvc.perform(post("/api/auth/activacion/consultar").contentType(MediaType.APPLICATION_JSON).content("""
+                {"token":"no-valido"}
+                """))
                 .andExpect(status().isOk());
+        mockMvc.perform(post("/api/auth/activacion").contentType(MediaType.APPLICATION_JSON).content("""
+                {"token":"no-valido","nombre":"Publico Nuevo","contrasenia":"Segura123"}
+                """))
+                .andExpect(status().isBadRequest());
 
         String login = mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
-                {"correoInstitucional":"publico.%s@ues.edu.sv","contrasenia":"Segura123"}
-                """.formatted(unico)))
+                {"correoInstitucional":"%s","contrasenia":"Segura123"}
+                """.formatted(estudiante.getCorreoInstitucional())))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(objectMapper.readTree(login).get("token").asText()).isNotBlank();
     }

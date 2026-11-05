@@ -108,31 +108,58 @@ class AuthLoginTokenTest {
 
     @Test
     void usuarioInexistenteNoEmiteToken() throws Exception {
-        assertSinToken(login("no.existe." + UUID.randomUUID() + "@ues.edu.sv", CLAVE), "Usuario no encontrado");
+        assertSinToken(login("no.existe." + UUID.randomUUID() + "@ues.edu.sv", CLAVE), "Credenciales incorrectas");
     }
 
     @Test
     void cuentaInactivaNoEmiteTokenAunqueLaContraseniaSeaCorrecta() throws Exception {
         Estudiante estudiante = crearEstudiante(false, null);
 
-        assertSinToken(login(estudiante.getCorreoInstitucional(), CLAVE), "Cuenta no activada");
+        assertSinToken(login(estudiante.getCorreoInstitucional(), CLAVE), "Credenciales incorrectas");
     }
 
     @Test
     void cuentaBloqueadaNoEmiteTokenAunqueLaContraseniaSeaCorrecta() throws Exception {
         Estudiante estudiante = crearEstudiante(true, Timestamp.valueOf(LocalDateTime.now().plusMinutes(5)));
 
-        assertSinToken(login(estudiante.getCorreoInstitucional(), CLAVE), "Cuenta bloqueada temporalmente");
+        assertSinToken(login(estudiante.getCorreoInstitucional(), CLAVE), "Credenciales incorrectas");
     }
 
     @Test
+    // El bloqueo sigue aplicándose (3 fallos, 5 minutos), pero la respuesta es siempre la genérica
     void alTercerIntentoFallidoSeBloqueaYNoSeEmiteToken() throws Exception {
         Estudiante estudiante = crearEstudiante(true, null);
-        login(estudiante.getCorreoInstitucional(), "Incorrecta1");
-        login(estudiante.getCorreoInstitucional(), "Incorrecta1");
+        assertSinToken(login(estudiante.getCorreoInstitucional(), "Incorrecta1"), "Credenciales incorrectas");
+        assertSinToken(login(estudiante.getCorreoInstitucional(), "Incorrecta1"), "Credenciales incorrectas");
+        assertThat(repository.findById(estudiante.getId()).orElseThrow().getBloqueadoHasta()).isNull();
 
-        assertSinToken(login(estudiante.getCorreoInstitucional(), "Incorrecta1"), "Cuenta bloqueada por 5 minutos");
-        assertSinToken(login(estudiante.getCorreoInstitucional(), CLAVE), "Cuenta bloqueada temporalmente");
+        LocalDateTime antes = LocalDateTime.now();
+        assertSinToken(login(estudiante.getCorreoInstitucional(), "Incorrecta1"), "Credenciales incorrectas");
+        LocalDateTime despues = LocalDateTime.now();
+
+        Estudiante bloqueado = repository.findById(estudiante.getId()).orElseThrow();
+        assertThat(bloqueado.getIntentosFallidos()).isEqualTo(3);
+        assertThat(bloqueado.getBloqueadoHasta().toLocalDateTime())
+                .isBetween(antes.plusMinutes(5).minusSeconds(1), despues.plusMinutes(5).plusSeconds(1));
+
+        // Con el bloqueo vigente la contraseña correcta tampoco entra, y el intento no se cuenta
+        assertSinToken(login(estudiante.getCorreoInstitucional(), CLAVE), "Credenciales incorrectas");
+        assertThat(repository.findById(estudiante.getId()).orElseThrow().getIntentosFallidos()).isEqualTo(3);
+    }
+
+    @Test
+    void alVencerElBloqueoLaContraseniaCorrectaEntraYReiniciaElContador() throws Exception {
+        Estudiante estudiante = crearEstudiante(true, Timestamp.valueOf(LocalDateTime.now().minusSeconds(1)));
+        estudiante.setIntentosFallidos(3);
+        repository.save(estudiante);
+
+        JsonNode respuesta = login(estudiante.getCorreoInstitucional(), CLAVE);
+
+        assertThat(respuesta.get("autenticado").asBoolean()).isTrue();
+        assertThat(respuesta.get("token").asText()).isNotBlank();
+        Estudiante guardado = repository.findById(estudiante.getId()).orElseThrow();
+        assertThat(guardado.getIntentosFallidos()).isZero();
+        assertThat(guardado.getBloqueadoHasta()).isNull();
     }
 
     // Todas las rutas salvo las públicas de autenticación exigen un token válido

@@ -34,6 +34,12 @@ public class TokenService {
 
     // El sujeto del token es el id del estudiante: será la identidad confiable en el servidor
     public TokenEmitido emitir(Estudiante estudiante) {
+        // Barrera central; es el único punto que firma JWT, así que ninguna ruta presente o futura
+        // puede abrir sesión a una cuenta nueva sin activar. Las anteriores (sin estado) y las confirmadas sí
+        if (estudiante.estaPendienteDeActivacion()) {
+            throw new CuentaPendienteException();
+        }
+
         // JWT guarda las fechas en segundos; así expiraEn coincide exactamente con el exp del token
         Instant ahora = relojAplicacion.instant().truncatedTo(ChronoUnit.SECONDS);
         Instant expiraEn = ahora.plus(duracion);
@@ -51,5 +57,12 @@ public class TokenService {
     }
 
     public record TokenEmitido(String valor, Instant expiraEn) {
+    }
+
+    // El mensaje no incluye datos de la cuenta
+    public static class CuentaPendienteException extends IllegalStateException {
+        public CuentaPendienteException() {
+            super("No se emiten tokens de sesión para cuentas pendientes de activación");
+        }
     }
 }

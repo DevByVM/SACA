@@ -335,18 +335,18 @@ class PerfilSeguridadTest {
 
     // ---- login y registro siguen siendo públicos
 
+    // El registro llega al controlador sin token (503 aquí: no hay SMTP configurado; el flujo completo está en
+    // RegistroActivacionTest) y una cuenta existente inicia sesión sin token
     @Test
     void loginYRegistroFuncionanSinToken() throws Exception {
-        String unico = UUID.randomUUID().toString().substring(0, 8);
-        String registro = mockMvc.perform(json(post("/api/auth/registro"), """
-                {"nombre":"Nuevo Estudiante","carnet":"%s","correoInstitucional":"nuevo.%s@ues.edu.sv","contrasenia":"Segura123"}
-                """.formatted(CarnetsDePrueba.nuevo("NV"), unico)))
-                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        assertThat(registro).isEqualTo("Usuario registrado correctamente");
+        mockMvc.perform(json(post("/api/auth/registro"), """
+                {"carnet":"%s"}
+                """.formatted(CarnetsDePrueba.nuevo("NV"))))
+                .andExpect(status().isServiceUnavailable());
 
         String login = mockMvc.perform(json(post("/api/auth/login"), """
-                {"correoInstitucional":"nuevo.%s@ues.edu.sv","contrasenia":"Segura123"}
-                """.formatted(unico)))
+                {"correoInstitucional":"%s","contrasenia":"%s"}
+                """.formatted(a.getCorreoInstitucional(), CLAVE_A)))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(leer(login).get("autenticado").asBoolean()).isTrue();
         assertThat(leer(login).get("token").asText()).isNotBlank();

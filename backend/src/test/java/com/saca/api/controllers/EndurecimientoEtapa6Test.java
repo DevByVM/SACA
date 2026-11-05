@@ -244,12 +244,12 @@ class EndurecimientoEtapa6Test {
 
     // ================= 5. Configuración de seguridad intacta
 
+    // El registro es público: sin token llega al controlador, que aquí responde 503 por no haber SMTP configurado
     @Test
     void loginYRegistroSiguenSiendoPublicosYLasRutasPrivadasExigenToken() throws Exception {
-        String unico = UUID.randomUUID().toString().substring(0, 8);
         assertThat(mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON).content("""
-                {"nombre":"Otro Estudiante","carnet":"%s","correoInstitucional":"otro.%s@ues.edu.sv","contrasenia":"Segura123"}
-                """.formatted(CarnetsDePrueba.nuevo("OT"), unico))).andReturn().getResponse().getStatus()).isEqualTo(200);
+                {"carnet":"%s"}
+                """.formatted(CarnetsDePrueba.nuevo("OT")))).andReturn().getResponse().getStatus()).isEqualTo(503);
         assertThat(puedeIniciarSesion(CLAVE)).isTrue();
 
         assertThat(mockMvc.perform(get("/api/auth/perfil")).andReturn().getResponse().getStatus()).isEqualTo(401);

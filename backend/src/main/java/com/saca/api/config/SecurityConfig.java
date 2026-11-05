@@ -24,8 +24,9 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Sin sesión todavía no hay token: login y registro deben ser públicos
-                .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/registro")
+                // Sin sesión todavía no hay token: login, registro, activación y reenvío deben ser públicos
+                .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/registro",
+                        "/api/auth/activacion", "/api/auth/activacion/consultar", "/api/auth/reenviar-activacion")
                 .permitAll()
                 // El navegador nunca envía el token en la consulta previa CORS
                 .requestMatchers(CorsUtils::isPreFlightRequest)

@@ -1,11 +1,14 @@
 package com.saca.api.entity;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -42,6 +45,17 @@ public class Estudiante {
 
 	@Column(name = "bloqueado_hasta")
 	private Timestamp bloqueadoHasta;
+
+	// NULL identifica una cuenta anterior a la confirmación del correo, que conserva su acceso.
+	// Al añadirse la columna, ddl-auto=update la deja en NULL en las filas existentes.
+	@JsonIgnore
+	@Enumerated(EnumType.STRING)
+	@Column(name = "estado_correo", length = 20)
+	private EstadoCorreo estadoCorreo;
+
+	@JsonIgnore
+	@Column(name = "correo_confirmado_en")
+	private LocalDateTime correoConfirmadoEn;
 
 	public Estudiante() {
 	}
@@ -112,5 +126,26 @@ public class Estudiante {
 
 	public void setBloqueadoHasta(Timestamp bloqueadoHasta) {
 		this.bloqueadoHasta = bloqueadoHasta;
+	}
+
+	public EstadoCorreo getEstadoCorreo() {
+		return estadoCorreo;
+	}
+
+	public void setEstadoCorreo(EstadoCorreo estadoCorreo) {
+		this.estadoCorreo = estadoCorreo;
+	}
+
+	public LocalDateTime getCorreoConfirmadoEn() {
+		return correoConfirmadoEn;
+	}
+
+	public void setCorreoConfirmadoEn(LocalDateTime correoConfirmadoEn) {
+		this.correoConfirmadoEn = correoConfirmadoEn;
+	}
+
+	// Solo las cuentas nuevas sin activar; las anteriores (NULL) y las confirmadas funcionan con normalidad
+	public boolean estaPendienteDeActivacion() {
+		return estadoCorreo == EstadoCorreo.PENDIENTE;
 	}
 }

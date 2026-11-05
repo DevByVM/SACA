@@ -1,0 +1,19 @@
+# Buzón de pruebas para los correos de activación (solo desarrollo local).
+# Proyecto propio, separado de los contenedores de docker-compose.local.yml y de docker-compose.yml.
+#   Arrancar:  docker compose -f docker-compose.correo.yml --profile correo up -d
+#   Detener:   docker compose -f docker-compose.correo.yml --profile correo down
+# SMTP en 127.0.0.1:1025 e interfaz web en http://127.0.0.1:8025, solo accesibles desde este equipo.
+# Sin volumen: los mensajes se pierden al eliminar el contenedor.
+# Backend: SPRING_MAIL_HOST=localhost, SPRING_MAIL_PORT=1025, SACA_CORREO_REMITENTE y SACA_FRONTEND_URL
+# (ver .env.example).
+name: saca-correo
+
+services:
+  mailpit:
+    image: axllent/mailpit:v1.27.4
+    container_name: saca_mailpit_local
+    profiles: ["correo"]
+    restart: "no"
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"

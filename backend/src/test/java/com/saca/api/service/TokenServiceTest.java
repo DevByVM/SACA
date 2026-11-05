@@ -1,6 +1,7 @@
 package com.saca.api.service;
 
 import com.saca.api.config.TokenConfig;
+import com.saca.api.entity.EstadoCorreo;
 import com.saca.api.entity.Estudiante;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
@@ -43,6 +44,29 @@ class TokenServiceTest {
         assertThat(jwt.getExpiresAt()).isEqualTo(ahora.plus(Duration.ofHours(8)));
         assertThat(emitido.expiraEn()).isEqualTo(jwt.getExpiresAt());
         assertThat(jwt.getClaims()).containsOnlyKeys("iss", "sub", "iat", "exp");
+    }
+
+    // Barrera central de emisión
+    @Test
+    void noEmiteTokensParaUnaCuentaPendienteDeActivacion() {
+        TokenService service = new TokenService(config.codificadorToken(clave), Clock.systemUTC(), Duration.ofHours(8));
+        Estudiante pendiente = new Estudiante(42L);
+        pendiente.setEstadoCorreo(EstadoCorreo.PENDIENTE);
+
+        assertThatThrownBy(() -> service.emitir(pendiente))
+                .isInstanceOf(TokenService.CuentaPendienteException.class)
+                .hasMessageNotContaining("42");
+    }
+
+    @Test
+    void lasCuentasAnterioresYLasConfirmadasRecibenSuToken() {
+        TokenService service = new TokenService(config.codificadorToken(clave), Clock.systemUTC(), Duration.ofHours(8));
+        Estudiante anterior = new Estudiante(41L);
+        Estudiante confirmada = new Estudiante(43L);
+        confirmada.setEstadoCorreo(EstadoCorreo.CONFIRMADO);
+
+        assertThat(config.decodificadorToken(clave).decode(service.emitir(anterior).valor()).getSubject()).isEqualTo("41");
+        assertThat(config.decodificadorToken(clave).decode(service.emitir(confirmada).valor()).getSubject()).isEqualTo("43");
     }
 
     @Test
