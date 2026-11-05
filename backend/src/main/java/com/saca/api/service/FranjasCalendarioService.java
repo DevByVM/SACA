@@ -24,7 +24,7 @@ import com.saca.api.repository.CicloAcademicoRepository;
 import com.saca.api.repository.DisponibilidadSemanalRepository;
 import com.saca.api.repository.JornadaLaboralRepository;
 
-// SDACAS-32: proyecta sobre las fechas del calendario las restricciones de tiempo del estudiante.
+// Proyecta sobre las fechas del calendario las restricciones de tiempo del estudiante.
 // - Jornada laboral: no pertenece a un ciclo, así que se repite cada semana en su día.
 // - Disponibilidad semanal: solo los bloques NO_DISPONIBLE y ESTUDIO de ciclos ACTIVO y dentro de las
 //   fechas de su ciclo, igual que las clases del calendario. CLASE y LIBRE conservan su significado y

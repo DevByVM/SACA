@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-// SDACAS-20: la carga semanal solo considera las actividades del estudiante del token en sus ciclos activos
+// La carga semanal solo considera las actividades del estudiante del token en sus ciclos activos
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")

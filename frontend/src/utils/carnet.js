@@ -1,4 +1,4 @@
-// SDACAS-3: formato oficial del carnet, el mismo que valida el backend (EstudianteService).
+// Formato oficial del carnet, el mismo que valida el backend (EstudianteService).
 // Se aceptan minúsculas: el valor se pasa a mayúsculas antes de validar y de enviarlo.
 export const FORMATO_CARNET = /^[A-Z]{2}[0-9]{5}$/;
 

@@ -16,7 +16,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// SDACAS-25: cálculo puro del rendimiento, sin Spring ni base de datos
+// Cálculo puro del rendimiento, sin Spring ni base de datos
 class RendimientoAcademicoCalculoTest {
 
     private static final BigDecimal SEIS = new BigDecimal("6.00");
@@ -67,7 +67,7 @@ class RendimientoAcademicoCalculoTest {
         assertThat(actual.compareTo(new BigDecimal(esperado))).as("%s debería ser %s", actual, esperado).isZero();
     }
 
-    // ================= HU025-CP001
+    // ================= Promedio ponderado con parte del plan calificado
 
     @Test
     void promedioPonderadoDelCasoHU025CP001() {

@@ -6,7 +6,7 @@ import { DIAS_SEMANA, diasDeLaSemana, formatearFecha } from "./fechas";
 
 // Cuadrícula de lunes a domingo de la semana que contiene la fecha seleccionada.
 // Pulsar el encabezado de un día lo selecciona para la agenda.
-// SDACAS-32: encima de los eventos se muestran las franjas de jornada laboral y disponibilidad del día;
+// Encima de los eventos se muestran las franjas de jornada laboral y disponibilidad del día;
 // los eventos conservan su representación.
 const SIN_FRANJAS = new Map();
 

@@ -4,7 +4,7 @@ import EventoCalendario from "./EventoCalendario";
 import { formatearFechaLarga, formatearHoras } from "./fechas";
 
 // Lista cronológica de uno o varios días. Las horas pendientes y la concentración de cada día salen
-// del resumen del backend (reglas de SDACAS-20) y no dependen de los filtros.
+// del resumen del backend (reglas de la carga semanal) y no dependen de los filtros.
 function AgendaEventos({ fechas, hoy, eventosPorFecha, resumenPorFecha, cargando }) {
   if (cargando) {
     return <EstadoVacio cargando mensaje="Cargando agenda..." />;

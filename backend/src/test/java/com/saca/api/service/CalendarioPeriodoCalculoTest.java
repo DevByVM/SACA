@@ -24,7 +24,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// SDACAS-21 (vista mensual): periodo arbitrario con resumen diario calculado con las reglas de SDACAS-20
+// Vista mensual del calendario: periodo arbitrario con resumen diario calculado con las reglas de la carga semanal
 class CalendarioPeriodoCalculoTest {
 
     // Cuadrícula de noviembre de 2026: del lunes 26 de octubre al domingo 6 de diciembre

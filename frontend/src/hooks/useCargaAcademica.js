@@ -90,7 +90,7 @@ export const horarioChocaConJornada = (horario, jornada) =>
   && horario.horaInicio.substring(0, 5) < jornada.horaFin.substring(0, 5)
   && horario.horaFin.substring(0, 5) > jornada.horaInicio.substring(0, 5);
 
-// Semáforo de la carga general (SDACAS-20): el nivel lo calcula el backend combinando horas y exigencia
+// Semáforo de la carga general: el nivel lo calcula el backend combinando horas y exigencia
 // evaluativa. Los textos se conservan porque Panel y Tablero los usan como clave de sus colores.
 export const obtenerConfigSemaforo = (nivelGeneral) => {
   if (nivelGeneral === 'CRITICA') {
@@ -174,7 +174,7 @@ export function useCargaAcademica(estudiante) {
       try {
         setLoading(true);
 
-        // Las jornadas solo alimentan los avisos de conflicto; la carga la calcula el backend (SDACAS-20)
+        // Las jornadas solo alimentan los avisos de conflicto; la carga la calcula el backend
         const [datosJornadas, datosCarga] = await Promise.all([
           jornadaService.listarPorEstudiante(estudianteId),
           obtenerCargaSemanal()
@@ -242,7 +242,7 @@ export function useCargaAcademica(estudiante) {
     porcentajeCarga: Math.min((horasPendientes / HORAS_ESCALA_MAXIMA) * 100, 100),
     avisosPonderacion,
     avisosConflicto,
-    // SDACAS-20: indicadores independientes y explicación de la clasificación general
+    // Indicadores independientes y explicación de la clasificación general
     nivelGeneral: carga?.nivelGeneral ?? null,
     indicadorHoras: carga?.horas ?? null,
     exigencia: carga?.exigencia ?? null,

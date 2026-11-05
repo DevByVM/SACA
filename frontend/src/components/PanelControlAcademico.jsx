@@ -24,7 +24,7 @@ const TONOS_SEMAFORO = {
   'Sobrecarga Crítica': { caja: 'border-danger-200 bg-danger-50 text-danger-700', icono: 'text-danger-700', barra: 'bg-danger-700' }
 };
 
-// Panel de control académico (SDACAS-28)
+// Panel de control académico
 // Responde: "¿Cómo estoy y qué debo atender?"
 // Solo lectura: las acciones sobre actividades están en Gestión Académica.
 function PanelControlAcademico({ estudiante, onNavegar }) {

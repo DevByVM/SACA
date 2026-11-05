@@ -15,7 +15,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// SDACAS-32 (E3): proyección de jornada laboral y disponibilidad sobre las fechas del calendario
+// Proyección de jornada laboral y disponibilidad sobre las fechas del calendario
 class FranjasCalendarioCalculoTest {
 
     // Semana del lunes 2 al domingo 8 de noviembre de 2026

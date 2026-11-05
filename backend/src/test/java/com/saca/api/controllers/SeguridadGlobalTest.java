@@ -49,7 +49,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-// Etapa 4: toda ruta exige un JWT válido salvo login, registro, la consulta previa CORS y /error.
+// Toda ruta exige un JWT válido salvo las públicas de autenticación, la consulta previa CORS y /error.
 // Las rutas se obtienen de Spring MVC, de modo que una ruta nueva queda cubierta sin tocar la prueba.
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -170,7 +170,7 @@ class SeguridadGlobalTest {
                         "CicloAcademicoController", "DisponibilidadSemanalController",
                         "HorarioClaseController", "JornadaLaboralController", "MateriaInscritaController",
                         "NotificacionController", "PerfilAcademicoController");
-        // 42 rutas tras retirar GreetingController en la etapa 6; una ruta nueva entra sola en las comprobaciones siguientes
+        // 42 rutas tras retirar GreetingController; una ruta nueva entra sola en las comprobaciones siguientes
         assertThat(rutasDeLaAplicacion()).hasSizeGreaterThanOrEqualTo(42);
     }
 
@@ -220,7 +220,7 @@ class SeguridadGlobalTest {
         assertRespuesta401Json(mockMvc.perform(get("/api/auth/registro")).andReturn());
     }
 
-    // GreetingController se retiró en la etapa 6: sin token 401 y con token 404, como cualquier ruta inexistente
+    // GreetingController ya no existe: sin token 401 y con token 404, como cualquier ruta inexistente
     @Test
     void lasRutasDeEjemploGreetingYaNoExisten() throws Exception {
         String token = tokenService.emitir(estudiante).valor();
@@ -264,7 +264,7 @@ class SeguridadGlobalTest {
     void unTokenValidoEsAceptadoEnTodosLosControladores() throws Exception {
         String token = tokenService.emitir(estudiante).valor();
         Map<String, Ruta> rutas = unaRutaGetPorControlador();
-        // 10 controladores con rutas GET tras retirar GreetingController en la etapa 6
+        // 10 controladores con rutas GET tras retirar GreetingController
         assertThat(rutas).hasSizeGreaterThanOrEqualTo(10);
 
         for (Ruta ruta : rutas.values()) {
@@ -299,7 +299,7 @@ class SeguridadGlobalTest {
                 .content("{\"correoInstitucional\":\"x@ues.edu.sv\",\"contrasenia\":\"x\"}")).andReturn());
     }
 
-    // Llamada directamente, sin un error real detrás, la página de error responde 404 JSON (etapa 6)
+    // Llamada directamente, sin un error real detrás, la página de error responde 404 JSON
     @Test
     void laRutaDeErrorNoExigeTokenYRespondeJson() throws Exception {
         MvcResult resultado = mockMvc.perform(get("/error")).andReturn();

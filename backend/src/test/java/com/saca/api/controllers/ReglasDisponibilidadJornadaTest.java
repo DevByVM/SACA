@@ -33,8 +33,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-// SDACAS-7: bloques de disponibilidad de 30 minutos como mínimo y tipos «No disponible» / «Tiempo de estudio».
-// SDACAS-8: la jornada laboral exige hora de inicio anterior a la de fin, de lunes a domingo.
+// Bloques de disponibilidad de 30 minutos como mínimo y tipos «No disponible» / «Tiempo de estudio».
+// La jornada laboral exige hora de inicio anterior a la de fin, de lunes a domingo.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -89,7 +89,7 @@ class ReglasDisponibilidadJornadaTest {
         token = tokenService.emitir(estudiante).valor();
     }
 
-    // ================= SDACAS-7: duración mínima
+    // ================= Duración mínima
 
     @Test
     void unBloqueDeMenosDeTreintaMinutosSeRechaza() throws Exception {
@@ -117,7 +117,7 @@ class ReglasDisponibilidadJornadaTest {
         assertThat(disponibilidadRepository.findById(id).orElseThrow().getHoraFin()).isEqualTo(LocalTime.of(11, 0));
     }
 
-    // SDACAS-32: misma respuesta que la jornada laboral; antes la comparación de horas nulas terminaba en un 500
+    // Misma respuesta que la jornada laboral; antes la comparación de horas nulas terminaba en un 500
     @Test
     void unBloqueSinHorasSeRechazaConUnMensajeYNoConUnError500() throws Exception {
         MvcResult resultado = como(post("/api/disponibilidades"),
@@ -151,7 +151,7 @@ class ReglasDisponibilidadJornadaTest {
         assertThat(mensaje(resultado)).isEqualTo("La hora de inicio debe ser menor que la hora de fin");
     }
 
-    // ================= SDACAS-7: tipos de bloque y persistencia por ciclo
+    // ================= Tipos de bloque y persistencia por ciclo
 
     @Test
     void noDisponibleYTiempoDeEstudioSeGuardanPorCiclo() throws Exception {
@@ -166,7 +166,7 @@ class ReglasDisponibilidadJornadaTest {
         assertThat(tipos).containsExactlyInAnyOrder("NO_DISPONIBLE", "ESTUDIO");
     }
 
-    // ================= SDACAS-8: horas de la jornada
+    // ================= Horas de la jornada
 
     @Test
     void unaJornadaConInicioPosteriorAlFinSeRechaza() throws Exception {

@@ -46,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-// Etapa 5D: con los filtros de seguridad activos y tokens reales, el calendario, las notificaciones
+// Con los filtros de seguridad activos y tokens reales, el calendario, las notificaciones
 // próximas y las preferencias solo son accesibles para el estudiante del token
 @SpringBootTest
 @AutoConfigureMockMvc

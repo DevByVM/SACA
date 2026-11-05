@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-// Etapa 6: CORS sin comodines, cambio de contraseña con la actual y errores HTTP coherentes,
+// Endurecimiento de seguridad: CORS sin comodines, cambio de contraseña con la actual y errores HTTP coherentes,
 // con los filtros de seguridad activos y tokens reales
 @SpringBootTest
 @AutoConfigureMockMvc

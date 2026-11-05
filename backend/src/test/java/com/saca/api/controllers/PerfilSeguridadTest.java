@@ -245,7 +245,7 @@ class PerfilSeguridadTest {
         assertThat(estudianteRepository.findById(a.getId()).orElseThrow().getNombre()).isEqualTo("Estudiante Uno");
     }
 
-    // Desde la etapa 4, sin token se responde 401 antes de saber si la ruta existe; con token, 404
+    // Sin token se responde 401 antes de saber si la ruta existe; con token, 404
     @Test
     void unaRutaInexistenteResponde401SinTokenY404ConToken() throws Exception {
         mockMvc.perform(get("/api/ruta-que-no-existe")).andExpect(status().isUnauthorized());
@@ -265,7 +265,7 @@ class PerfilSeguridadTest {
                 {"nombre":"Estudiante Uno","carnet":"%s","correoInstitucional":"%s","contrasenia":""}
                 """.formatted(b.getCarnet(), a.getCorreoInstitucional());
 
-        // SDACAS-3: el carnet y el correo no se modifican desde el perfil, ni siquiera hacia los de otro estudiante
+        // El carnet y el correo no se modifican desde el perfil, ni siquiera hacia los de otro estudiante
         String camposFijos = "El carnet y el correo institucional no se pueden modificar desde el perfil";
         assertThat(mockMvc.perform(json(conToken(put("/api/auth/perfil"), tokenDe(a)), robarCorreo))
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8)).isEqualTo(camposFijos);
@@ -280,7 +280,7 @@ class PerfilSeguridadTest {
 
     @Test
     void conSuTokenAActualizaSuPropioPerfilYContraseniaSinAfectarAB() throws Exception {
-        // Desde la etapa 6 cambiar la contraseña exige la actual
+        // Cambiar la contraseña exige la actual
         String conActual = """
                 {"nombre":"Nombre Nuevo","carnet":"%s","correoInstitucional":"%s","contrasenia":"NuevaClave123","contraseniaActual":"%s"}
                 """.formatted(a.getCarnet(), a.getCorreoInstitucional(), CLAVE_A);

@@ -43,7 +43,7 @@ function explicarNotaNecesaria(materia) {
   return "Sin actividades pendientes registradas";
 }
 
-// SDACAS-25: el cálculo vive en el backend (GET /api/rendimiento); este componente solo lo presenta.
+// El cálculo vive en el backend (GET /api/rendimiento); este componente solo lo presenta.
 // «actividades» se recibe únicamente para volver a consultar cuando cambian en Gestión Académica.
 function ReporteRendimientoPorMateria({ ciclos, actividades }) {
   const [cicloSeleccionado, setCicloSeleccionado] = useState(CICLO_ACTIVO);

@@ -37,6 +37,6 @@ public record EventoCalendarioResponse(
 		// La actividad no tiene fecha de entrega y se ubica por su fecha de inicio
 		boolean ubicadaPorFechaInicio,
 		BigDecimal tiempoEstimadoHoras,
-		// Misma definición que la carga semanal (SDACAS-20): ni completada ni calificada
+		// Misma definición que la carga semanal: ni completada ni calificada
 		boolean pendiente) {
 }

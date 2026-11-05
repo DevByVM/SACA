@@ -2,7 +2,7 @@ import { unirClases } from "../ui/unirClases";
 import { TIPOS_FRANJA } from "./constantes";
 import { hora } from "./fechas";
 
-// Franja de jornada laboral o de disponibilidad en la vista semanal (SDACAS-32)
+// Franja de jornada laboral o de disponibilidad en la vista semanal
 function FranjaCalendario({ franja }) {
   const tipo = TIPOS_FRANJA[franja.tipo];
   return (

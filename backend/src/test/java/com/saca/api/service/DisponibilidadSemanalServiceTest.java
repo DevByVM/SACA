@@ -222,7 +222,7 @@ class DisponibilidadSemanalServiceTest {
         verify(repository, never()).save(any());
     }
 
-    // Propiedad (etapa 5A)
+    // Propiedad: el estudiante de cada bloque es siempre el autenticado
 
     @Test
     void crearAsignaElEstudianteAutenticadoYDescartaElIdDelCuerpo() {

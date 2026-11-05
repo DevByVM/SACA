@@ -19,8 +19,8 @@ import com.saca.api.entity.HorarioClase;
 import com.saca.api.entity.JornadaLaboral;
 import com.saca.api.service.IntervalosMinutos.Intervalo;
 
-// SDACAS-32 (E4): tiempo de estudio disponible en una ventana de fechas. Es un dato informativo:
-// no interviene en la carga académica, en sus niveles ni en sus umbrales (SDACAS-20 y SDACAS-26).
+// Tiempo de estudio disponible en una ventana de fechas. Es un dato informativo:
+// no interviene en la carga académica, en sus niveles ni en sus umbrales (semanal ni por semanas del ciclo).
 //
 // Para cada día de la ventana:
 // - reservado: unión de los bloques ESTUDIO de ciclos ACTIVO, con el día dentro de las fechas de su ciclo;
@@ -97,7 +97,7 @@ public class TiempoDisponibleService {
 		return intervalos;
 	}
 
-	// Misma regla que el calendario (SDACAS-21): ciclo ACTIVO y fecha dentro del ciclo de la materia
+	// Misma regla que el calendario: ciclo ACTIVO y fecha dentro del ciclo de la materia
 	private static List<Intervalo> clasesDelDia(List<HorarioClase> horarios, LocalDate fecha) {
 		List<Intervalo> intervalos = new ArrayList<>();
 		for (HorarioClase horario : horarios) {

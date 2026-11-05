@@ -3,7 +3,7 @@ package com.saca.api.dto.response;
 import java.time.LocalDate;
 import java.util.List;
 
-// Carga semana a semana desde la semana actual hasta el fin del ciclo activo (SDACAS-26).
+// Carga semana a semana desde la semana actual hasta el fin del ciclo activo.
 // Sin ciclo activo, o con el ciclo activo ya terminado, la lista de semanas queda vacía.
 public record CargaPorSemanasResponse(
 		boolean cicloActivo,

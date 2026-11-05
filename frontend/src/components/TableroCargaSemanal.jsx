@@ -304,7 +304,7 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
         </p>
       </div>
 
-      {/* INDICADORES DE LA CLASIFICACIÓN (SDACAS-20) */}
+      {/* INDICADORES DE LA CLASIFICACIÓN */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Tarjeta
           titulo="Carga horaria"
@@ -584,7 +584,7 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
         )}
       </Tarjeta>
 
-      {/* CARGA POR SEMANA HASTA EL FIN DEL CICLO (SDACAS-26) */}
+      {/* CARGA POR SEMANA HASTA EL FIN DEL CICLO */}
       <CargaPorSemanas onIrAAcademico={onNavegar ? irA('academico') : undefined} />
 
       {/* ENLACES A OTRAS VISTAS */}

@@ -27,7 +27,7 @@ export function eventoVisible(evento, filtros) {
     || (filtros.estados.CALIFICADA && evento.calificada);
 }
 
-// SDACAS-32: franjas de tiempo de la vista semanal. La jornada laboral y los bloques «No disponible» son
+// Franjas de tiempo de la vista semanal. La jornada laboral y los bloques «No disponible» son
 // tiempo restringido; «Tiempo de estudio» es tiempo reservado. Borde discontinuo y fondo propio para no
 // confundirlas con clases (borde izquierdo de marca) ni con actividades (borde izquierdo azul).
 export const TIPOS_FRANJA = {

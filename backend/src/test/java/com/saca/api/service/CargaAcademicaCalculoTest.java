@@ -16,7 +16,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// SDACAS-20: cálculo puro de la carga semanal (horas y exigencia evaluativa) con una ventana fija
+// Cálculo puro de la carga semanal (horas y exigencia evaluativa) con una ventana fija
 class CargaAcademicaCalculoTest {
 
     private static final LocalDateTime DESDE = LocalDateTime.of(2026, 11, 2, 8, 0);
@@ -148,7 +148,7 @@ class CargaAcademicaCalculoTest {
 
     @Test
     void dosEvaluacionesDeAltoPesoEnDiasDistintosNoSonConcentracion() {
-        // Con los umbrales aprobados suman 60 %, así que siguen siendo críticas por el peso acumulado
+        // Con los umbrales vigentes suman 60 %, así que siguen siendo críticas por el peso acumulado
         CargaSemanalResponse r = calcular(enDias(2, 30, 1), enDias(2, 30, 4));
 
         assertThat(r.exigencia().concentracion()).isFalse();

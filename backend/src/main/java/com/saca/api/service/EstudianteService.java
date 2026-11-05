@@ -31,7 +31,7 @@ public class EstudianteService {
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    // SDACAS-3: formato oficial del carnet (dos letras y cinco números), validado después de pasar a mayúsculas
+    // Formato oficial del carnet (dos letras y cinco números), validado después de pasar a mayúsculas
     private static final Pattern FORMATO_CARNET = Pattern.compile("^[A-Z]{2}[0-9]{5}$");
     static final String MENSAJE_CARNET_OBLIGATORIO = "Carnet obligatorio";
     static final String MENSAJE_FORMATO_CARNET = "El carnet debe tener dos letras y cinco números, por ejemplo AP23001";
@@ -175,7 +175,7 @@ public class EstudianteService {
 
         String nombre = normalizarTexto(request.getNombre());
 
-        // SDACAS-3: el correo deriva del carnet y ninguno de los dos se modifica desde el perfil. Si se envían, deben
+        // El correo deriva del carnet y ninguno de los dos se modifica desde el perfil. Si se envían, deben
         // coincidir con los guardados (sin distinguir mayúsculas); así un carnet anterior vacío, null o sin el
         // formato oficial se conserva tal cual
         if (modificaCarnetOCorreo(estudianteOpt.get(), request)) {

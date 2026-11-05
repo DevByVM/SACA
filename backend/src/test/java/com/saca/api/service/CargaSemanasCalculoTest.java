@@ -20,8 +20,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// SDACAS-26: semanas de lunes a domingo desde la actual hasta el fin del ciclo activo, clasificadas con
-// el cálculo de la carga semanal (SDACAS-20)
+// Semanas de lunes a domingo desde la actual hasta el fin del ciclo activo, clasificadas con
+// el cálculo de la carga semanal
 class CargaSemanasCalculoTest {
 
     // Miércoles 4 de noviembre de 2026 a las 10:00

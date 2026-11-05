@@ -50,7 +50,7 @@ function Segmentado({ etiqueta, opciones, valor, onCambiar }) {
   );
 }
 
-// SDACAS-21: calendario académico con vistas mensual, semanal y de agenda. Se pide una cuadrícula
+// Calendario académico con vistas mensual, semanal y de agenda. Se pide una cuadrícula
 // mensual completa (6 semanas) por mes visible; la semana y la agenda de cualquier día seleccionado ya
 // están dentro de esos datos, así que filtrar o cambiar de vista no vuelve a consultar.
 function CalendarioAcademico() {
@@ -62,7 +62,7 @@ function CalendarioAcademico() {
   const [periodo, setPeriodo] = useState(null);
   const [mesCargado, setMesCargado] = useState(null);
   const [error, setError] = useState("");
-  // SDACAS-32: franjas de jornada laboral y disponibilidad, con su propio filtro y su propio error
+  // Franjas de jornada laboral y disponibilidad, con su propio filtro y su propio error
   const [franjas, setFranjas] = useState(null);
   const [errorFranjas, setErrorFranjas] = useState(false);
   const [filtroFranjas, setFiltroFranjas] = useState(FRANJAS_INICIALES);

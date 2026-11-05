@@ -135,7 +135,7 @@ class AuthLoginTokenTest {
         assertSinToken(login(estudiante.getCorreoInstitucional(), CLAVE), "Cuenta bloqueada temporalmente");
     }
 
-    // Desde la etapa 4 todas las rutas salvo login y registro exigen un token válido
+    // Todas las rutas salvo las públicas de autenticación exigen un token válido
     @Test
     void lasRutasDeDatosRechazanTantoUnTokenInvalidoComoLaFaltaDeToken() throws Exception {
         mockMvc.perform(get("/api/disponibilidades").header("Authorization", "Bearer token-invalido"))

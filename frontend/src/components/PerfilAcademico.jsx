@@ -92,7 +92,7 @@ const guardarUsuario = async (e) => {
   }
 
   try {
-    // SDACAS-3: el carnet y el correo no se envían; el backend no permite modificarlos desde el perfil
+    // El carnet y el correo no se envían; el backend no permite modificarlos desde el perfil
     const res = await actualizarPerfil(estudiante.id, {
       nombre: usuario.nombre,
       contrasenia: usuario.contrasenia,
