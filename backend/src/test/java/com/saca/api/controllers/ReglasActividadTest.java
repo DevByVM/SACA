@@ -35,8 +35,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-// SDACAS-15/27: al registrar, la fecha de entrega no puede ser anterior a hoy.
-// SDACAS-18: porcentaje de 1 a 100 y la suma por materia no puede superar el 100 %.
+// Al registrar, la fecha de entrega no puede ser anterior a hoy.
+// Porcentaje de 1 a 100 y la suma por materia no puede superar el 100 %.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -91,7 +91,7 @@ class ReglasActividadTest {
         hoy = LocalDate.now(relojAplicacion);
     }
 
-    // ================= SDACAS-15 / SDACAS-27: fecha de entrega
+    // ================= Fecha de entrega
 
     @Test
     void noSeRegistraUnaActividadConEntregaAnteriorAHoy() throws Exception {
@@ -119,7 +119,7 @@ class ReglasActividadTest {
         assertThat(estado(resultado)).isEqualTo(200);
     }
 
-    // ================= SDACAS-18: rango del porcentaje
+    // ================= Rango del porcentaje
 
     @Test
     void elPorcentajeDebeEstarEntreUnoYCien() throws Exception {
@@ -133,7 +133,7 @@ class ReglasActividadTest {
         assertThat(estado(crear(cuerpo("Uno", materia.getId(), 1.0, hoy.plusDays(3))))).isEqualTo(201);
     }
 
-    // ================= SDACAS-18: suma por materia
+    // ================= Suma por materia
 
     @Test
     void alRegistrarNoSeSuperaElCienPorCientoDeLaMateria() throws Exception {

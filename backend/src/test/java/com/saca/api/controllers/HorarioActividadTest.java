@@ -42,7 +42,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-// SDACAS-12: un horario de clase puede vincularse opcionalmente con una actividad de su misma materia
+// Un horario de clase puede vincularse opcionalmente con una actividad de su misma materia
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -211,7 +211,7 @@ class HorarioActividadTest {
                 actividadRepository.findById(actividad.getIdActividad()).orElseThrow().getMateriaInscrita().getId());
     }
 
-    // ================= Crear (HU012-CP003)
+    // ================= Crear
 
     @Test
     void seCreaUnHorarioVinculadoAUnaActividadDeLaMismaMateria() throws Exception {

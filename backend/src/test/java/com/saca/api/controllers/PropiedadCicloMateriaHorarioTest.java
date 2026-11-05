@@ -39,7 +39,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-// Etapa 5C: con los filtros de seguridad activos y tokens reales, ciclos, materias y horarios solo son
+// Con los filtros de seguridad activos y tokens reales, ciclos, materias y horarios solo son
 // accesibles para su propietario, y sus relaciones no permiten vincular registros de otro estudiante
 @SpringBootTest
 @AutoConfigureMockMvc

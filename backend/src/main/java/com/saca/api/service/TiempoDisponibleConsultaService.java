@@ -17,7 +17,7 @@ import com.saca.api.repository.HorarioClaseRepository;
 import com.saca.api.repository.JornadaLaboralRepository;
 import com.saca.api.service.TiempoDisponibleService.Resultado;
 
-// SDACAS-32 (E4.2): carga los datos del estudiante autenticado y delega el cálculo en TiempoDisponibleService.
+// Carga los datos del estudiante autenticado y delega el cálculo en TiempoDisponibleService.
 // Las cuatro consultas filtran por estudiante; un bloque con un cicloId ajeno se descarta en el cálculo
 // porque solo cuentan los ciclos activos del propio estudiante.
 @Service

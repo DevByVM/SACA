@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+
+import com.saca.api.proteccion.LimiteSolicitudesExcedidoException;
+import com.saca.api.service.CorreoActivacionService.CorreoNoDisponibleException;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -94,6 +98,27 @@ public class GlobalExceptionHandler {
 			HttpMediaTypeNotSupportedException exception,
 			HttpServletRequest request) {
 		return construirRespuesta(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Tipo de contenido no admitido", request.getRequestURI());
+	}
+
+	// Sin correo configurado no se registran cuentas, porque no podrían activarse
+	@ExceptionHandler(CorreoNoDisponibleException.class)
+	public ResponseEntity<ErrorResponse> manejarCorreoNoDisponible(
+			CorreoNoDisponibleException exception,
+			HttpServletRequest request) {
+		return construirRespuesta(HttpStatus.SERVICE_UNAVAILABLE,
+				"El registro de cuentas no está disponible en este momento. Inténtalo más tarde.", request.getRequestURI());
+	}
+
+	// Límite de solicitudes por cliente; Retry-After indica cuándo volver a intentarlo
+	@ExceptionHandler(LimiteSolicitudesExcedidoException.class)
+	public ResponseEntity<ErrorResponse> manejarLimiteExcedido(
+			LimiteSolicitudesExcedidoException exception,
+			HttpServletRequest request) {
+		ResponseEntity<ErrorResponse> respuesta =
+				construirRespuesta(HttpStatus.TOO_MANY_REQUESTS, exception.getMessage(), request.getRequestURI());
+		return ResponseEntity.status(respuesta.getStatusCode())
+				.header(HttpHeaders.RETRY_AFTER, String.valueOf(exception.segundosParaReintentar()))
+				.body(respuesta.getBody());
 	}
 
 	@ExceptionHandler(Exception.class)

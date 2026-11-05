@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-// SDACAS-25: nota mínima de aprobación en el perfil académico (sin valor por defecto) y actualización
+// Nota mínima de aprobación en el perfil académico (sin valor por defecto) y actualización
 // parcial del perfil: un campo omitido se conserva y uno enviado como null se borra
 @SpringBootTest
 @AutoConfigureMockMvc

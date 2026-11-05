@@ -34,8 +34,9 @@ function PerfilAcademico({ estudiante }) {
       const dataUsuario = await obtenerPerfil();
       setUsuario({
         nombre: dataUsuario.nombre,
-        carnet: dataUsuario.carnet,
-        correoInstitucional: dataUsuario.correoInstitucional,
+        // Un carnet anterior puede venir null: el campo necesita un texto para seguir siendo controlado
+        carnet: dataUsuario.carnet ?? "",
+        correoInstitucional: dataUsuario.correoInstitucional ?? "",
         contrasenia: "",
         contraseniaActual: ""
       });
@@ -77,16 +78,6 @@ const guardarUsuario = async (e) => {
     return;
   }
 
-  if (!usuario.carnet.trim()) {
-    toast.warning("Carnet requerido");
-    return;
-  }
-
-  if (!usuario.correoInstitucional.endsWith("@ues.edu.sv")) {
-    toast.warning("Correo institucional inválido");
-    return;
-  }
-
   if (
     usuario.contrasenia &&
     !usuario.contrasenia.match(/^(?=.*[A-Z])(?=.*\d).{8,}$/)
@@ -101,10 +92,12 @@ const guardarUsuario = async (e) => {
   }
 
   try {
-    const res = await actualizarPerfil(
-      estudiante.id,
-      usuario
-    );
+    // El carnet y el correo no se envían; el backend no permite modificarlos desde el perfil
+    const res = await actualizarPerfil(estudiante.id, {
+      nombre: usuario.nombre,
+      contrasenia: usuario.contrasenia,
+      contraseniaActual: usuario.contraseniaActual
+    });
 
     if (res === "Perfil actualizado correctamente") {
       toast.success(res);
@@ -185,7 +178,7 @@ const guardarAcademico = async (e) => {
           <h2 className="text-xl font-bold text-ink-900">
             {usuario.nombre || "Estudiante"}
           </h2>
-          <p className="text-sm text-ink-600">Carnet: {usuario.carnet}</p>
+          <p className="text-sm text-ink-600">Carnet: {usuario.carnet || "No registrado"}</p>
           <p className="break-words text-sm text-ink-600">Correo: {usuario.correoInstitucional}</p>
 
           <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
@@ -220,20 +213,24 @@ const guardarAcademico = async (e) => {
             value={usuario.nombre}
             onChange={handleUserChange}
           />
+          {/* Solo lectura: el correo deriva del carnet y ninguno se modifica desde el perfil */}
           <Campo
+            className="[&_input]:bg-surface-muted"
             label="Carnet"
             name="carnet"
             required={false}
             value={usuario.carnet}
-            onChange={handleUserChange}
+            readOnly
+            ayuda="Se asigna en el registro y no se puede modificar."
           />
           <Campo
-            className="md:col-span-2"
+            className="md:col-span-2 [&_input]:bg-surface-muted"
             label="Correo Institucional"
             name="correoInstitucional"
             required={false}
             value={usuario.correoInstitucional}
-            onChange={handleUserChange}
+            readOnly
+            ayuda="Se obtiene del carnet y no se puede modificar."
           />
           <Campo
             label="Nueva Contraseña"

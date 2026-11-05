@@ -67,7 +67,7 @@ public class CalendarioController {
         return service.obtenerCalendarioSemanal(EstudianteAutenticado.idPropio(jwt, estudianteId));
     }
 
-    // SDACAS-21: clases y actividades de la semana (lunes a domingo) que contiene la fecha indicada.
+    // Clases y actividades de la semana (lunes a domingo) que contiene la fecha indicada.
     // Sin fecha se usa la semana actual; el estudiante siempre es el del token.
     @GetMapping("/semana")
     public CalendarioSemanaResponse obtenerSemana(
@@ -85,7 +85,7 @@ public class CalendarioController {
         return service.obtenerPeriodo(EstudianteAutenticado.id(jwt), desde, hasta);
     }
 
-    // SDACAS-32: franjas de jornada laboral y disponibilidad del mismo periodo; se piden aparte para que la
+    // Franjas de jornada laboral y disponibilidad del mismo periodo; se piden aparte para que la
     // respuesta de /periodo no cambie
     @GetMapping("/franjas")
     public CalendarioFranjasResponse obtenerFranjas(

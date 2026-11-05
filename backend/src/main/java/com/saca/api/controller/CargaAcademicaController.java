@@ -41,13 +41,13 @@ public class CargaAcademicaController {
 		return cargaAcademicaService.obtenerCargaSemanal(EstudianteAutenticado.id(jwt));
 	}
 
-	// SDACAS-26: semanas desde la actual hasta el fin del ciclo activo; el rango lo fija el ciclo, no el cliente
+	// Semanas desde la actual hasta el fin del ciclo activo; el rango lo fija el ciclo, no el cliente
 	@GetMapping("/semanas")
 	public CargaPorSemanasResponse obtenerCargaPorSemanas(@AuthenticationPrincipal Jwt jwt) {
 		return cargaSemanasService.obtenerCargaPorSemanas(EstudianteAutenticado.id(jwt));
 	}
 
-	// SDACAS-32: tiempo de estudio disponible (bloques ESTUDIO menos clases, jornadas y NO_DISPONIBLE) del
+	// Tiempo de estudio disponible (bloques ESTUDIO menos clases, jornadas y NO_DISPONIBLE) del
 	// estudiante del token; informativo, no cambia la carga. Mismo rango máximo que el calendario
 	@GetMapping("/tiempo-disponible")
 	public TiempoDisponibleResponse obtenerTiempoDisponible(

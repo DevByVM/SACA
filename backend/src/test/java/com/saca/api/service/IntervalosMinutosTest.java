@@ -10,7 +10,7 @@ import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// SDACAS-32 (E4.1): unión, recorte e intersección de intervalos semiabiertos en minutos
+// Unión, recorte e intersección de intervalos semiabiertos en minutos
 class IntervalosMinutosTest {
 
     private static Intervalo i(int inicioHora, int inicioMinuto, int finHora, int finMinuto) {

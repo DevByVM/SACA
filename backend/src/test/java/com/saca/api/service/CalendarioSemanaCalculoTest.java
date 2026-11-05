@@ -21,7 +21,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// SDACAS-21: cálculo puro de la semana del calendario (lunes a domingo) sin Spring ni base de datos
+// Cálculo puro de la semana del calendario (lunes a domingo) sin Spring ni base de datos
 class CalendarioSemanaCalculoTest {
 
     // Semana del lunes 2 al domingo 8 de noviembre de 2026
@@ -109,7 +109,7 @@ class CalendarioSemanaCalculoTest {
         assertThat(semana.inicio()).isEqualTo(LUNES);
     }
 
-    // ================= HU021-CP001: orden por día y hora
+    // ================= Orden por día y hora
 
     @Test
     void hu021Cp001LasClasesSeOrdenanDeLunesADomingoYPorHora() {
@@ -178,7 +178,7 @@ class CalendarioSemanaCalculoTest {
                 .containsExactly("FIN115 2026-11-04", "INI115 2026-11-06");
     }
 
-    // ================= HU021-CP002: clases y actividades diferenciadas
+    // ================= Clases y actividades diferenciadas
 
     @Test
     void hu021Cp002ClasesYActividadesSeDiferencianConSuTipoYPorcentaje() {
@@ -284,7 +284,7 @@ class CalendarioSemanaCalculoTest {
         assertThat(semana.actividadesSinFecha()).isZero();
     }
 
-    // ================= HU021-CP003: cambiar de semana
+    // ================= Cambiar de semana
 
     @Test
     void hu021Cp003AlCambiarDeSemanaCambianLasFechasYLosEventos() {

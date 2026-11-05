@@ -40,7 +40,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-// SDACAS-21 (vista mensual): endpoint /periodo, sus validaciones y su coste en consultas SQL
+// Vista mensual del calendario: endpoint /periodo, sus validaciones y su coste en consultas SQL
 @SpringBootTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")

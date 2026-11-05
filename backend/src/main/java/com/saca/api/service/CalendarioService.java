@@ -92,7 +92,7 @@ public class CalendarioService {
         }
     }
 
-    // SDACAS-21: semana de lunes a domingo que contiene la fecha indicada (sin fecha, la semana actual)
+    // Semana de lunes a domingo que contiene la fecha indicada (sin fecha, la semana actual)
     @Transactional(readOnly = true)
     public CalendarioSemanaResponse obtenerSemana(Long estudianteId, LocalDate fecha) {
         return calcularSemana(
@@ -168,7 +168,7 @@ public class CalendarioService {
         return new CalendarioPeriodoResponse(desde, hasta, eventos, resumirDias(desde, hasta, eventos), sinFecha);
     }
 
-    // Horas pendientes y concentración por día con las reglas y umbrales de la carga semanal (SDACAS-20)
+    // Horas pendientes y concentración por día con las reglas y umbrales de la carga semanal
     private static List<ResumenDiaCalendarioResponse> resumirDias(
             LocalDate desde,
             LocalDate hasta,

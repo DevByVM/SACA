@@ -94,8 +94,10 @@ CREATE TABLE `estudiantes` (
   `bloqueado_hasta` datetime(6) DEFAULT NULL,
   `carnet` varchar(20) DEFAULT NULL,
   `contrasenia` varchar(255) NOT NULL,
+  `correo_confirmado_en` datetime(6) DEFAULT NULL,
   `correo_institucional` varchar(120) DEFAULT NULL,
   `cuenta_activa` bit(1) DEFAULT NULL,
+  `estado_correo` enum('CONFIRMADO','PENDIENTE') DEFAULT NULL,
   `intentos_fallidos` int DEFAULT NULL,
   `nombre` varchar(120) DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -212,6 +214,31 @@ CREATE TABLE `tipo_actividad` (
   `activo` bit(1) NOT NULL,
   `nombre` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id_tipo_actividad`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tokens_activacion`
+--
+
+DROP TABLE IF EXISTS `tokens_activacion`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tokens_activacion` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `creado_en` datetime(6) NOT NULL,
+  `enviado_en` datetime(6) DEFAULT NULL,
+  `envio_descartado_en` datetime(6) DEFAULT NULL,
+  `envio_intentado_en` datetime(6) DEFAULT NULL,
+  `expira_en` datetime(6) NOT NULL,
+  `hash_token` varchar(64) NOT NULL,
+  `invalidado_en` datetime(6) DEFAULT NULL,
+  `usado_en` datetime(6) DEFAULT NULL,
+  `estudiante_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_token_activacion_hash` (`hash_token`),
+  KEY `idx_token_activacion_estudiante_creado` (`estudiante_id`,`creado_en`),
+  CONSTRAINT `fk_token_activacion_estudiante` FOREIGN KEY (`estudiante_id`) REFERENCES `estudiantes` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

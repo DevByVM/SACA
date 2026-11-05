@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-// SDACAS-25: el reporte de rendimiento solo expone datos del estudiante del token y del ciclo pedido
+// El reporte de rendimiento solo expone datos del estudiante del token y del ciclo pedido
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -93,7 +93,7 @@ class RendimientoAcademicoTest {
         MateriaInscrita materiaAnteriorA = crearMateria(cicloAnteriorA, "MAT115");
         MateriaInscrita materiaB = crearMateria(cicloB, "SECRETA");
 
-        // Datos de HU025-CP001 y una evaluación todavía sin nota
+        // Datos del caso de promedio ponderado de RendimientoAcademicoCalculoTest y una evaluación todavía sin nota
         crearActividad(materiaA, "Parcial 1", 30, 10.0);
         crearActividad(materiaA, "Laboratorio 1", 10, 5.0);
         crearActividad(materiaA, "Parcial 2", 30, null);

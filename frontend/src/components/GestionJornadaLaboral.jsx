@@ -44,7 +44,7 @@ export const RegistroJornada = ({ estudiante }) => {
 
   const diasDeLaSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-  // SDACAS-8: la jornada se guarda aunque choque; solo se avisa de las clases y actividades
+  // La jornada se guarda aunque choque; solo se avisa de las clases y actividades
   // pendientes del ciclo activo que coinciden con ella
   const [conflictos, setConflictos] = useState([]);
 
@@ -124,7 +124,7 @@ export const RegistroJornada = ({ estudiante }) => {
       return;
     }
 
-    // Misma duración mínima que valida el backend (SDACAS-32); los cruces y duplicados los informa el backend
+    // Misma duración mínima que valida el backend; los cruces y duplicados los informa el backend
     const minutos = (hora) => Number(hora.substring(0, 2)) * 60 + Number(hora.substring(3, 5));
     if (minutos(datosJornada.horaFin) - minutos(datosJornada.horaInicio) < 30) {
       setError('La jornada debe durar al menos 30 minutos');

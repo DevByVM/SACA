@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-// SDACAS-32 (E2): días permitidos, duración mínima, duplicados y cruces entre jornadas del mismo
+// Jornada laboral: días permitidos, duración mínima, duplicados y cruces entre jornadas del mismo
 // estudiante, al crear y al editar. Las jornadas consecutivas (salida = entrada) se aceptan.
 @SpringBootTest
 @AutoConfigureMockMvc

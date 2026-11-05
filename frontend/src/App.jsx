@@ -9,6 +9,8 @@ import {
   obtenerSesion,
 } from "./api/sesion";
 import Login from "./components/Login";
+import ActivacionCuenta from "./components/cuenta/ActivacionCuenta";
+import { extraerTokenDelFragmento, quitarFragmento } from "./utils/cuenta";
 import PerfilAcademico from "./components/PerfilAcademico";
 import Sidebar from "./components/Sidebar.jsx";
 import TableroCargaSemanal from "./components/TableroCargaSemanal.jsx";
@@ -31,11 +33,39 @@ function App() {
     () => obtenerSesion()?.estudiante ?? null
   );
 
+  // Token del enlace de activación (…/#token=…). Solo se guarda en memoria; el fragmento se borra de la
+  // dirección en cuanto se lee (ver el efecto siguiente)
+  const [tokenActivacion, setTokenActivacion] = useState(
+    () => extraerTokenDelFragmento(window.location.hash)
+  );
+
+  // Cómo abrir el inicio de sesión al salir de la activación: con el correo escrito y un aviso, o en el reenvío
+  const [entradaLogin, setEntradaLogin] = useState({ clave: 0, correo: "", aviso: "", modo: "login" });
+
   const [vistaActiva, setVistaActiva] =
     useState("dashboard");
   const [actualizacionNotificaciones, setActualizacionNotificaciones] = useState(0);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const botonMenuRef = useRef(null);
+
+  // Quita el token de la dirección al cargar y atiende enlaces abiertos con la aplicación ya cargada
+  useEffect(() => {
+    quitarFragmento(window.location, window.history);
+    const alCambiarFragmento = () => {
+      const token = extraerTokenDelFragmento(window.location.hash);
+      quitarFragmento(window.location, window.history);
+      if (token) {
+        setTokenActivacion(token);
+      }
+    };
+    window.addEventListener("hashchange", alCambiarFragmento);
+    return () => window.removeEventListener("hashchange", alCambiarFragmento);
+  }, []);
+
+  const salirDeActivacion = (entrada) => {
+    setTokenActivacion(null);
+    setEntradaLogin((anterior) => ({ correo: "", aviso: "", modo: "login", ...entrada, clave: anterior.clave + 1 }));
+  };
 
   const cerrarSesion = () => {
 
@@ -74,9 +104,24 @@ function App() {
     };
   }, [logueado]);
 
+  if (tokenActivacion) {
+    return (
+      <ActivacionCuenta
+        token={tokenActivacion}
+        onActivada={(correo) => salirDeActivacion({ correo, aviso: "Cuenta activada. Ya puedes iniciar sesión." })}
+        onSolicitarEnlace={() => salirDeActivacion({ modo: "reenvio" })}
+        onIrAlInicio={() => salirDeActivacion({})}
+      />
+    );
+  }
+
   if (!logueado) {
     return (
       <Login
+        key={entradaLogin.clave}
+        correoInicial={entradaLogin.correo}
+        avisoInicial={entradaLogin.aviso}
+        modoInicial={entradaLogin.modo}
         onLoginSuccess={(estudianteAutenticado) => {
 
           setEstudiante(estudianteAutenticado);

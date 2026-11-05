@@ -39,7 +39,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-// SDACAS-21: endpoint semanal del calendario y orden corregido del endpoint anterior
+// Endpoint semanal del calendario y orden corregido del endpoint anterior
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")

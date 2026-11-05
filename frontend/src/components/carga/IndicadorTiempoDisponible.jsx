@@ -18,7 +18,7 @@ function comparacion(disponibles, minutosPendientes) {
   return `Faltan ${formatearDuracion(minutosPendientes - disponibles)} de tiempo de estudio para cubrir las horas pendientes.`;
 }
 
-// SDACAS-32: tiempo de estudio disponible de la semana seleccionada. El cálculo lo hace el backend (bloques
+// Tiempo de estudio disponible de la semana seleccionada. El cálculo lo hace el backend (bloques
 // «Tiempo de estudio» menos clases, jornada laboral y bloques «No disponible», sin contar dos veces un mismo
 // minuto). Es solo informativo: usa colores neutros y no cambia el estado de carga ni sus niveles.
 // La caché la aporta el panel para no repetir la consulta al volver a una semana ya vista.

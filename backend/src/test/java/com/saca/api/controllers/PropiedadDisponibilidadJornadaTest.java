@@ -37,7 +37,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-// Etapa 5A: con los filtros de seguridad activos y tokens reales, el estudiante B no puede ver,
+// Con los filtros de seguridad activos y tokens reales, el estudiante B no puede ver,
 // crear a nombre de A, modificar, eliminar ni reasignar disponibilidades o jornadas de A
 @SpringBootTest
 @AutoConfigureMockMvc

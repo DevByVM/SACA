@@ -38,7 +38,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-// SDACAS-26: endpoint /api/carga/semanas con el estudiante del token. Las fechas se construyen a partir
+// Endpoint /api/carga/semanas con el estudiante del token. Las fechas se construyen a partir
 // del día real para no sustituir el reloj de la aplicación, que también usa la emisión de tokens.
 @SpringBootTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 @AutoConfigureMockMvc

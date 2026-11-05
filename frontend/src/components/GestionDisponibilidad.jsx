@@ -30,7 +30,7 @@ const minutosDelDia = (hora) => {
 
 const DURACION_MINIMA_MINUTOS = 30;
 
-// Tipos que se ofrecen para registrar bloques (SDACAS-7 y SDACAS-32). Las clases universitarias se
+// Tipos que se ofrecen para registrar bloques. Las clases universitarias se
 // registran en Gestión Académica → Horarios, no como bloques de disponibilidad.
 const TIPOS_VIGENTES = [
   { value: "NO_DISPONIBLE", label: "No disponible" },

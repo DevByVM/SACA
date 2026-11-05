@@ -22,8 +22,8 @@ import com.saca.api.entity.EstadoCiclo;
 import com.saca.api.repository.ActividadAcademicaRepository;
 import com.saca.api.repository.CicloAcademicoRepository;
 
-// SDACAS-26: carga semana a semana (lunes a domingo) desde la semana actual hasta el fin del ciclo activo.
-// Cada semana se clasifica con el mismo cálculo híbrido de la carga semanal (SDACAS-20); aquí solo se
+// Carga semana a semana (lunes a domingo) desde la semana actual hasta el fin del ciclo activo.
+// Cada semana se clasifica con el mismo cálculo híbrido de la carga semanal; aquí solo se
 // definen las ventanas. La semana actual empieza en el momento de la consulta, así que lo vencido no cuenta.
 @Service
 public class CargaSemanasService {

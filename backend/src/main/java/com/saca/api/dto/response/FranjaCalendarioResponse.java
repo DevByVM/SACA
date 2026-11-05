@@ -3,7 +3,7 @@ package com.saca.api.dto.response;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-// Franja de tiempo de un día concreto en el calendario (SDACAS-32). La jornada laboral y la
+// Franja de tiempo de un día concreto en el calendario. La jornada laboral y la
 // disponibilidad semanal son registros independientes; aquí solo se proyectan sobre las fechas.
 public record FranjaCalendarioResponse(
 		LocalDate fecha,

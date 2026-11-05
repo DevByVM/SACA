@@ -27,7 +27,7 @@ import com.saca.api.repository.CicloAcademicoRepository;
 import com.saca.api.repository.MateriaInscritaRepository;
 import com.saca.api.repository.PerfilAcademicoRepository;
 
-// SDACAS-25. Una actividad está calificada si tiene nota registrada, sin importar su estado.
+// Rendimiento académico: una actividad está calificada si tiene nota registrada, sin importar su estado.
 // Las actividades con porcentaje 0 (registros antiguos) se muestran como «sin ponderación» y no cuentan.
 @Service
 public class RendimientoAcademicoService {

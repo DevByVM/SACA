@@ -1120,7 +1120,7 @@ function TablaActividades({ actividades, materias, onEdit, onDelete, onComplete,
 
 const esCompletada = (actividad) => actividad.estado === "COMPLETADA";
 
-// SDACAS-23: avance = completadas / total de la misma lista que muestra la tabla (ciclo activo del estudiante)
+// Avance = completadas / total de la misma lista que muestra la tabla (ciclo activo del estudiante)
 function BarraAvanceActividades({ actividades }) {
   const total = actividades.length;
   const completadas = actividades.filter(esCompletada).length;

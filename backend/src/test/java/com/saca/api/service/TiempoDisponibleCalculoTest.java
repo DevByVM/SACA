@@ -21,8 +21,8 @@ import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// SDACAS-32 (E4.1): horas de estudio disponibles = bloques ESTUDIO menos su solape con clases, jornadas y
-// bloques NO_DISPONIBLE, sin contar dos veces un mismo minuto. Los números de caso siguen el informe de E4.
+// Horas de estudio disponibles = bloques ESTUDIO menos su solape con clases, jornadas y
+// bloques NO_DISPONIBLE, sin contar dos veces un mismo minuto. Los casos se numeran (caso01, caso02...) y se agrupan por tema.
 class TiempoDisponibleCalculoTest {
 
     // Semana del lunes 2 al domingo 8 de noviembre de 2026

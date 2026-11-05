@@ -42,7 +42,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-// Etapa 5B: con los filtros de seguridad activos y tokens reales, una actividad solo es accesible
+// Con los filtros de seguridad activos y tokens reales, una actividad solo es accesible
 // para el estudiante dueño de su materia (actividad → materia → ciclo → estudiante), y las notas
 // solo se pueden usar desde la actividad a la que ya pertenecen
 @SpringBootTest

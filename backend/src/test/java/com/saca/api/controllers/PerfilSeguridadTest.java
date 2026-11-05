@@ -2,6 +2,7 @@ package com.saca.api.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.saca.api.CarnetsDePrueba;
 import com.saca.api.config.TokenConfig;
 import com.saca.api.entity.Estudiante;
 import com.saca.api.entity.PerfilAcademico;
@@ -21,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -88,7 +90,7 @@ class PerfilSeguridadTest {
         String unico = UUID.randomUUID().toString().substring(0, 8);
         Estudiante estudiante = new Estudiante();
         estudiante.setNombre(nombre);
-        estudiante.setCarnet("PF" + unico);
+        estudiante.setCarnet(CarnetsDePrueba.nuevo("PF"));
         estudiante.setCorreoInstitucional("perfil." + unico + "@ues.edu.sv");
         estudiante.setContrasenia(passwordEncoder.encode(clave));
         estudiante.setCuentaActiva(true);
@@ -243,7 +245,7 @@ class PerfilSeguridadTest {
         assertThat(estudianteRepository.findById(a.getId()).orElseThrow().getNombre()).isEqualTo("Estudiante Uno");
     }
 
-    // Desde la etapa 4, sin token se responde 401 antes de saber si la ruta existe; con token, 404
+    // Sin token se responde 401 antes de saber si la ruta existe; con token, 404
     @Test
     void unaRutaInexistenteResponde401SinTokenY404ConToken() throws Exception {
         mockMvc.perform(get("/api/ruta-que-no-existe")).andExpect(status().isUnauthorized());
@@ -263,19 +265,22 @@ class PerfilSeguridadTest {
                 {"nombre":"Estudiante Uno","carnet":"%s","correoInstitucional":"%s","contrasenia":""}
                 """.formatted(b.getCarnet(), a.getCorreoInstitucional());
 
+        // El carnet y el correo no se modifican desde el perfil, ni siquiera hacia los de otro estudiante
+        String camposFijos = "El carnet y el correo institucional no se pueden modificar desde el perfil";
         assertThat(mockMvc.perform(json(conToken(put("/api/auth/perfil"), tokenDe(a)), robarCorreo))
-                .andReturn().getResponse().getContentAsString()).isEqualTo("Correo ya registrado");
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8)).isEqualTo(camposFijos);
         assertThat(mockMvc.perform(json(conToken(put("/api/auth/perfil"), tokenDe(a)), robarCarnet))
-                .andReturn().getResponse().getContentAsString()).isEqualTo("Carnet ya registrado");
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8)).isEqualTo(camposFijos);
 
-        assertThat(estudianteRepository.findById(a.getId()).orElseThrow().getCorreoInstitucional())
-                .isEqualTo(a.getCorreoInstitucional());
+        Estudiante aGuardado = estudianteRepository.findById(a.getId()).orElseThrow();
+        assertThat(aGuardado.getCorreoInstitucional()).isEqualTo(a.getCorreoInstitucional());
+        assertThat(aGuardado.getCarnet()).isEqualTo(a.getCarnet());
         assertBSinCambios();
     }
 
     @Test
     void conSuTokenAActualizaSuPropioPerfilYContraseniaSinAfectarAB() throws Exception {
-        // Desde la etapa 6 cambiar la contraseña exige la actual
+        // Cambiar la contraseña exige la actual
         String conActual = """
                 {"nombre":"Nombre Nuevo","carnet":"%s","correoInstitucional":"%s","contrasenia":"NuevaClave123","contraseniaActual":"%s"}
                 """.formatted(a.getCarnet(), a.getCorreoInstitucional(), CLAVE_A);
@@ -330,18 +335,18 @@ class PerfilSeguridadTest {
 
     // ---- login y registro siguen siendo públicos
 
+    // El registro llega al controlador sin token (503 aquí: no hay SMTP configurado; el flujo completo está en
+    // RegistroActivacionTest) y una cuenta existente inicia sesión sin token
     @Test
     void loginYRegistroFuncionanSinToken() throws Exception {
-        String unico = UUID.randomUUID().toString().substring(0, 8);
-        String registro = mockMvc.perform(json(post("/api/auth/registro"), """
-                {"nombre":"Nuevo Estudiante","carnet":"NV%s","correoInstitucional":"nuevo.%s@ues.edu.sv","contrasenia":"Segura123"}
-                """.formatted(unico, unico)))
-                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        assertThat(registro).isEqualTo("Usuario registrado correctamente");
+        mockMvc.perform(json(post("/api/auth/registro"), """
+                {"carnet":"%s"}
+                """.formatted(CarnetsDePrueba.nuevo("NV"))))
+                .andExpect(status().isServiceUnavailable());
 
         String login = mockMvc.perform(json(post("/api/auth/login"), """
-                {"correoInstitucional":"nuevo.%s@ues.edu.sv","contrasenia":"Segura123"}
-                """.formatted(unico)))
+                {"correoInstitucional":"%s","contrasenia":"%s"}
+                """.formatted(a.getCorreoInstitucional(), CLAVE_A)))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(leer(login).get("autenticado").asBoolean()).isTrue();
         assertThat(leer(login).get("token").asText()).isNotBlank();

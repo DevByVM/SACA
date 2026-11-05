@@ -45,7 +45,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-// SDACAS-32 (E4.2): GET /api/carga/tiempo-disponible con el estudiante del token. Las fechas se construyen
+// GET /api/carga/tiempo-disponible con el estudiante del token. Las fechas se construyen
 // a partir del día real porque el reloj de la aplicación también lo usa la emisión de tokens.
 @SpringBootTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 @AutoConfigureMockMvc
@@ -222,7 +222,7 @@ class CargaTiempoDisponibleTest {
         return new int[] {dia.get("minutosReservados").asInt(), dia.get("minutosDescontados").asInt(), dia.get("minutosDisponibles").asInt()};
     }
 
-    // El mismo cálculo de E4.1 con los datos del estudiante, desde el instante que informa la respuesta
+    // El mismo cálculo de TiempoDisponibleService con los datos del estudiante, desde el instante que informa la respuesta
     private Resultado calculoDirecto(Long estudianteId, LocalDateTime desde, LocalDate hasta) {
         return tiempoDisponibleService.calcular(desde, hasta.atTime(LocalTime.MAX),
                 disponibilidadRepository.findByEstudianteId(estudianteId),

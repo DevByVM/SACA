@@ -2,6 +2,7 @@ package com.saca.api.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.saca.api.CarnetsDePrueba;
 import com.saca.api.config.ManejadorErroresSeguridad;
 import com.saca.api.config.TokenConfig;
 import com.saca.api.entity.Estudiante;
@@ -48,7 +49,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-// Etapa 4: toda ruta exige un JWT válido salvo login, registro, la consulta previa CORS y /error.
+// Toda ruta exige un JWT válido salvo las públicas de autenticación, la consulta previa CORS y /error.
 // Las rutas se obtienen de Spring MVC, de modo que una ruta nueva queda cubierta sin tocar la prueba.
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -59,7 +60,8 @@ class SeguridadGlobalTest {
     private static final String ID_INEXISTENTE = "999999";
 
     // Únicas rutas que pueden responder sin token, con su método
-    private static final Set<String> RUTAS_PUBLICAS = Set.of("POST /api/auth/login", "POST /api/auth/registro");
+    private static final Set<String> RUTAS_PUBLICAS = Set.of("POST /api/auth/login", "POST /api/auth/registro",
+            "POST /api/auth/activacion", "POST /api/auth/activacion/consultar", "POST /api/auth/reenviar-activacion");
 
     @Autowired
     private MockMvc mockMvc;
@@ -169,7 +171,7 @@ class SeguridadGlobalTest {
                         "CicloAcademicoController", "DisponibilidadSemanalController",
                         "HorarioClaseController", "JornadaLaboralController", "MateriaInscritaController",
                         "NotificacionController", "PerfilAcademicoController");
-        // 42 rutas tras retirar GreetingController en la etapa 6; una ruta nueva entra sola en las comprobaciones siguientes
+        // 42 rutas tras retirar GreetingController; una ruta nueva entra sola en las comprobaciones siguientes
         assertThat(rutasDeLaAplicacion()).hasSizeGreaterThanOrEqualTo(42);
     }
 
@@ -217,9 +219,10 @@ class SeguridadGlobalTest {
     void unaRutaPublicaConOtroMetodoNoEsPublica() throws Exception {
         assertRespuesta401Json(mockMvc.perform(get("/api/auth/login")).andReturn());
         assertRespuesta401Json(mockMvc.perform(get("/api/auth/registro")).andReturn());
+        assertRespuesta401Json(mockMvc.perform(get("/api/auth/activacion")).andReturn());
     }
 
-    // GreetingController se retiró en la etapa 6: sin token 401 y con token 404, como cualquier ruta inexistente
+    // GreetingController ya no existe: sin token 401 y con token 404, como cualquier ruta inexistente
     @Test
     void lasRutasDeEjemploGreetingYaNoExisten() throws Exception {
         String token = tokenService.emitir(estudiante).valor();
@@ -263,7 +266,7 @@ class SeguridadGlobalTest {
     void unTokenValidoEsAceptadoEnTodosLosControladores() throws Exception {
         String token = tokenService.emitir(estudiante).valor();
         Map<String, Ruta> rutas = unaRutaGetPorControlador();
-        // 10 controladores con rutas GET tras retirar GreetingController en la etapa 6
+        // 10 controladores con rutas GET tras retirar GreetingController
         assertThat(rutas).hasSizeGreaterThanOrEqualTo(10);
 
         for (Ruta ruta : rutas.values()) {
@@ -274,17 +277,26 @@ class SeguridadGlobalTest {
 
     // ---- rutas públicas
 
+    // Sin token se llega al controlador. Aquí no hay SMTP configurado, así que el registro responde 503 (no 401);
+    // el flujo completo de registro y activación se prueba en RegistroActivacionTest
     @Test
-    void loginYRegistroFuncionanSinToken() throws Exception {
-        String unico = UUID.randomUUID().toString().substring(0, 8);
+    void loginRegistroYActivacionFuncionanSinToken() throws Exception {
         mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON).content("""
-                {"nombre":"Publico Nuevo","carnet":"PN%s","correoInstitucional":"publico.%s@ues.edu.sv","contrasenia":"Segura123"}
-                """.formatted(unico, unico)))
+                {"carnet":"%s"}
+                """.formatted(CarnetsDePrueba.nuevo("PN"))))
+                .andExpect(status().isServiceUnavailable());
+        mockMvc.perform(post("/api/auth/activacion/consultar").contentType(MediaType.APPLICATION_JSON).content("""
+                {"token":"no-valido"}
+                """))
                 .andExpect(status().isOk());
+        mockMvc.perform(post("/api/auth/activacion").contentType(MediaType.APPLICATION_JSON).content("""
+                {"token":"no-valido","nombre":"Publico Nuevo","contrasenia":"Segura123"}
+                """))
+                .andExpect(status().isBadRequest());
 
         String login = mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
-                {"correoInstitucional":"publico.%s@ues.edu.sv","contrasenia":"Segura123"}
-                """.formatted(unico)))
+                {"correoInstitucional":"%s","contrasenia":"Segura123"}
+                """.formatted(estudiante.getCorreoInstitucional())))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(objectMapper.readTree(login).get("token").asText()).isNotBlank();
     }
@@ -298,7 +310,7 @@ class SeguridadGlobalTest {
                 .content("{\"correoInstitucional\":\"x@ues.edu.sv\",\"contrasenia\":\"x\"}")).andReturn());
     }
 
-    // Llamada directamente, sin un error real detrás, la página de error responde 404 JSON (etapa 6)
+    // Llamada directamente, sin un error real detrás, la página de error responde 404 JSON
     @Test
     void laRutaDeErrorNoExigeTokenYRespondeJson() throws Exception {
         MvcResult resultado = mockMvc.perform(get("/error")).andReturn();

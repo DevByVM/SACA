@@ -23,7 +23,7 @@ import com.saca.api.entity.NivelCarga;
 import com.saca.api.mapper.ActividadAcademicaMapper;
 import com.saca.api.repository.ActividadAcademicaRepository;
 
-// SDACAS-20. Dos indicadores independientes sobre las actividades pendientes de los próximos 7 días:
+// Carga semanal: dos indicadores independientes sobre las actividades pendientes de los próximos 7 días:
 // la carga horaria (tiempo estimado) y la exigencia evaluativa (porcentajes). Los porcentajes nunca se
 // convierten en horas. Los umbrales son valores iniciales del proyecto, no normas oficiales de la UES.
 @Service
@@ -68,7 +68,7 @@ public class CargaAcademicaService {
 		return calcular(actividades, desde, hasta, "en los próximos 7 días");
 	}
 
-	// Mismo cálculo para otra ventana (SDACAS-26: semanas del ciclo); la descripción solo cambia el texto
+	// Mismo cálculo para otra ventana (semanas del ciclo); la descripción solo cambia el texto
 	// de los motivos, por ejemplo «en la semana del 9/11 al 15/11»
 	public CargaSemanalResponse calcular(List<ActividadAcademica> actividades, LocalDateTime desde, LocalDateTime hasta,
 			String descripcionVentana) {

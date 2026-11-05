@@ -16,7 +16,7 @@ import Insignia from '../ui/Insignia';
 import Tarjeta from '../ui/Tarjeta';
 import { unirClases } from '../ui/unirClases';
 
-// Nombre de cada semana según la clasificación híbrida de SDACAS-20, que decide el backend
+// Nombre de cada semana según la clasificación híbrida de la carga semanal, que decide el backend
 const NIVELES_SEMANA = { NORMAL: 'Baja', ELEVADA: 'Media', CRITICA: 'Alta' };
 const TONOS_NIVEL = { NORMAL: 'exito', ELEVADA: 'advertencia', CRITICA: 'peligro' };
 const BARRAS_NIVEL = { NORMAL: 'bg-success-700', ELEVADA: 'bg-warning-700', CRITICA: 'bg-danger-700' };
@@ -126,12 +126,12 @@ function DesgloseSemana({ semana, id, cacheTiempo }) {
     </div>
   );
 
-  // La semana actual ya se analiza en detalle arriba (SDACAS-20): aquí solo se remite a ese análisis
+  // La semana actual ya se analiza en detalle arriba: aquí solo se remite a ese análisis
   if (semana.semanaActual) {
     return (
       <div id={id} role="region" aria-labelledby={idTitulo} aria-live="polite" className="mt-4 rounded-xl border border-line bg-surface-muted p-3 sm:p-4">
         {encabezado}
-        {/* SDACAS-32: el tiempo disponible no forma parte del análisis superior, así que no se duplica */}
+        {/* El tiempo disponible no forma parte del análisis superior, así que no se duplica */}
         <IndicadorTiempoDisponible semana={semana} cache={cacheTiempo} />
         <Aviso tono="info" icono="fa-solid fa-arrow-up" className="mt-3">
           El detalle de esta semana (horas, exigencia evaluativa y actividades pendientes) está en el análisis de carga de
@@ -189,7 +189,7 @@ function DesgloseSemana({ semana, id, cacheTiempo }) {
   );
 }
 
-// Carga por semana (SDACAS-26): independiente de los indicadores de los próximos 7 días, que no cambian
+// Carga por semana: independiente de los indicadores de los próximos 7 días, que no cambian
 // al seleccionar otra semana
 function CargaPorSemanas({ onIrAAcademico }) {
   const [datos, setDatos] = useState(null);
@@ -197,7 +197,7 @@ function CargaPorSemanas({ onIrAAcademico }) {
   const [seleccionada, setSeleccionada] = useState(null);
   const botones = useRef([]);
   const idDesglose = useId();
-  // Tiempo disponible ya consultado por semana (SDACAS-32); se vacía al recargar las semanas
+  // Tiempo disponible ya consultado por semana; se vacía al recargar las semanas
   const [cacheTiempo] = useState(() => new Map());
 
   const cargar = useCallback(async () => {

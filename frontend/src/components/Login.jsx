@@ -1,8 +1,8 @@
 // Importa el hook useState para manejar estados dentro del componente
 import { useState } from "react";
 
-// Importa las funciones para iniciar sesión y registrar usuarios
-import { login, registrar } from "../services/authService";
+// Importa la función para iniciar sesión
+import { login } from "../services/authService";
 
 // Guarda el token de sesión recibido al iniciar sesión
 import { guardarSesion } from "../api/sesion";
@@ -11,31 +11,47 @@ import { guardarSesion } from "../api/sesion";
 import { toast } from "react-toastify";
 
 // Componentes compartidos del sistema de diseño
+import Aviso from "./ui/Aviso";
 import Boton from "./ui/Boton";
 import Campo from "./ui/Campo";
-import Tarjeta from "./ui/Tarjeta";
+import PantallaAcceso from "./cuenta/PantallaAcceso";
+import ReenvioActivacion from "./cuenta/ReenvioActivacion";
+import RegistroCuenta from "./cuenta/RegistroCuenta";
+
+const TITULOS = {
+    login: "Iniciar Sesión",
+    registro: "Crear cuenta",
+    reenvio: "Reenviar enlace de activación",
+};
 
 /**
  * Componente Login
- * 
+ *
+ * Además del inicio de sesión, permite solicitar una cuenta con el carnet y pedir otro enlace de activación.
+ *
  * Props:
  * - onLoginSuccess: función que se ejecuta cuando el usuario
  *   inicia sesión correctamente.
+ * - correoInicial: correo con el que se abre el formulario (tras activar la cuenta).
+ * - avisoInicial: mensaje de éxito que se muestra sobre el formulario (tras activar la cuenta).
+ * - modoInicial: "login", "registro" o "reenvio".
  */
 
-function Login({ onLoginSuccess }) {
+function Login({ onLoginSuccess, correoInicial = "", avisoInicial = "", modoInicial = "login" }) {
 
-    // Determina si se muestra el formulario de login o registro
-    const [modo, setModo] = useState("login");
+    // Pantalla visible: inicio de sesión, solicitud de cuenta o reenvío del enlace
+    const [modo, setModo] = useState(TITULOS[modoInicial] ? modoInicial : "login");
+
+    // Carnet con el que se abre el reenvío cuando se llega desde la solicitud de cuenta
+    const [identificadorReenvio, setIdentificadorReenvio] = useState("");
+
+    const [aviso, setAviso] = useState(avisoInicial);
 
     /**
-     * Estado que almacena todos los campos del formulario.
-     * Se utiliza tanto para login como para registro.
+     * Estado que almacena los campos del inicio de sesión.
      */
     const [form, setForm] = useState({
-        nombre: "",
-        carnet: "",
-        correoInstitucional: "",
+        correoInstitucional: correoInicial,
         contrasenia: ""
     });
 
@@ -49,6 +65,12 @@ function Login({ onLoginSuccess }) {
             ...form,
             [e.target.name]: e.target.value
         });
+    };
+
+    const irA = (nuevoModo, identificador = "") => {
+        setAviso("");
+        setIdentificadorReenvio(identificador);
+        setModo(nuevoModo);
     };
 
     /**
@@ -98,10 +120,8 @@ function Login({ onLoginSuccess }) {
 
             } else {
 
-                // Si las credenciales son incorrectas
-                toast.error(
-                    respuesta.mensaje || "Credenciales incorrectas"
-                );
+                // Siempre el mismo aviso; no se distingue si la cuenta existe, está bloqueada o pendiente
+                toast.error("Credenciales incorrectas", { toastId: "credenciales-incorrectas" });
             }
 
         } catch (error) {
@@ -113,161 +133,82 @@ function Login({ onLoginSuccess }) {
         }
     };
 
-    /**
-     * Maneja el registro de nuevos estudiantes.
-     */
-    const handleRegistro = async (e) => {
-        e.preventDefault();
-
-        try {
-
-            // Envía todos los datos del formulario al backend
-            const respuesta = await registrar(form);
-
-            if (respuesta !== "Usuario registrado correctamente") {
-                throw new Error(respuesta || "No se pudo completar el registro");
-            }
-
-            toast.success(respuesta);
-
-            // Regresa automáticamente al formulario de login
-            setModo("login");
-
-            // Limpia todos los campos
-            setForm({
-                nombre: "",
-                carnet: "",
-                correoInstitucional: "",
-                contrasenia: ""
-            });
-
-        } catch (error) {
-
-            // Muestra mensaje de error
-            toast.error(
-                error.message || "Error al registrar"
-            );
-        }
-    };
-
     return (
-        <main className="flex min-h-screen items-center justify-center bg-canvas px-4 py-8 sm:p-6">
+        <PantallaAcceso titulo={TITULOS[modo]}>
 
-            {/* Contenedor principal */}
-            <Tarjeta className="w-full max-w-md p-6 shadow-md sm:p-8">
+            {modo === "registro" && (
+                <RegistroCuenta
+                    onReenviar={(carnet) => irA("reenvio", carnet)}
+                    onVolver={() => irA("login")}
+                />
+            )}
 
-                {/* Encabezado */}
-                <div className="mb-6 flex flex-col items-center text-center">
+            {modo === "reenvio" && (
+                <ReenvioActivacion
+                    identificadorInicial={identificadorReenvio}
+                    onVolver={() => irA("login")}
+                />
+            )}
 
-                    {/* Ícono decorativo */}
-                    <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full border border-brand-200 bg-brand-50 text-brand-700">
-                        <i className="fa-solid fa-graduation-cap text-4xl" aria-hidden="true"></i>
+            {modo === "login" && (
+                <>
+                    {aviso && <Aviso tono="exito" className="mb-4">{aviso}</Aviso>}
+
+                    {/* Formulario principal */}
+                    {/* Sin required: los campos vacíos los rechaza el backend y su mensaje se muestra como aviso */}
+                    <form onSubmit={handleLogin} className="flex flex-col gap-4">
+
+                        {/* Correo institucional */}
+                        <Campo
+                            label="Correo institucional"
+                            name="correoInstitucional"
+                            required={false}
+                            value={form.correoInstitucional}
+                            autoComplete="off"
+                            onChange={handleChange}
+                        />
+
+                        {/* Contraseña */}
+                        <Campo
+                            label="Contraseña"
+                            name="contrasenia"
+                            type="password"
+                            required={false}
+                            value={form.contrasenia}
+                            autoComplete="current-password"
+                            onChange={handleChange}
+                        />
+
+                        {/* Botón principal */}
+                        <Boton type="submit" className="mt-2 min-h-11 w-full">
+                            Ingresar
+                        </Boton>
+
+                    </form>
+
+                    {/* Ayuda fija, igual para todos; no depende de la respuesta ni revela si una cuenta existe */}
+                    <div className="mt-5 space-y-2 rounded-lg bg-surface-muted p-3 text-xs text-ink-600" role="note">
+                        <p>
+                            Si tus datos no son aceptados, revisa tu correo institucional y tu contraseña. Tras tres
+                            intentos fallidos seguidos, el acceso se bloquea durante cinco minutos.
+                        </p>
+                        <p>
+                            Si creaste tu cuenta hace poco, primero actívala con el enlace que te enviamos a tu
+                            correo institucional.
+                        </p>
                     </div>
 
-                    {/* Nombre del sistema */}
-                    <h1 className="text-3xl font-bold text-ink-900">
-                        SACA UES
-                    </h1>
-
-                    {/* Descripción */}
-                    <p className="mt-1 text-sm text-ink-600">
-                        Sistema de Análisis de Carga Académica
-                    </p>
-
-                    {/* Línea decorativa */}
-                    <div className="mt-4 h-1 w-16 rounded-full bg-brand-700" aria-hidden="true"></div>
-                </div>
-
-                {/* Título dinámico */}
-                <h2 className="mb-6 text-center text-lg font-semibold text-brand-700">
-                    {modo === "login" ? "Iniciar Sesión" : "Registro"}
-                </h2>
-
-                {/* Formulario principal */}
-                {/* Sin required: los campos vacíos los rechaza el backend y su mensaje se muestra como aviso */}
-                <form
-                    onSubmit={modo === "login" ? handleLogin : handleRegistro}
-                    className="flex flex-col gap-4"
-                >
-
-                    {/* Campos exclusivos para registro */}
-                    {modo === "registro" && (
-                        <>
-                            <Campo
-                                label="Nombre"
-                                name="nombre"
-                                required={false}
-                                value={form.nombre}
-                                onChange={handleChange}
-                            />
-
-                            <Campo
-                                label="Carnet"
-                                name="carnet"
-                                required={false}
-                                value={form.carnet}
-                                onChange={handleChange}
-                            />
-                        </>
-                    )}
-
-                    {/* Correo institucional */}
-                    <Campo
-                        label="Correo institucional"
-                        name="correoInstitucional"
-                        required={false}
-                        value={form.correoInstitucional}
-                        autoComplete="off"
-                        onChange={handleChange}
-                    />
-
-                    {/* Contraseña */}
-                    <Campo
-                        label="Contraseña"
-                        name="contrasenia"
-                        type="password"
-                        required={false}
-                        value={form.contrasenia}
-                        autoComplete="new-password"
-                        onChange={handleChange}
-                    />
-
-                    {/* Botón principal */}
-                    <Boton type="submit" className="mt-2 min-h-11 w-full">
-                        {modo === "login"
-                            ? "Ingresar"
-                            : "Registrarse"}
+                    <Boton variante="texto" onClick={() => irA("reenvio")} className="mt-4 w-full">
+                        ¿No te llegó el enlace de activación? Solicitar otro
                     </Boton>
 
-                </form>
+                    <Boton variante="texto" onClick={() => irA("registro")} className="mt-2 w-full">
+                        ¿No tienes cuenta? Regístrate
+                    </Boton>
+                </>
+            )}
 
-                {/* Botón para cambiar entre login y registro */}
-                <Boton
-                    variante="texto"
-                    onClick={() => {
-
-                        setForm({
-                            nombre: "",
-                            carnet: "",
-                            correoInstitucional: "",
-                            contrasenia: ""
-                        });
-
-                        setModo(
-                            modo === "login"
-                                ? "registro"
-                                : "login"
-                        );
-                    }}
-                    className="mt-5 w-full"
-                >
-                    {modo === "login"
-                        ? "¿No tienes cuenta? Regístrate"
-                        : "¿Ya tienes cuenta? Inicia sesión"}
-                </Boton>
-
-            </Tarjeta>
-        </main>
+        </PantallaAcceso>
     );
 }
 
