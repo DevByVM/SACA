@@ -41,8 +41,11 @@ function SidebarItem({
 function Sidebar({
   vistaActiva,
   setVistaActiva,
-  cerrarSesion
+  cerrarSesion,
+  rol,
 }) {
+  const esAdministrador = rol === "ADMINISTRADOR";
+
   return (
     // En escritorio ocupa la altura de la ventana; si las opciones no caben, el menú se desplaza por dentro
     <aside className="flex w-full flex-col justify-between border-b border-line bg-surface md:h-full md:w-64 md:overflow-y-auto md:border-b-0 md:border-r">
@@ -70,72 +73,38 @@ function Sidebar({
         <nav className="grid grid-cols-2 gap-1 p-4 md:grid-cols-1" aria-label="Módulos del Sistema">
 
           <div className="col-span-2 px-3 pb-2 text-xs font-bold uppercase tracking-widest text-ink-600 md:col-span-1">
-            Módulos del Sistema
+            {esAdministrador ? "Administración" : "Módulos del Sistema"}
           </div>
 
-          <SidebarItem
-            id="dashboard"
-            label="Dashboard"
-            icon="fa-table-cells-large"
-            vistaActiva={vistaActiva}
-            setVistaActiva={setVistaActiva}
-          />
-
-          <SidebarItem
-            id="academico"
-            label="Gestión Académica"
-            icon="fa-book-open"
-            vistaActiva={vistaActiva}
-            setVistaActiva={setVistaActiva}
-          />
-
-          <SidebarItem
-            id="perfil"
-            label="Perfil Académico"
-            icon="fa-user-graduate"
-            vistaActiva={vistaActiva}
-            setVistaActiva={setVistaActiva}
-          />
-
-          <SidebarItem
-            id="analisis"
-            label="Análisis de Carga"
-            icon="fa-gauge-high"
-            vistaActiva={vistaActiva}
-            setVistaActiva={setVistaActiva}
-          />
-
-          <SidebarItem
-            id="disponibilidad"
-            label="Gestión de disponibilidad"
-            icon="fa-clock"
-            vistaActiva={vistaActiva}
-            setVistaActiva={setVistaActiva}
-          />
-
-          <SidebarItem
-            id="jornada"
-            label="Horario Laboral"
-            icon="fa-briefcase"
-            vistaActiva={vistaActiva}
-            setVistaActiva={setVistaActiva}
-          />
-
-          <SidebarItem
-            id="calendario"
-            label="Calendario Académico"
-            icon="fa-calendar-week"
-            vistaActiva={vistaActiva}
-            setVistaActiva={setVistaActiva}
-          />
-
-          <SidebarItem
-            id="notificaciones"
-            label="Notificaciones"
-            icon="fa-bell"
-            vistaActiva={vistaActiva}
-            setVistaActiva={setVistaActiva}
-          />
+          {esAdministrador ? (
+            <>
+              <SidebarItem
+                id="admin-usuarios"
+                label="Gestión de usuarios"
+                icon="fa-users"
+                vistaActiva={vistaActiva}
+                setVistaActiva={setVistaActiva}
+              />
+              <SidebarItem
+                id="admin-catalogo"
+                label="Catálogo de materias"
+                icon="fa-book"
+                vistaActiva={vistaActiva}
+                setVistaActiva={setVistaActiva}
+              />
+            </>
+          ) : (
+            <>
+              <SidebarItem id="dashboard" label="Dashboard" icon="fa-table-cells-large" vistaActiva={vistaActiva} setVistaActiva={setVistaActiva} />
+              <SidebarItem id="academico" label="Gestión Académica" icon="fa-book-open" vistaActiva={vistaActiva} setVistaActiva={setVistaActiva} />
+              <SidebarItem id="perfil" label="Perfil Académico" icon="fa-user-graduate" vistaActiva={vistaActiva} setVistaActiva={setVistaActiva} />
+              <SidebarItem id="analisis" label="Análisis de Carga" icon="fa-gauge-high" vistaActiva={vistaActiva} setVistaActiva={setVistaActiva} />
+              <SidebarItem id="disponibilidad" label="Gestión de disponibilidad" icon="fa-clock" vistaActiva={vistaActiva} setVistaActiva={setVistaActiva} />
+              <SidebarItem id="jornada" label="Horario Laboral" icon="fa-briefcase" vistaActiva={vistaActiva} setVistaActiva={setVistaActiva} />
+              <SidebarItem id="calendario" label="Calendario Académico" icon="fa-calendar-week" vistaActiva={vistaActiva} setVistaActiva={setVistaActiva} />
+              <SidebarItem id="notificaciones" label="Notificaciones" icon="fa-bell" vistaActiva={vistaActiva} setVistaActiva={setVistaActiva} />
+            </>
+          )}
 
           <hr className="col-span-2 my-3 border-line md:col-span-1" />
 

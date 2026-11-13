@@ -23,6 +23,8 @@ import ConfiguracionNotificaciones from "./components/ConfiguracionNotificacione
 import NotificacionesProximas from "./components/NotificacionesProximas.jsx";
 import Boton from "./components/ui/Boton";
 import { unirClases } from "./components/ui/unirClases";
+import GestionUsuarios from "./components/admin/GestionUsuarios";
+import GestionCatalogoMaterias from "./components/admin/GestionCatalogoMaterias";
 function App() {
 
   const [logueado, setLogueado] = useState(
@@ -42,8 +44,9 @@ function App() {
   // Cómo abrir el inicio de sesión al salir de la activación: con el correo escrito y un aviso, o en el reenvío
   const [entradaLogin, setEntradaLogin] = useState({ clave: 0, correo: "", aviso: "", modo: "login" });
 
-  const [vistaActiva, setVistaActiva] =
-    useState("dashboard");
+  const [vistaActiva, setVistaActiva] = useState(
+    () => obtenerSesion()?.estudiante?.rol === "ADMINISTRADOR" ? "admin-usuarios" : "dashboard"
+  );
   const [actualizacionNotificaciones, setActualizacionNotificaciones] = useState(0);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const botonMenuRef = useRef(null);
@@ -125,7 +128,8 @@ function App() {
         onLoginSuccess={(estudianteAutenticado) => {
 
           setEstudiante(estudianteAutenticado);
-          setLogueado(true);
+        setVistaActiva(estudianteAutenticado.rol === "ADMINISTRADOR" ? "admin-usuarios" : "dashboard");
+        setLogueado(true);
         }}
       />
     );
@@ -172,6 +176,7 @@ function App() {
           vistaActiva={vistaActiva}
           setVistaActiva={navegarDesdeMenu}
           cerrarSesion={cerrarSesion}
+          rol={estudiante?.rol}
         />
       </div>
 
@@ -190,6 +195,8 @@ function App() {
               </p>
 
               <h1 className="mt-1 text-3xl font-extrabold uppercase leading-tight tracking-tight text-ink-900 sm:text-4xl">
+                {vistaActiva === "admin-usuarios" && "Gestión de usuarios"}
+                {vistaActiva === "admin-catalogo" && "Catálogo de materias"}
                 {vistaActiva === "dashboard" && "Panel de control"}
                 {vistaActiva === "academico" && "Gestión académica"}
                 {vistaActiva === "perfil" && "Perfil académico"}
@@ -204,11 +211,11 @@ function App() {
 
             <div className="flex shrink-0 items-center gap-3 self-end rounded-lg border border-line bg-surface px-4 py-2 text-right shadow-sm sm:self-start">
 
-              <i className="fa-solid fa-user-graduate text-brand-700" aria-hidden="true"></i>
+              <i className={`fa-solid ${estudiante?.rol === "ADMINISTRADOR" ? "fa-user-shield" : "fa-user-graduate"} text-brand-700`} aria-hidden="true"></i>
 
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-widest text-ink-600">
-                  Estudiante
+                  {estudiante?.rol === "ADMINISTRADOR" ? "Administrador" : "Estudiante"}
                 </p>
 
                 <p className="max-w-44 truncate text-sm font-bold text-ink-900">
@@ -216,17 +223,27 @@ function App() {
                 </p>
               </div>
 
-              <NotificacionesProximas
-                estudiante={estudiante}
-                onConfigurar={() => setVistaActiva("notificaciones")}
-                actualizacion={actualizacionNotificaciones}
-              />
+              {estudiante?.rol !== "ADMINISTRADOR" && (
+                <NotificacionesProximas
+                  estudiante={estudiante}
+                  onConfigurar={() => setVistaActiva("notificaciones")}
+                  actualizacion={actualizacionNotificaciones}
+                />
+              )}
 
             </div>
 
           </header>
 
           <div className="w-full">
+
+            {vistaActiva === "admin-usuarios" && estudiante?.rol === "ADMINISTRADOR" && (
+              <GestionUsuarios />
+            )}
+
+            {vistaActiva === "admin-catalogo" && estudiante?.rol === "ADMINISTRADOR" && (
+              <GestionCatalogoMaterias />
+            )}
 
             {vistaActiva === "dashboard" && (
               <PanelControlAcademico

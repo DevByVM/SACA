@@ -18,6 +18,7 @@ import {
   eliminarMateria,
   listarMaterias,
 } from "../api/materiasApi";
+import { listarCatalogoMaterias } from "../api/catalogoMateriasApi";
 
 import {
   getActividadesByEstudianteIdAndCicloActivo,
@@ -46,8 +47,7 @@ const cicloInicial = {
 
 const materiaInicial = {
   cicloAcademicoId: "",
-  nombre: "",
-  codigo: "",
+  catalogoMateriaId: "",
   grupoTeorico: "",
 };
 
@@ -118,6 +118,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
   const [cargando, setCargando] = useState(false);
   const [ciclos, setCiclos] = useState([]);
   const [materias, setMaterias] = useState([]);
+  const [catalogoMaterias, setCatalogoMaterias] = useState([]);
   const [horarios, setHorarios] = useState([]);
   const [cicloForm, setCicloForm] = useState(cicloInicial);
   const [materiaForm, setMateriaForm] = useState(materiaInicial);
@@ -169,6 +170,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       if (vistaObjetivo === "materias") {
         await cargarColeccion("ciclos", () => listarCiclos(estudianteId), setCiclos);
         await cargarColeccion("materias", () => listarMaterias(estudianteId), setMaterias);
+        await cargarColeccion("catalogo-materias", listarCatalogoMaterias, setCatalogoMaterias);
       }
 
       if (vistaObjetivo === "horarios") {
@@ -205,6 +207,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       solicitudesEnCurso.current.clear();
       setCiclos([]);
       setMaterias([]);
+      setCatalogoMaterias([]);
       setHorarios([]);
       setActividades([]);
       estudianteAnterior.current = estudianteId;
@@ -246,6 +249,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
     const payload = {
       ...materiaForm,
       cicloAcademicoId: Number(materiaForm.cicloAcademicoId),
+      catalogoMateriaId: Number(materiaForm.catalogoMateriaId),
     };
 
     await guardar(async () => {
@@ -550,8 +554,9 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
     setEditando({ tipo: "materia", id: materia.id });
     setMateriaForm({
       cicloAcademicoId: materia.cicloAcademicoId,
-      nombre: materia.nombre,
-      codigo: materia.codigo,
+      catalogoMateriaId: materia.catalogoMateriaId
+        ?? catalogoMaterias.find((item) => item.codigo === materia.codigo)?.id
+        ?? "",
       grupoTeorico: materia.grupoTeorico,
     });
     setFormularioAbierto(true);
@@ -725,6 +730,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
         {vista === "materias" && (
           <FormularioMateria
             ciclos={ciclos}
+            catalogoMaterias={catalogoMaterias}
             form={materiaForm}
             setForm={setMateriaForm}
             onSubmit={guardarMateria}
@@ -791,7 +797,7 @@ function FormularioCiclo({ form, setForm, onSubmit, onCancel }) {
   );
 }
 
-function FormularioMateria({ ciclos, form, setForm, onSubmit, onCancel }) {
+function FormularioMateria({ ciclos, catalogoMaterias, form, setForm, onSubmit, onCancel }) {
   return (
     <form className="grid gap-4 sm:grid-cols-2" onSubmit={onSubmit}>
       <Selector
@@ -801,8 +807,18 @@ function FormularioMateria({ ciclos, form, setForm, onSubmit, onCancel }) {
         onValorChange={(cicloAcademicoId) => setForm({ ...form, cicloAcademicoId })}
         options={ciclos.map((ciclo) => ({ value: ciclo.id, label: `${ciclo.nombre} - ${ciclo.anio}` }))}
       />
-      <CampoUi className="sm:col-span-2" label="Nombre" value={form.nombre} onValorChange={(nombre) => setForm({ ...form, nombre })} />
-      <CampoUi label="Codigo" value={form.codigo} onValorChange={(codigo) => setForm({ ...form, codigo })} />
+      <Selector
+        className="sm:col-span-2"
+        label="Materia del catálogo"
+        value={form.catalogoMateriaId}
+        onValorChange={(catalogoMateriaId) => setForm({ ...form, catalogoMateriaId })}
+        options={catalogoMaterias.map((materia) => ({
+          value: materia.id,
+          label: `${materia.codigo} - ${materia.nombre}`,
+        }))}
+        ayuda={catalogoMaterias.length === 0 ? "El administrador debe agregar materias al catálogo antes de inscribirlas." : undefined}
+        disabled={catalogoMaterias.length === 0}
+      />
       <CampoUi label="Grupo teorico" value={form.grupoTeorico} onValorChange={(grupoTeorico) => setForm({ ...form, grupoTeorico })} />
       <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:col-span-2 sm:flex-row sm:justify-end">
         <Boton variante="secundario" onClick={onCancel}>
