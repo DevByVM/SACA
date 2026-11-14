@@ -14,6 +14,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
 import com.saca.api.config.TokenConfig;
+import com.saca.api.entity.Administrador;
 import com.saca.api.entity.Estudiante;
 
 @Service
@@ -40,13 +41,21 @@ public class TokenService {
             throw new CuentaPendienteException();
         }
 
-        // JWT guarda las fechas en segundos; así expiraEn coincide exactamente con el exp del token
+        return emitir(estudiante.getId(), "ESTUDIANTE");
+    }
+
+    public TokenEmitido emitir(Administrador administrador) {
+        return emitir(administrador.getId(), "ADMINISTRADOR");
+    }
+
+    private TokenEmitido emitir(Long id, String rol) {
         Instant ahora = relojAplicacion.instant().truncatedTo(ChronoUnit.SECONDS);
         Instant expiraEn = ahora.plus(duracion);
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(TokenConfig.EMISOR)
-                .subject(String.valueOf(estudiante.getId()))
+                .subject(String.valueOf(id))
+                .claim("rol", rol)
                 .issuedAt(ahora)
                 .expiresAt(expiraEn)
                 .build();

@@ -26,3 +26,17 @@ export const cambiarEstadoMateriaCatalogo = (id, activa) => apiRequest(`/admin/c
   method: 'PATCH',
   body: JSON.stringify({ activa }),
 })
+
+export const listarTiposActividadAdmin = () => apiRequest('/admin/tipos-actividad')
+
+export const guardarTipoActividadAdmin = (tipo, id) => apiRequest(
+  id ? `/admin/tipos-actividad/${id}` : '/admin/tipos-actividad',
+  {
+    method: id ? 'PUT' : 'POST',
+    body: JSON.stringify(tipo),
+  },
+)
+
+export const eliminarTipoActividadAdmin = (id) => apiRequest(`/admin/tipos-actividad/${id}`, {
+  method: 'DELETE',
+})

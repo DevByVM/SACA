@@ -32,6 +32,9 @@ public class EstudianteService {
     private TokenService tokenService;
 
     @Autowired
+    private AdministradorService administradorService;
+
+    @Autowired
     private VerificadorContrasenias verificadorContrasenias;
 
     @Autowired
@@ -68,6 +71,11 @@ public class EstudianteService {
     // llegan a compararse antes del bloqueo. La comparación se hace sin ningún bloqueo de base de datos, y el
     // login nunca guarda la entidad completa.
     public LoginResponse login(LoginRequest request) {
+
+        Optional<LoginResponse> loginAdministrador = administradorService.autenticar(request);
+        if (loginAdministrador.isPresent()) {
+            return loginAdministrador.get();
+        }
 
         String correoInstitucional = normalizarCorreo(request.getCorreoInstitucional());
 

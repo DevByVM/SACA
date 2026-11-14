@@ -10,27 +10,32 @@ import com.saca.api.dto.request.CrearMateriaInscritaRequest;
 import com.saca.api.dto.response.MateriaInscritaResponse;
 import com.saca.api.entity.CicloAcademico;
 import com.saca.api.entity.MateriaInscrita;
+import com.saca.api.entity.MateriaCatalogo;
 import com.saca.api.exception.RecursoNoEncontradoException;
 import com.saca.api.exception.ValidacionNegocioException;
 import com.saca.api.mapper.MateriaInscritaMapper;
 import com.saca.api.repository.CicloAcademicoRepository;
 import com.saca.api.repository.EstudianteRepository;
 import com.saca.api.repository.MateriaInscritaRepository;
+import com.saca.api.repository.MateriaCatalogoRepository;
 
 @Service
 public class MateriaInscritaService {
 
 	private final MateriaInscritaRepository materiaInscritaRepository;
+	private final MateriaCatalogoRepository materiaCatalogoRepository;
 	private final CicloAcademicoRepository cicloAcademicoRepository;
 	private final EstudianteRepository estudianteRepository;
 	private final MateriaInscritaMapper materiaInscritaMapper;
 
 	public MateriaInscritaService(
 			MateriaInscritaRepository materiaInscritaRepository,
+			MateriaCatalogoRepository materiaCatalogoRepository,
 			CicloAcademicoRepository cicloAcademicoRepository,
 			EstudianteRepository estudianteRepository,
 			MateriaInscritaMapper materiaInscritaMapper) {
 		this.materiaInscritaRepository = materiaInscritaRepository;
+		this.materiaCatalogoRepository = materiaCatalogoRepository;
 		this.cicloAcademicoRepository = cicloAcademicoRepository;
 		this.estudianteRepository = estudianteRepository;
 		this.materiaInscritaMapper = materiaInscritaMapper;
@@ -65,9 +70,10 @@ public class MateriaInscritaService {
 	@Transactional
 	public MateriaInscritaResponse crear(CrearMateriaInscritaRequest request, Long estudianteId) {
 		CicloAcademico cicloAcademico = buscarCicloDelEstudiante(request.cicloAcademicoId(), estudianteId);
-		validarCodigoDisponibleAlCrear(request.cicloAcademicoId(), request.codigo());
+		MateriaCatalogo catalogoMateria = buscarMateriaActivaDelCatalogo(request.catalogoMateriaId());
+		validarCodigoDisponibleAlCrear(request.cicloAcademicoId(), catalogoMateria.getCodigo());
 
-		MateriaInscrita materiaInscrita = materiaInscritaMapper.toEntity(request, cicloAcademico);
+		MateriaInscrita materiaInscrita = materiaInscritaMapper.toEntity(request, cicloAcademico, catalogoMateria);
 		MateriaInscrita materiaGuardada = materiaInscritaRepository.save(materiaInscrita);
 		return materiaInscritaMapper.toResponse(materiaGuardada);
 	}
@@ -79,9 +85,10 @@ public class MateriaInscritaService {
 			ActualizarMateriaInscritaRequest request) {
 		MateriaInscrita materiaInscrita = buscarMateriaDelEstudiante(materiaId, estudianteId);
 		Long cicloAcademicoId = materiaInscrita.getCicloAcademico().getId();
+		MateriaCatalogo catalogoMateria = buscarMateriaActivaDelCatalogo(request.catalogoMateriaId());
 
-		validarCodigoDisponibleAlActualizar(cicloAcademicoId, request.codigo(), materiaId);
-		materiaInscritaMapper.updateEntity(materiaInscrita, request);
+		validarCodigoDisponibleAlActualizar(cicloAcademicoId, catalogoMateria.getCodigo(), materiaId);
+		materiaInscritaMapper.updateEntity(materiaInscrita, request, catalogoMateria);
 
 		return materiaInscritaMapper.toResponse(materiaInscrita);
 	}
@@ -112,6 +119,11 @@ public class MateriaInscritaService {
 		if (!estudianteRepository.existsById(estudianteId)) {
 			throw new RecursoNoEncontradoException("No se encontro el estudiante solicitado");
 		}
+	}
+
+	private MateriaCatalogo buscarMateriaActivaDelCatalogo(Long id) {
+		return materiaCatalogoRepository.findByIdAndActivaTrue(id)
+				.orElseThrow(() -> new RecursoNoEncontradoException("No se encontró la materia activa del catálogo"));
 	}
 
 	private void validarCodigoDisponibleAlCrear(Long cicloAcademicoId, String codigo) {

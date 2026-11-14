@@ -6,8 +6,12 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsUtils;
+
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -34,13 +38,17 @@ public class SecurityConfig {
                 // Página de error de Spring: si exigiera token, un error se convertiría en 401
                 .requestMatchers("/error")
                 .permitAll()
-                // Cualquier otra ruta, incluidas las que se añadan en el futuro, exige un JWT válido
+                .requestMatchers("/api/admin/**")
+                .hasAuthority("ADMINISTRADOR")
+                .requestMatchers(HttpMethod.GET, "/api/catalogo-materias")
+                .hasAnyAuthority("ESTUDIANTE", "ADMINISTRADOR")
+                // Las funciones académicas pertenecen a los estudiantes.
                 .anyRequest()
-                .authenticated()
+                .hasAuthority("ESTUDIANTE")
             )
             // Valida el Bearer con el decodificador de TokenConfig (firma HS256, emisor y vigencia)
             .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(Customizer.withDefaults())
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                 .authenticationEntryPoint(manejadorErrores)
                 .accessDeniedHandler(manejadorErrores))
             .exceptionHandling(errores -> errores
@@ -50,5 +58,14 @@ public class SecurityConfig {
             .httpBasic(httpBasic -> httpBasic.disable());
 
         return http.build();
+    }
+
+    private JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            String rol = jwt.getClaimAsString("rol");
+            return rol == null ? List.of() : List.of(new SimpleGrantedAuthority(rol));
+        });
+        return converter;
     }
 }

@@ -90,9 +90,11 @@ class AuthLoginTokenTest {
         assertThat(respuesta.get("nombre").asText()).isEqualTo("Prueba Token");
         assertThat(respuesta.get("carnet").asText()).isEqualTo(estudiante.getCarnet());
         assertThat(respuesta.get("correoInstitucional").asText()).isEqualTo(estudiante.getCorreoInstitucional());
+        assertThat(respuesta.get("rol").asText()).isEqualTo("ESTUDIANTE");
 
         Jwt jwt = decodificadorToken.decode(respuesta.get("token").asText());
         assertThat(jwt.getSubject()).isEqualTo(String.valueOf(estudiante.getId()));
+        assertThat(jwt.getClaimAsString("rol")).isEqualTo("ESTUDIANTE");
         assertThat(Duration.between(jwt.getIssuedAt(), jwt.getExpiresAt())).isEqualTo(Duration.ofHours(8));
         assertThat(Instant.parse(respuesta.get("expiraEn").asText())).isEqualTo(jwt.getExpiresAt());
     }

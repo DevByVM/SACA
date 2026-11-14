@@ -6,5 +6,6 @@ public record MateriaInscritaResponse(
 		String cicloAcademicoNombre,
 		String nombre,
 		String codigo,
-		String grupoTeorico) {
+		String grupoTeorico,
+		Long catalogoMateriaId) {
 }
