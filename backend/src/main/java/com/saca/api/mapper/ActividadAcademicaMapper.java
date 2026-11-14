@@ -5,6 +5,7 @@ import com.saca.api.dto.response.ActividadAcademicaResponse;
 import com.saca.api.entity.ActividadAcademica;
 import com.saca.api.entity.MateriaInscrita;
 import com.saca.api.entity.Nota;
+import com.saca.api.entity.TipoActividad;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -21,19 +22,22 @@ public class ActividadAcademicaMapper {
                 actividadAcademica.getTiempoEstimadoHoras(),
                 actividadAcademica.getEstado(),
                 actividadAcademica.getFechaCompletada(),
-                actividadAcademica.getTipoActividad(),
+                actividadAcademica.getTipoActividad().getIdTipoActividad(),
                 actividadAcademica.getMateriaInscrita().getId(),
                 Optional.ofNullable(actividadAcademica.getNota()).map(Nota::getId).orElse(null),
                 Optional.ofNullable(actividadAcademica.getNota()).map(Nota::getValorObtenido).orElse(null),
-                actividadAcademica.getTipoActividad().name(),
-                actividadAcademica.getMateriaInscrita().getCodigo()
+                actividadAcademica.getTipoActividad().getNombre(),
+                actividadAcademica.getMateriaInscrita().getCodigo(),
+                actividadAcademica.getTipoActividad().getNombre()
         );
     }
 
-    public ActividadAcademica toEntity(ActividadAcademicaRequest crearActividad, MateriaInscrita materiaInscrita){
+    public ActividadAcademica toEntity(ActividadAcademicaRequest crearActividad, MateriaInscrita materiaInscrita,
+                                       TipoActividad tipoActividad){
         ActividadAcademica actividad = new ActividadAcademica();
         setCampos(crearActividad, actividad);
         actividad.setMateriaInscrita(materiaInscrita);
+        actividad.setTipoActividad(tipoActividad);
         return actividad;
     }
 
@@ -50,6 +54,5 @@ public class ActividadAcademicaMapper {
         actividad.setTiempoEstimadoHoras(crearActividad.tiempoEstimadoHoras());
         actividad.setEstado(crearActividad.estado());
         actividad.setFechaCompletada(crearActividad.fechaCompletada());
-        actividad.setTipoActividad(crearActividad.tipoActividad());
     }
 }

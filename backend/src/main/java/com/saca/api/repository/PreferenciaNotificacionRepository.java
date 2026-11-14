@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface PreferenciaNotificacionRepository extends JpaRepository<PreferenciaNotificacion, Long> {
 
     Optional<PreferenciaNotificacion> findByEstudianteId(Long estudianteId);
+
+    long countByTiposActividadHabilitados_IdTipoActividad(Integer tipoActividadId);
 }

@@ -2,33 +2,38 @@ package com.saca.api.service;
 
 import com.saca.api.dto.request.PreferenciaNotificacionRequest;
 import com.saca.api.dto.response.PreferenciaNotificacionResponse;
+import com.saca.api.dto.response.TipoActividadResponse;
 import com.saca.api.entity.Estudiante;
 import com.saca.api.entity.PreferenciaNotificacion;
-import com.saca.api.entity.TipoActividadAcademica;
+import com.saca.api.entity.TipoActividad;
 import com.saca.api.exception.RecursoNoEncontradoException;
 import com.saca.api.exception.ValidacionNegocioException;
 import com.saca.api.repository.EstudianteRepository;
 import com.saca.api.repository.PreferenciaNotificacionRepository;
+import com.saca.api.repository.TipoActividadRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class PreferenciaNotificacionService {
 
     private final PreferenciaNotificacionRepository preferenciaRepository;
     private final EstudianteRepository estudianteRepository;
+    private final TipoActividadRepository tipoActividadRepository;
 
     public PreferenciaNotificacionService(
             PreferenciaNotificacionRepository preferenciaRepository,
-            EstudianteRepository estudianteRepository
+            EstudianteRepository estudianteRepository,
+            TipoActividadRepository tipoActividadRepository
     ) {
         this.preferenciaRepository = preferenciaRepository;
         this.estudianteRepository = estudianteRepository;
+        this.tipoActividadRepository = tipoActividadRepository;
     }
 
     @Transactional(readOnly = true)
@@ -52,7 +57,7 @@ public class PreferenciaNotificacionService {
                 .orElseGet(PreferenciaNotificacion::new);
 
         preferencia.setEstudiante(estudiante);
-        preferencia.setTiposActividadHabilitados(request.tiposActividadHabilitados());
+        preferencia.setTiposActividadHabilitados(resolverTipos(request.tiposActividadHabilitados()));
 
         PreferenciaNotificacion guardada = preferenciaRepository.save(preferencia);
         return construirRespuesta(estudiante.getId(), guardada.getTiposActividadHabilitados());
@@ -69,18 +74,32 @@ public class PreferenciaNotificacionService {
 
     private PreferenciaNotificacionResponse construirRespuesta(
             Long estudianteId,
-            Collection<TipoActividadAcademica> tiposHabilitados
+            Collection<TipoActividad> tiposHabilitados
     ) {
         return new PreferenciaNotificacionResponse(
                 estudianteId,
-                Arrays.asList(TipoActividadAcademica.values()),
-                ordenarTipos(tiposHabilitados)
+                tipoActividadRepository.findByActivoTrueOrderByNombreAsc().stream()
+                        .map(this::toResponse)
+                        .toList(),
+                tiposHabilitados.stream()
+                        .map(TipoActividad::getIdTipoActividad)
+                        .sorted()
+                        .toList()
         );
     }
 
-    private List<TipoActividadAcademica> ordenarTipos(Collection<TipoActividadAcademica> tiposActividad) {
-        return tiposActividad.stream()
-                .sorted(Comparator.comparingInt(Enum::ordinal))
-                .toList();
+    private Set<TipoActividad> resolverTipos(Set<Integer> ids) {
+        if (ids == null || ids.stream().anyMatch(java.util.Objects::isNull)) {
+            throw new ValidacionNegocioException("Los tipos de actividad indicados no son válidos");
+        }
+        List<TipoActividad> encontrados = tipoActividadRepository.findAllById(ids);
+        if (encontrados.size() != ids.size() || encontrados.stream().anyMatch(tipo -> !tipo.isActivo())) {
+            throw new RecursoNoEncontradoException("Uno o más tipos de actividad no están disponibles");
+        }
+        return new LinkedHashSet<>(encontrados);
+    }
+
+    private TipoActividadResponse toResponse(TipoActividad tipo) {
+        return new TipoActividadResponse(tipo.getIdTipoActividad(), tipo.getNombre(), tipo.isActivo());
     }
 }

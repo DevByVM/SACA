@@ -32,6 +32,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.saca.api.TipoActividadPrueba.crear;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
@@ -218,7 +219,7 @@ class ReglasActividadTest {
         nueva.setPorcentajeEvaluacion(porcentaje);
         nueva.setTiempoEstimadoHoras(2);
         nueva.setEstado("ACTIVO");
-        nueva.setTipoActividad(TipoActividadAcademica.LABORATORIO);
+        nueva.setTipoActividad(com.saca.api.TipoActividadPrueba.crear(TipoActividadAcademica.LABORATORIO));
         nueva.setMateriaInscrita(destino);
         return actividadRepository.save(nueva);
     }

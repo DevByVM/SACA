@@ -1,26 +1,21 @@
-// Nombres legibles de los tipos que ya existen en el modelo (TipoActividadAcademica)
-export const TIPOS_ACTIVIDAD = {
-  PARCIAL: "Parcial",
-  LABORATORIO: "Laboratorio",
-  PROYECTO: "Proyecto",
-  INVESTIGACION: "Investigación",
-};
-
 export const ESTILOS_EVENTO = {
   CLASE: "border-brand-700 bg-brand-50",
   ACTIVIDAD: "border-info-700 bg-info-50",
 };
 
-export const FILTROS_INICIALES = {
-  tipos: { CLASE: true, PARCIAL: true, LABORATORIO: true, PROYECTO: true, INVESTIGACION: true },
+export const filtrosIniciales = (tiposActividad = []) => ({
+  tipos: {
+    CLASE: true,
+    ...Object.fromEntries(tiposActividad.map((tipo) => [String(tipo.id), true])),
+  },
   estados: { PENDIENTE: true, COMPLETADA: true, CALIFICADA: true },
-};
+});
 
 // El estado solo filtra actividades: una completada y calificada se muestra si cualquiera de sus dos
 // estados está seleccionado
 export function eventoVisible(evento, filtros) {
-  const tipo = evento.tipo === "CLASE" ? "CLASE" : evento.tipoActividad;
-  if (!filtros.tipos[tipo]) return false;
+  const tipo = evento.tipo === "CLASE" ? "CLASE" : String(evento.tipoActividadId);
+  if (filtros.tipos[tipo] === false) return false;
   if (evento.tipo === "CLASE") return true;
   return (filtros.estados.PENDIENTE && evento.pendiente)
     || (filtros.estados.COMPLETADA && evento.completada)

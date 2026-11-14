@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.saca.api.TipoActividadPrueba.crear;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -123,7 +124,7 @@ class CargaAcademicaTest {
         nueva.setPorcentajeEvaluacion(peso);
         nueva.setTiempoEstimadoHoras(horas);
         nueva.setEstado("ACTIVO");
-        nueva.setTipoActividad(TipoActividadAcademica.PARCIAL);
+        nueva.setTipoActividad(crear(TipoActividadAcademica.PARCIAL));
         nueva.setMateriaInscrita(materia);
         actividadRepository.save(nueva);
     }

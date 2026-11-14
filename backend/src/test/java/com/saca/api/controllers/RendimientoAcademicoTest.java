@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.saca.api.TipoActividadPrueba.crear;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -150,7 +151,7 @@ class RendimientoAcademicoTest {
         nueva.setPorcentajeEvaluacion(peso);
         nueva.setTiempoEstimadoHoras(4);
         nueva.setEstado("ACTIVO");
-        nueva.setTipoActividad(TipoActividadAcademica.PARCIAL);
+        nueva.setTipoActividad(crear(TipoActividadAcademica.PARCIAL));
         nueva.setMateriaInscrita(materia);
         if (nota != null) {
             Nota registrada = new Nota();

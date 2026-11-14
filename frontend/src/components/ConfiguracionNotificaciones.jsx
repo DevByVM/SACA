@@ -10,13 +10,6 @@ import EncabezadoModulo from "./ui/EncabezadoModulo";
 import EstadoVacio from "./ui/EstadoVacio";
 import Tarjeta from "./ui/Tarjeta";
 
-function formatearTipoActividad(tipoActividad) {
-  return tipoActividad
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (letra) => letra.toUpperCase());
-}
-
 function ConfiguracionNotificaciones({ estudiante, onPreferenciasGuardadas }) {
   const estudianteId = estudiante?.id;
   const [tiposDisponibles, setTiposDisponibles] = useState([]);
@@ -109,12 +102,12 @@ function ConfiguracionNotificaciones({ estudiante, onPreferenciasGuardadas }) {
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {tiposDisponibles.map((tipoActividad) => {
-                  const idCampo = `notificacion-${tipoActividad.toLowerCase()}`;
-                  const habilitado = tiposHabilitados.includes(tipoActividad);
+                  const idCampo = `notificacion-${tipoActividad.id}`;
+                  const habilitado = tiposHabilitados.includes(tipoActividad.id);
 
                   return (
                     <label
-                      key={tipoActividad}
+                      key={tipoActividad.id}
                       htmlFor={idCampo}
                       className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 text-sm transition-colors ${
                         habilitado
@@ -126,10 +119,10 @@ function ConfiguracionNotificaciones({ estudiante, onPreferenciasGuardadas }) {
                         id={idCampo}
                         type="checkbox"
                         checked={habilitado}
-                        onChange={() => cambiarTipoActividad(tipoActividad)}
+                        onChange={() => cambiarTipoActividad(tipoActividad.id)}
                         className="h-4 w-4 accent-brand-700"
                       />
-                      <span className="font-semibold">{formatearTipoActividad(tipoActividad)}</span>
+                      <span className="font-semibold">{tipoActividad.nombre}</span>
                     </label>
                   );
                 })}

@@ -19,6 +19,7 @@ import {
   listarMaterias,
 } from "../api/materiasApi";
 import { listarCatalogoMaterias } from "../api/catalogoMateriasApi";
+import { listarTiposActividad } from "../api/tiposActividadApi";
 
 import {
   getActividadesByEstudianteIdAndCicloActivo,
@@ -67,7 +68,7 @@ const actividadInicial = {
   fechaInicio: "",
   fechaEntrega: "",
   tiempoEstimadoHoras: "",
-  tipoActividad: "",
+  tipoActividadId: "",
   materiaInscritaId: "",
   porcentajeEvaluacion: "5",
   notaObtenida: "",
@@ -119,6 +120,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
   const [ciclos, setCiclos] = useState([]);
   const [materias, setMaterias] = useState([]);
   const [catalogoMaterias, setCatalogoMaterias] = useState([]);
+  const [tiposActividad, setTiposActividad] = useState([]);
   const [horarios, setHorarios] = useState([]);
   const [cicloForm, setCicloForm] = useState(cicloInicial);
   const [materiaForm, setMateriaForm] = useState(materiaInicial);
@@ -188,6 +190,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
         // El reporte de rendimiento permite elegir entre los ciclos del estudiante
         await cargarColeccion("ciclos", () => listarCiclos(estudianteId), setCiclos);
         await cargarColeccion("materias", () => listarMaterias(estudianteId), setMaterias);
+        await cargarColeccion("tipos-actividad", listarTiposActividad, setTiposActividad);
         await cargarColeccion(
           "actividades",
           () => getActividadesByEstudianteIdAndCicloActivo(estudianteId),
@@ -208,6 +211,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       setCiclos([]);
       setMaterias([]);
       setCatalogoMaterias([]);
+      setTiposActividad([]);
       setHorarios([]);
       setActividades([]);
       estudianteAnterior.current = estudianteId;
@@ -333,6 +337,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       fechaEntrega: formatFechaLocalDateTime(actividadForm.fechaEntrega),
       tiempoEstimadoHoras: actividadForm.tiempoEstimadoHoras ? Number(actividadForm.tiempoEstimadoHoras) : null,
       materiaInscritaId: Number(actividadForm.materiaInscritaId),
+      tipoActividadId: Number(actividadForm.tipoActividadId),
       porcentajeEvaluacion: porcentajeNuevo,
       fechaCompletada:
         editando.tipo === "actividad" && actividadForm.fechaCompletada
@@ -480,7 +485,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       tiempoEstimadoHoras: actividad.tiempoEstimadoHoras
         ? Number(actividad.tiempoEstimadoHoras)
         : null,
-      tipoActividad: actividad.tipoActividad,
+      tipoActividadId: Number(actividad.tipoActividadId),
       materiaInscritaId: Number(actividad.materiaInscritaId),
       porcentajeEvaluacion: Number(actividad.porcentajeEvaluacion || 0),
       estado: "COMPLETADA",
@@ -509,7 +514,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       tiempoEstimadoHoras: actividad.tiempoEstimadoHoras
         ? Number(actividad.tiempoEstimadoHoras)
         : null,
-      tipoActividad: actividad.tipoActividad,
+      tipoActividadId: Number(actividad.tipoActividadId),
       materiaInscritaId: Number(actividad.materiaInscritaId),
       porcentajeEvaluacion: Number(actividad.porcentajeEvaluacion || 0),
       estado: "ACTIVO",
@@ -586,7 +591,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       fechaInicio: actividad.fechaInicio,
       fechaEntrega: actividad.fechaEntrega,
       tiempoEstimadoHoras: actividad.tiempoEstimadoHoras,
-      tipoActividad: actividad.tipoActividad,
+      tipoActividadId: actividad.tipoActividadId,
       materiaInscritaId: actividad.materiaInscritaId,
       porcentajeEvaluacion: actividad.porcentajeEvaluacion,
       notaObtenida: actividad.notaObtenida ?? "",
@@ -677,6 +682,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       {vista === "materias" && (
         <TablaMaterias
           materias={materias}
+          tiposActividad={tiposActividad}
           onEdit={editarMateria}
           onDelete={(id) => eliminar("materia", id)}
         />
@@ -750,6 +756,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
         {vista === "actividades" && (
           <FormularioActividades
             materias={materias}
+            tiposActividad={tiposActividad}
             form={actividadForm}
             setForm={setActividadForm}
             onSubmit={guardarActividad}
@@ -883,7 +890,7 @@ function FormularioHorario({ materias, actividades, form, setForm, onSubmit, onC
 }
 
 //form de actividades
-function FormularioActividades({ materias, form, setForm, onSubmit, onCancel, fechaEntregaMinima }) {
+function FormularioActividades({ materias, tiposActividad, form, setForm, onSubmit, onCancel, fechaEntregaMinima }) {
   return (
     <form className="grid gap-4 sm:grid-cols-2" onSubmit={onSubmit}>
       <Selector
@@ -892,7 +899,14 @@ function FormularioActividades({ materias, form, setForm, onSubmit, onCancel, fe
         onValorChange={(materiaInscritaId) => setForm({ ...form, materiaInscritaId })}
         options={materias.map((materia) => ({ value: materia.id, label: `${materia.codigo} - ${materia.nombre}` }))}
       />
-      <Selector label="Tipo de Actividad" value={form.tipoActividad} onValorChange={(tipoActividad) => setForm({ ...form, tipoActividad })} options={["PARCIAL", "LABORATORIO", "PROYECTO", "INVESTIGACION"]} />
+      <Selector
+        label="Tipo de actividad"
+        value={form.tipoActividadId}
+        onValorChange={(tipoActividadId) => setForm({ ...form, tipoActividadId })}
+        options={tiposActividad.map((tipo) => ({ value: tipo.id, label: tipo.nombre }))}
+        disabled={tiposActividad.length === 0}
+        ayuda={tiposActividad.length === 0 ? "No hay tipos de actividad disponibles." : undefined}
+      />
       <CampoUi className="sm:col-span-2" label="Nombre" value={form.nombre} onValorChange={(nombre) => setForm({ ...form, nombre })} />
       <CampoUi className="sm:col-span-2" label="Porcentaje de evaluacion (ej. 10%)" type="number" min={1} max={100} value={form.porcentajeEvaluacion} onValorChange={(porcentajeEvaluacion) => setForm({ ...form, porcentajeEvaluacion })} />
       <CampoUi label="Fecha inicio" type="datetime-local" value={form.fechaInicio} onValorChange={(fechaInicio) => setForm({ ...form, fechaInicio })} />

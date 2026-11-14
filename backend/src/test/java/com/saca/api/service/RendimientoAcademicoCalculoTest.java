@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.saca.api.TipoActividadPrueba.crear;
 
 // Cálculo puro del rendimiento, sin Spring ni base de datos
 class RendimientoAcademicoCalculoTest {
@@ -39,7 +40,7 @@ class RendimientoAcademicoCalculoTest {
         actividad.setNombre("Actividad " + actividad.getIdActividad());
         actividad.setPorcentajeEvaluacion(peso);
         actividad.setEstado(estado);
-        actividad.setTipoActividad(TipoActividadAcademica.PARCIAL);
+        actividad.setTipoActividad(crear(TipoActividadAcademica.PARCIAL));
         actividad.setFechaEntrega(LocalDateTime.of(2026, 9, 1, 8, 0).plusDays(actividad.getIdActividad()));
         actividad.setMateriaInscrita(materia);
         if (nota != null) {

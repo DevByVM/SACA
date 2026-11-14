@@ -27,17 +27,20 @@ public class ActividadAcademicaService {
     private final MateriaInscritaRepository materiaInscritaRepository;
     private final EstudianteRepository estudianteRepository;
     private final HorarioClaseRepository horarioClaseRepository;
+    private final TipoActividadRepository tipoActividadRepository;
     private final Clock relojAplicacion;
 
     public ActividadAcademicaService(ActividadAcademicaRepository actividadRepository, ActividadAcademicaMapper mapper,
                                      NotaRepository notaRepository, MateriaInscritaRepository materiaInscritaRepository, EstudianteRepository estudianteRepository,
-                                     HorarioClaseRepository horarioClaseRepository, Clock relojAplicacion) {
+                                     HorarioClaseRepository horarioClaseRepository, TipoActividadRepository tipoActividadRepository,
+                                     Clock relojAplicacion) {
         this.actividadRepository = actividadRepository;
         this.mapper = mapper;
         this.notaRepository = notaRepository;
         this.materiaInscritaRepository = materiaInscritaRepository;
         this.estudianteRepository = estudianteRepository;
         this.horarioClaseRepository = horarioClaseRepository;
+        this.tipoActividadRepository = tipoActividadRepository;
         this.relojAplicacion = relojAplicacion;
     }
 
@@ -55,10 +58,11 @@ public class ActividadAcademicaService {
         validarFechas(request.fechaInicio(), request.fechaEntrega());
 
         MateriaInscrita materia = buscarMateriaDelEstudiante(request.materiaInscritaId(), estudianteId);
+        TipoActividad tipoActividad = buscarTipoActividad(request.tipoActividadId(), request.tipoActividad());
         // Solo al registrar: editar, completar o reactivar una actividad ya vencida debe seguir siendo posible
         validarEntregaNoAnteriorAHoy(request.fechaEntrega());
         validarPorcentajeDisponible(materia.getId(), request.porcentajeEvaluacion(), null);
-        ActividadAcademica actividad = mapper.toEntity(request, materia);
+        ActividadAcademica actividad = mapper.toEntity(request, materia, tipoActividad);
         // Una actividad nueva aún no tiene nota propia: un notaId solo podría apuntar a la nota de otra
         // actividad o a una nota sin actividad, cuyo propietario no se puede comprobar
         if(request.notaId() != null){
@@ -87,6 +91,7 @@ public class ActividadAcademicaService {
 
         // La materia de destino también debe ser del estudiante: así la actividad no puede pasar a otro
         MateriaInscrita materia = buscarMateriaDelEstudiante(request.materiaInscritaId(), estudianteId);
+        TipoActividad tipoActividad = buscarTipoActividad(request.tipoActividadId(), request.tipoActividad());
         validarPorcentajeDisponible(materia.getId(), request.porcentajeEvaluacion(), actividadId);
         boolean debeDesvincularHorarios = validarCambioDeMateria(actividadExistente, materia, desvincularHorarios);
         // Solo se admite la nota que esta misma actividad ya tiene enlazada
@@ -97,7 +102,7 @@ public class ActividadAcademicaService {
 
         //se mapea el objeto
         ActividadAcademica actividadActualizada = mapper.updateEntity(actividadExistente, request);
-        actividadActualizada.setTipoActividad(request.tipoActividad());
+        actividadActualizada.setTipoActividad(tipoActividad);
         actividadActualizada.setMateriaInscrita(materia);
 
         // se verifica si se registró, actualizó o eliminó una nota obtenida
@@ -197,6 +202,26 @@ public class ActividadAcademicaService {
         }
         return materiaInscritaRepository.findByIdAndCicloAcademicoEstudianteId(materiaInscritaId, estudianteId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No se encontro la materia inscrita solicitada"));
+    }
+
+    private TipoActividad buscarTipoActividad(Integer tipoActividadId, String nombreLegacy) {
+        if (tipoActividadId == null && (nombreLegacy == null || nombreLegacy.isBlank())) {
+            throw new ValidacionNegocioException("El tipo de actividad es obligatorio");
+        }
+        if (tipoActividadId != null) {
+            return tipoActividadRepository.findByIdTipoActividadAndActivoTrue(tipoActividadId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró el tipo de actividad"));
+        }
+        String nombre = switch (nombreLegacy.trim().toUpperCase(java.util.Locale.ROOT)) {
+            case "PARCIAL" -> "Parcial";
+            case "LABORATORIO" -> "Laboratorio";
+            case "PROYECTO" -> "Proyecto";
+            case "INVESTIGACION" -> "Investigación";
+            default -> nombreLegacy.trim();
+        };
+        return tipoActividadRepository.findByNombreIgnoreCase(nombre)
+                .filter(TipoActividad::isActivo)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró el tipo de actividad"));
     }
 
     private void validarFechas(LocalDateTime fechaInicio, LocalDateTime fechaEntrega) {

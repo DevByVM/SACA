@@ -120,7 +120,7 @@ public class RendimientoAcademicoService {
 			detalle.add(new ActividadRendimientoResponse(
 					actividad.getIdActividad(),
 					actividad.getNombre(),
-					actividad.getTipoActividad(),
+					actividad.getTipoActividad().getNombre(),
 					actividad.getEstado(),
 					actividad.getFechaEntrega(),
 					peso,

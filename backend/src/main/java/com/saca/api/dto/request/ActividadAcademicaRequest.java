@@ -1,7 +1,6 @@
 package com.saca.api.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.saca.api.entity.TipoActividadAcademica;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;
@@ -37,8 +36,8 @@ public record ActividadAcademicaRequest(
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
         LocalDateTime fechaCompletada,
 
-        @NotNull(message = "El tipo de Actividad es obligatorio")
-        TipoActividadAcademica tipoActividad,
+        Integer tipoActividadId,
+        String tipoActividad,
         @NotNull(message = "La materia es obligatoria")
         Long materiaInscritaId,
         @Min(value = 1)

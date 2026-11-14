@@ -3,7 +3,7 @@ package com.saca.api.controllers;
 import com.saca.api.dto.request.PreferenciaNotificacionRequest;
 import com.saca.api.dto.response.ActividadAcademicaResponse;
 import com.saca.api.dto.response.PreferenciaNotificacionResponse;
-import com.saca.api.entity.TipoActividadAcademica;
+import com.saca.api.dto.response.TipoActividadResponse;
 import com.saca.api.service.NotificacionService;
 import com.saca.api.service.PreferenciaNotificacionService;
 import org.junit.jupiter.api.AfterEach;
@@ -63,8 +63,8 @@ class NotificacionControllerTest {
         mockMvc.perform(get("/api/notificaciones/preferencias/7"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estudianteId").value(7))
-                .andExpect(jsonPath("$.tiposDisponibles[0]").value("PARCIAL"))
-                .andExpect(jsonPath("$.tiposActividadHabilitados[0]").value("PARCIAL"));
+                .andExpect(jsonPath("$.tiposDisponibles[0].nombre").value("Parcial"))
+                .andExpect(jsonPath("$.tiposActividadHabilitados[0]").value(1));
     }
 
     @Test
@@ -76,11 +76,11 @@ class NotificacionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "tiposActividadHabilitados": ["PARCIAL"]
+                                  "tiposActividadHabilitados": [1]
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.tiposActividadHabilitados[0]").value("PARCIAL"));
+                .andExpect(jsonPath("$.tiposActividadHabilitados[0]").value(1));
 
         then(preferenciaService).should()
                 .guardarOActualizar(eq(7L), any(PreferenciaNotificacionRequest.class));
@@ -108,19 +108,20 @@ class NotificacionControllerTest {
                         8.0,
                         "ACTIVO",
                         null,
-                        TipoActividadAcademica.PROYECTO,
+                        3,
                         3L,
                         null,
                         null,
-                        "PROYECTO",
-                        "DSI215"
+                        "Proyecto",
+                        "DSI215",
+                        "Proyecto"
                 )
         ));
 
         mockMvc.perform(get("/api/notificaciones/estudiante/7/proximas"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].idActividad").value(12))
-                .andExpect(jsonPath("$[0].tipoActividad").value("PROYECTO"))
+                .andExpect(jsonPath("$[0].tipoActividad").value("Proyecto"))
                 .andExpect(jsonPath("$[0].materiaInscritaCodigo").value("DSI215"));
     }
 
@@ -128,12 +129,12 @@ class NotificacionControllerTest {
         return new PreferenciaNotificacionResponse(
                 7L,
                 List.of(
-                        TipoActividadAcademica.PARCIAL,
-                        TipoActividadAcademica.LABORATORIO,
-                        TipoActividadAcademica.PROYECTO,
-                        TipoActividadAcademica.INVESTIGACION
+                        new TipoActividadResponse(1, "Parcial", true),
+                        new TipoActividadResponse(2, "Laboratorio", true),
+                        new TipoActividadResponse(3, "Proyecto", true),
+                        new TipoActividadResponse(4, "Investigación", true)
                 ),
-                List.of(TipoActividadAcademica.PARCIAL)
+                List.of(1)
         );
     }
 }

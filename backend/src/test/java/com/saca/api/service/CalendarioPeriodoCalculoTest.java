@@ -23,6 +23,7 @@ import java.time.LocalTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.saca.api.TipoActividadPrueba.crear;
 
 // Vista mensual del calendario: periodo arbitrario con resumen diario calculado con las reglas de la carga semanal
 class CalendarioPeriodoCalculoTest {
@@ -66,7 +67,7 @@ class CalendarioPeriodoCalculoTest {
         actividad.setIdActividad(siguienteId++);
         actividad.setMateriaInscrita(materia);
         actividad.setNombre(nombre);
-        actividad.setTipoActividad(TipoActividadAcademica.PARCIAL);
+        actividad.setTipoActividad(crear(TipoActividadAcademica.PARCIAL));
         actividad.setPorcentajeEvaluacion(peso);
         actividad.setTiempoEstimadoHoras(horas);
         actividad.setEstado("ACTIVO");

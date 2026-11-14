@@ -15,6 +15,9 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
+DROP TABLE IF EXISTS `franjas_plantilla_planificacion`;
+DROP TABLE IF EXISTS `plantillas_planificacion`;
+
 --
 -- Table structure for table `actividades_academicas`
 --
@@ -31,7 +34,7 @@ CREATE TABLE `actividades_academicas` (
   `nombre` varchar(255) DEFAULT NULL,
   `porcentaje_evaluacion` double NOT NULL,
   `tiempo_estimado_horas` double NOT NULL,
-  `tipo_actividad` enum('INVESTIGACION','LABORATORIO','PARCIAL','PROYECTO') NOT NULL,
+  `tipo_actividad_id` int NOT NULL,
   `materia_inscrita_id` bigint NOT NULL,
   `nota_id` int DEFAULT NULL,
   PRIMARY KEY (`id_actividad`),
@@ -212,10 +215,21 @@ DROP TABLE IF EXISTS `tipo_actividad`;
 CREATE TABLE `tipo_actividad` (
   `id_tipo_actividad` int NOT NULL AUTO_INCREMENT,
   `activo` bit(1) NOT NULL,
-  `nombre` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id_tipo_actividad`)
+  `nombre` varchar(120) NOT NULL,
+  PRIMARY KEY (`id_tipo_actividad`),
+  UNIQUE KEY `uk_tipo_actividad_nombre` (`nombre`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+INSERT INTO `tipo_actividad` (`nombre`, `activo`) VALUES
+  ('Parcial', b'1'),
+  ('Laboratorio', b'1'),
+  ('Proyecto', b'1'),
+  ('Investigación', b'1');
+
+ALTER TABLE `actividades_academicas`
+  ADD CONSTRAINT `fk_actividad_tipo_actividad`
+  FOREIGN KEY (`tipo_actividad_id`) REFERENCES `tipo_actividad` (`id_tipo_actividad`);
 
 --
 -- Table structure for table `tokens_activacion`
@@ -241,6 +255,28 @@ CREATE TABLE `tokens_activacion` (
   CONSTRAINT `fk_token_activacion_estudiante` FOREIGN KEY (`estudiante_id`) REFERENCES `estudiantes` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+CREATE TABLE `plantillas_planificacion` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `activa` bit(1) NOT NULL,
+  `nombre` varchar(120) NOT NULL,
+  `perfil` varchar(30) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `franjas_plantilla_planificacion` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `dia_semana` varchar(15) NOT NULL,
+  `hora_fin` time(6) NOT NULL,
+  `hora_inicio` time(6) NOT NULL,
+  `tipo_bloque` varchar(20) NOT NULL,
+  `plantilla_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_franja_plantilla` (`plantilla_id`),
+  CONSTRAINT `fk_franja_plantilla` FOREIGN KEY (`plantilla_id`)
+    REFERENCES `plantillas_planificacion` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

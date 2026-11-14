@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.saca.api.TipoActividadPrueba.crear;
 
 // Cálculo puro de la carga semanal (horas y exigencia evaluativa) con una ventana fija
 class CargaAcademicaCalculoTest {
@@ -43,7 +44,7 @@ class CargaAcademicaCalculoTest {
         actividad.setFechaInicio(entrega == null ? null : entrega.minusDays(3));
         actividad.setFechaEntrega(entrega);
         actividad.setEstado("ACTIVO");
-        actividad.setTipoActividad(TipoActividadAcademica.PARCIAL);
+        actividad.setTipoActividad(crear(TipoActividadAcademica.PARCIAL));
         actividad.setMateriaInscrita(materia);
         return actividad;
     }

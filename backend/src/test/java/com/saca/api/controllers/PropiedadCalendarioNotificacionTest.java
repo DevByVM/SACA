@@ -43,6 +43,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.saca.api.TipoActividadPrueba.crear;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
@@ -103,7 +104,7 @@ class PropiedadCalendarioNotificacionTest {
         materiaB = crearMateria(crearCiclo(b), "Materia de B", "MAT-B");
         crearHorario(materiaA, "Docente de A");
         actividadA = crearActividad(materiaA, "Entrega privada de A");
-        crearPreferencias(a, Set.of(TipoActividadAcademica.PARCIAL));
+        crearPreferencias(a, Set.of(crear(TipoActividadAcademica.PARCIAL)));
         tokenA = tokenService.emitir(a).valor();
         tokenB = tokenService.emitir(b).valor();
     }
@@ -160,12 +161,12 @@ class PropiedadCalendarioNotificacionTest {
         nueva.setPorcentajeEvaluacion(20);
         nueva.setTiempoEstimadoHoras(4);
         nueva.setEstado("ACTIVO");
-        nueva.setTipoActividad(TipoActividadAcademica.PARCIAL);
+        nueva.setTipoActividad(crear(TipoActividadAcademica.PARCIAL));
         nueva.setMateriaInscrita(materia);
         return actividadRepository.save(nueva);
     }
 
-    private void crearPreferencias(Estudiante estudiante, Set<TipoActividadAcademica> tipos) {
+    private void crearPreferencias(Estudiante estudiante, Set<com.saca.api.entity.TipoActividad> tipos) {
         PreferenciaNotificacion preferencia = new PreferenciaNotificacion();
         preferencia.setEstudiante(estudiante);
         preferencia.setTiposActividadHabilitados(new HashSet<>(tipos));
@@ -193,9 +194,10 @@ class PropiedadCalendarioNotificacionTest {
                 .doesNotContain(DATOS_PRIVADOS_A, "PRIV-A", "Docente de A", "Entrega privada de A");
     }
 
-    private List<String> tiposHabilitadosEnBaseDeDatos(Estudiante estudiante) {
+    private List<Integer> tiposHabilitadosEnBaseDeDatos(Estudiante estudiante) {
         return transaccion.execute(estado -> preferenciaRepository.findByEstudianteId(estudiante.getId())
-                .map(p -> p.getTiposActividadHabilitados().stream().map(Enum::name).sorted().toList())
+                .map(p -> p.getTiposActividadHabilitados().stream()
+                        .map(com.saca.api.entity.TipoActividad::getIdTipoActividad).sorted().toList())
                 .orElse(List.of()));
     }
 
@@ -217,12 +219,12 @@ class PropiedadCalendarioNotificacionTest {
         MvcResult preferencias = como(tokenA, get("/api/notificaciones/preferencias/" + a.getId()));
         assertThat(estado(preferencias)).isEqualTo(200);
         assertThat(json(preferencias).get("estudianteId").asLong()).isEqualTo(a.getId());
-        assertThat(json(preferencias).get("tiposActividadHabilitados").toString()).isEqualTo("[\"PARCIAL\"]");
+        assertThat(json(preferencias).get("tiposActividadHabilitados").toString()).isEqualTo("[1]");
 
         MvcResult guardadas = como(tokenA, put("/api/notificaciones/preferencias/" + a.getId()),
-                "{\"tiposActividadHabilitados\":[\"PROYECTO\",\"PARCIAL\"]}");
+                "{\"tiposActividadHabilitados\":[3,1]}");
         assertThat(estado(guardadas)).isEqualTo(200);
-        assertThat(tiposHabilitadosEnBaseDeDatos(a)).containsExactly("PARCIAL", "PROYECTO");
+        assertThat(tiposHabilitadosEnBaseDeDatos(a)).containsExactly(1, 3);
     }
 
     // ================= B con el estudianteId de A: todas las rutas responden 404
@@ -239,7 +241,7 @@ class PropiedadCalendarioNotificacionTest {
             assertThat(estado(intento)).as(intento.getRequest().getMethod() + " " + intento.getRequest().getRequestURI()).isEqualTo(404);
             assertSinDatosDeA(intento);
         }
-        assertThat(tiposHabilitadosEnBaseDeDatos(a)).containsExactly("PARCIAL");
+        assertThat(tiposHabilitadosEnBaseDeDatos(a)).containsExactly(1);
     }
 
     @Test
@@ -247,7 +249,7 @@ class PropiedadCalendarioNotificacionTest {
         assertThat(estado(como(tokenB, get("/api/calendario/semanal/987654321")))).isEqualTo(404);
         assertThat(estado(como(tokenB, get("/api/notificaciones/preferencias/987654321")))).isEqualTo(404);
         assertThat(estado(como(tokenB, put("/api/notificaciones/preferencias/987654321"),
-                "{\"tiposActividadHabilitados\":[\"PARCIAL\"]}"))).isEqualTo(404);
+                "{\"tiposActividadHabilitados\":[1]}"))).isEqualTo(404);
         assertThat(preferenciaRepository.findByEstudianteId(987654321L)).isEmpty();
     }
 
@@ -257,7 +259,7 @@ class PropiedadCalendarioNotificacionTest {
     void elCalendarioYLasNotificacionesDeBNoIncluyenNadaDeA() throws Exception {
         // B habilita todos los tipos: aun así solo puede recibir sus propias actividades
         como(tokenB, put("/api/notificaciones/preferencias/" + b.getId()),
-                "{\"tiposActividadHabilitados\":[\"PARCIAL\",\"LABORATORIO\",\"PROYECTO\",\"INVESTIGACION\"]}");
+                "{\"tiposActividadHabilitados\":[1,2,3,4]}");
         ActividadAcademica actividadB = crearActividad(materiaB, "Entrega de B");
 
         MvcResult calendario = como(tokenB, get("/api/calendario/semanal/" + b.getId()));
@@ -278,12 +280,12 @@ class PropiedadCalendarioNotificacionTest {
     @Test
     void lasPreferenciasDeBSonIndependientesYUnEstudianteIdEnElCuerpoNoTieneEfecto() throws Exception {
         MvcResult guardadas = como(tokenB, put("/api/notificaciones/preferencias/" + b.getId()),
-                "{\"estudianteId\":%d,\"tiposActividadHabilitados\":[\"LABORATORIO\"]}".formatted(a.getId()));
+                "{\"estudianteId\":%d,\"tiposActividadHabilitados\":[2]}".formatted(a.getId()));
 
         assertThat(estado(guardadas)).isEqualTo(200);
         assertThat(json(guardadas).get("estudianteId").asLong()).isEqualTo(b.getId());
-        assertThat(tiposHabilitadosEnBaseDeDatos(b)).containsExactly("LABORATORIO");
-        assertThat(tiposHabilitadosEnBaseDeDatos(a)).containsExactly("PARCIAL");
+        assertThat(tiposHabilitadosEnBaseDeDatos(b)).containsExactly(2);
+        assertThat(tiposHabilitadosEnBaseDeDatos(a)).containsExactly(1);
     }
 
     @Test
@@ -293,6 +295,6 @@ class PropiedadCalendarioNotificacionTest {
         assertThat(estado(sinTipos)).isEqualTo(400);
         assertThat(json(sinTipos).get("message").asText())
                 .isEqualTo("tiposActividadHabilitados: Debe indicar los tipos de actividad para las notificaciones");
-        assertThat(tiposHabilitadosEnBaseDeDatos(a)).containsExactly("PARCIAL");
+        assertThat(tiposHabilitadosEnBaseDeDatos(a)).containsExactly(1);
     }
 }

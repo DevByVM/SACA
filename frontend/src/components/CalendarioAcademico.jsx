@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { obtenerCalendarioPeriodo, obtenerFranjasCalendario } from "../services/calendarioService";
 import AgendaEventos from "./calendario/AgendaEventos";
-import { ESTILOS_EVENTO, FILTROS_INICIALES, FRANJAS_INICIALES, TIPOS_FRANJA, eventoVisible } from "./calendario/constantes";
+import { ESTILOS_EVENTO, filtrosIniciales, FRANJAS_INICIALES, TIPOS_FRANJA, eventoVisible } from "./calendario/constantes";
+import { listarTiposActividad } from "../api/tiposActividadApi";
 import FiltroFranjas from "./calendario/FiltroFranjas";
 import FiltrosCalendario from "./calendario/FiltrosCalendario";
 import VistaMensual from "./calendario/VistaMensual";
@@ -58,7 +59,9 @@ function CalendarioAcademico() {
   const [seleccionada, setSeleccionada] = useState(hoy);
   const [vista, setVista] = useState("mes");
   const [modoAgenda, setModoAgenda] = useState("dia");
-  const [filtros, setFiltros] = useState(FILTROS_INICIALES);
+  const [filtros, setFiltros] = useState(() => filtrosIniciales());
+  const [tiposActividad, setTiposActividad] = useState([]);
+  const [errorTipos, setErrorTipos] = useState("");
   const [periodo, setPeriodo] = useState(null);
   const [mesCargado, setMesCargado] = useState(null);
   const [error, setError] = useState("");
@@ -68,6 +71,32 @@ function CalendarioAcademico() {
   const [filtroFranjas, setFiltroFranjas] = useState(FRANJAS_INICIALES);
 
   const mes = mesDe(seleccionada);
+
+  useEffect(() => {
+    let vigente = true;
+    listarTiposActividad()
+      .then((tipos) => {
+        if (!vigente) return;
+        setTiposActividad(tipos);
+        setFiltros((actuales) => ({
+          ...actuales,
+          tipos: {
+            ...Object.fromEntries(tipos.map((tipo) => [
+              String(tipo.id),
+              actuales.tipos[String(tipo.id)] !== false,
+            ])),
+            CLASE: actuales.tipos.CLASE !== false,
+          },
+        }));
+        setErrorTipos("");
+      })
+      .catch((errorCarga) => {
+        if (vigente) setErrorTipos(errorCarga.message || "No se pudieron cargar los tipos de actividad.");
+      });
+    return () => {
+      vigente = false;
+    };
+  }, []);
 
   useEffect(() => {
     let vigente = true;
@@ -176,7 +205,8 @@ function CalendarioAcademico() {
         </div>
       </div>
 
-      <FiltrosCalendario filtros={filtros} onCambiar={setFiltros} />
+      {errorTipos && <Aviso tono="peligro">{errorTipos}</Aviso>}
+      <FiltrosCalendario filtros={filtros} onCambiar={setFiltros} tiposActividad={tiposActividad} />
 
       {vista === "semana" && (
         <FiltroFranjas valores={filtroFranjas} onCambiar={setFiltroFranjas} franjasDeLaSemana={franjasDeLaSemana} />

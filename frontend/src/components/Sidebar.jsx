@@ -93,6 +93,13 @@ function Sidebar({
                 setVistaActiva={setVistaActiva}
               />
               <SidebarItem
+                id="admin-tipos-actividad"
+                label="Tipos de actividad"
+                icon="fa-list-check"
+                vistaActiva={vistaActiva}
+                setVistaActiva={setVistaActiva}
+              />
+              <SidebarItem
                 id="admin-plantillas"
                 label="Plantillas de planificación"
                 icon="fa-calendar-days"
