@@ -108,6 +108,7 @@ backend/coverage/
 tmp/
 temp/
 output/playwright/
+.playwright-cli/
 *.tmp
 *.bak
 *.swp
