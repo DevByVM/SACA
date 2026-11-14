@@ -21,6 +21,12 @@ import {
 const TOKEN = "Ab3_-".repeat(8) + "xyz";
 
 describe("enlace de activación", () => {
+  test("distingue restablecimiento de activación y rechaza tokens mal formados", () => {
+    assert.equal(extraerTokenDelFragmento(`#restablecimiento=${TOKEN}`, "restablecimiento"), TOKEN);
+    assert.equal(extraerTokenDelFragmento(`#restablecimiento=${TOKEN}`), null);
+    assert.equal(extraerTokenDelFragmento(`#token=${TOKEN}`, "restablecimiento"), null);
+    assert.equal(extraerTokenDelFragmento("#restablecimiento=corto", "restablecimiento"), null);
+  });
   test("lee el token del fragmento del enlace", () => {
     assert.equal(TOKEN.length, 43);
     assert.equal(extraerTokenDelFragmento(`#token=${TOKEN}`), TOKEN);

@@ -106,7 +106,21 @@ public class GlobalExceptionHandler {
 			CorreoNoDisponibleException exception,
 			HttpServletRequest request) {
 		return construirRespuesta(HttpStatus.SERVICE_UNAVAILABLE,
-				"El registro de cuentas no está disponible en este momento. Inténtalo más tarde.", request.getRequestURI());
+				request.getRequestURI().contains("restablecimiento")
+						? "El envío de correos no está disponible en este momento. Inténtalo más tarde."
+						: "El registro de cuentas no está disponible en este momento. Inténtalo más tarde.", request.getRequestURI());
+	}
+
+	@ExceptionHandler(com.saca.api.service.CorreoActivacionService.CorreoNoEnviadoException.class)
+	public ResponseEntity<ErrorResponse> manejarCorreoNoEnviado(HttpServletRequest request) {
+		return construirRespuesta(HttpStatus.SERVICE_UNAVAILABLE,
+				"No se pudo enviar el correo. Inténtalo más tarde.", request.getRequestURI());
+	}
+
+	@ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+	public ResponseEntity<ErrorResponse> manejarDatosDuplicados(HttpServletRequest request) {
+		return construirRespuesta(HttpStatus.CONFLICT,
+				"Los datos entran en conflicto con un registro existente.", request.getRequestURI());
 	}
 
 	// Límite de solicitudes por cliente; Retry-After indica cuándo volver a intentarlo

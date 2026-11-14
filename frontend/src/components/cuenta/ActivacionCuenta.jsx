@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { activarCuenta, consultarActivacion } from "../../services/authService";
+import { activarCuenta, consultarActivacion, consultarRestablecimiento, restablecerContrasenia } from "../../services/authService";
 import {
   AYUDA_CONTRASENIA,
   ESTADOS_ENLACE,
@@ -25,8 +25,10 @@ import PantallaAcceso from "./PantallaAcceso";
  * - onActivada(correoInstitucional): la cuenta quedó activada.
  * - onSolicitarEnlace(): abre el reenvío del enlace.
  * - onIrAlInicio(): vuelve al inicio de sesión.
+ * - restablecimiento: reutiliza el formulario para elegir una nueva contraseña, sin activar la cuenta.
  */
-function ActivacionCuenta({ token, onActivada, onSolicitarEnlace, onIrAlInicio }) {
+function ActivacionCuenta({ token, onActivada, onSolicitarEnlace, onIrAlInicio, restablecimiento = false }) {
+    const titulo = restablecimiento ? "Restablecer contraseña" : "Activar cuenta";
     const [consulta, setConsulta] = useState({ cargando: true, datos: null, error: "" });
     const [intentoConsulta, setIntentoConsulta] = useState(0);
     const [form, setForm] = useState({ nombre: "", contrasenia: "", confirmacion: "" });
@@ -37,20 +39,21 @@ function ActivacionCuenta({ token, onActivada, onSolicitarEnlace, onIrAlInicio }
     useEffect(() => {
         let vigente = true;
         setConsulta({ cargando: true, datos: null, error: "" });
-        consultarActivacion(token)
+        const consultar = restablecimiento ? consultarRestablecimiento : consultarActivacion;
+        consultar(token)
             .then((datos) => vigente && setConsulta({ cargando: false, datos, error: "" }))
             .catch((fallo) => vigente && setConsulta({ cargando: false, datos: null, error: fallo.message }));
         return () => {
             vigente = false;
         };
-    }, [token, intentoConsulta]);
+    }, [token, intentoConsulta, restablecimiento]);
 
     const cambiar = (campo) => (valor) => setForm((anterior) => ({ ...anterior, [campo]: valor }));
 
     const activar = async (evento) => {
         evento.preventDefault();
         const nuevosErrores = {
-            nombre: validarNombre(form.nombre),
+            nombre: restablecimiento ? null : validarNombre(form.nombre),
             contrasenia: validarContrasenia(form.contrasenia),
             confirmacion: form.contrasenia === form.confirmacion ? null : MENSAJE_CONFIRMACION,
         };
@@ -62,7 +65,8 @@ function ActivacionCuenta({ token, onActivada, onSolicitarEnlace, onIrAlInicio }
         setErrorServidor("");
         setEnviando(true);
         try {
-            const respuesta = await activarCuenta({
+            const guardar = restablecimiento ? restablecerContrasenia : activarCuenta;
+            const respuesta = await guardar({
                 token,
                 nombre: form.nombre.trim(),
                 contrasenia: form.contrasenia,
@@ -76,7 +80,7 @@ function ActivacionCuenta({ token, onActivada, onSolicitarEnlace, onIrAlInicio }
 
     if (consulta.cargando) {
         return (
-            <PantallaAcceso titulo="Activar cuenta">
+            <PantallaAcceso titulo={titulo}>
                 <p className="text-center text-sm text-ink-600" role="status">
                     <i className="fa-solid fa-spinner fa-spin mr-2" aria-hidden="true"></i>
                     Comprobando el enlace…
@@ -87,7 +91,7 @@ function ActivacionCuenta({ token, onActivada, onSolicitarEnlace, onIrAlInicio }
 
     if (consulta.error) {
         return (
-            <PantallaAcceso titulo="Activar cuenta">
+            <PantallaAcceso titulo={titulo}>
                 <div className="flex flex-col gap-4">
                     <Aviso tono="peligro">{consulta.error}</Aviso>
                     <Boton onClick={() => setIntentoConsulta((intento) => intento + 1)} className="min-h-11 w-full">
@@ -106,12 +110,15 @@ function ActivacionCuenta({ token, onActivada, onSolicitarEnlace, onIrAlInicio }
     if (estado !== ESTADOS_ENLACE.VALIDO) {
         const usado = estado === ESTADOS_ENLACE.USADO;
         return (
-            <PantallaAcceso titulo="Activar cuenta">
+            <PantallaAcceso titulo={titulo}>
                 <div className="flex flex-col gap-4">
                     <Aviso tono={usado ? "info" : "advertencia"}>
-                        {MENSAJES_ENLACE[estado] ?? MENSAJES_ENLACE.INVALIDO}
+                        {restablecimiento
+                            ? (usado ? "Este enlace ya se utilizó. Inicia sesión con tu nueva contraseña."
+                                : "El enlace no es válido o venció. Solicita otro a administración.")
+                            : (MENSAJES_ENLACE[estado] ?? MENSAJES_ENLACE.INVALIDO)}
                     </Aviso>
-                    {!usado && (
+                    {!usado && !restablecimiento && (
                         <Boton onClick={onSolicitarEnlace} className="min-h-11 w-full">
                             Solicitar un enlace nuevo
                         </Boton>
@@ -125,16 +132,16 @@ function ActivacionCuenta({ token, onActivada, onSolicitarEnlace, onIrAlInicio }
     }
 
     return (
-        <PantallaAcceso titulo="Activar cuenta">
-            <dl className="mb-5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 rounded-lg bg-surface-muted p-3 text-sm">
+        <PantallaAcceso titulo={titulo}>
+            {restablecimiento ? <p className="mb-5 text-sm text-ink-600">Elige tu nueva contraseña. El cambio no modifica el estado de tu cuenta.</p> : <dl className="mb-5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 rounded-lg bg-surface-muted p-3 text-sm">
                 <dt className="font-semibold text-ink-900">Carnet</dt>
                 <dd className="text-ink-600">{carnet}</dd>
                 <dt className="font-semibold text-ink-900">Correo</dt>
                 <dd className="break-all text-ink-600">{correoInstitucional}</dd>
-            </dl>
+            </dl>}
 
             <form onSubmit={activar} className="flex flex-col gap-4" noValidate>
-                <Campo
+                {!restablecimiento && <Campo
                     label="Nombre completo"
                     name="nombre"
                     value={form.nombre}
@@ -142,7 +149,7 @@ function ActivacionCuenta({ token, onActivada, onSolicitarEnlace, onIrAlInicio }
                     error={errores.nombre || undefined}
                     autoComplete="name"
                     disabled={enviando}
-                />
+                />}
                 <Campo
                     label="Contraseña"
                     name="contrasenia"
@@ -168,7 +175,7 @@ function ActivacionCuenta({ token, onActivada, onSolicitarEnlace, onIrAlInicio }
                 {errorServidor && <Aviso tono="peligro">{errorServidor}</Aviso>}
 
                 <Boton type="submit" className="mt-2 min-h-11 w-full" disabled={enviando}>
-                    {enviando ? "Activando…" : "Activar cuenta"}
+                    {enviando ? "Guardando…" : titulo}
                 </Boton>
             </form>
 

@@ -39,9 +39,45 @@ class CorreoActivacionMailpitTest {
     private CorreoActivacionService service;
 
     @Autowired
+    private RestablecimientoContraseniaService restablecimientos;
+
+    @Autowired
+    private com.saca.api.repository.EstudianteRepository estudiantes;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     private final HttpClient http = HttpClient.newHttpClient();
+
+    @Test
+    void restablecimientoLlegaAMailpitYElEstudianteCompletaElCambio() throws Exception {
+        String destino = "reset" + UUID.randomUUID().toString().substring(0, 8) + "@ues.edu.sv";
+        var encoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+        var estudiante = new com.saca.api.entity.Estudiante();
+        estudiante.setNombre("Prueba Correo");
+        estudiante.setCorreoInstitucional(destino);
+        estudiante.setContrasenia(encoder.encode("Anterior123"));
+        estudiante.setCuentaActiva(true);
+        estudiante.setEstadoCorreo(com.saca.api.entity.EstadoCorreo.CONFIRMADO);
+        estudiante = estudiantes.saveAndFlush(estudiante);
+        restablecimientos.solicitar(estudiante.getId());
+
+        JsonNode busqueda = get("/search?query=" + URLEncoder.encode("to:" + destino, StandardCharsets.UTF_8));
+        assertThat(busqueda.get("messages")).hasSize(1);
+        JsonNode resumen = busqueda.get("messages").get(0);
+        assertThat(resumen.get("Subject").asText()).isEqualTo("Restablece tu contraseña de SACA UES");
+        String texto = get("/message/" + resumen.get("ID").asText()).get("Text").asText();
+        var enlace = java.util.regex.Pattern.compile("http://localhost:5173/#restablecimiento=([A-Za-z0-9_-]{43})").matcher(texto);
+        assertThat(enlace.find()).isTrue();
+        String token = enlace.group(1);
+        assertThat(encoder.matches("Anterior123", estudiantes.findById(estudiante.getId()).orElseThrow().getContrasenia())).isTrue();
+        restablecimientos.restablecer(new com.saca.api.dto.request.RestablecerContraseniaRequest(token, "NuevaCorreo123"));
+        var guardado = estudiantes.findById(estudiante.getId()).orElseThrow();
+        assertThat(encoder.matches("NuevaCorreo123", guardado.getContrasenia())).isTrue();
+        assertThat(encoder.matches("Anterior123", guardado.getContrasenia())).isFalse();
+        assertThat(guardado.getCuentaActiva()).isTrue();
+        assertThat(restablecimientos.consultar(token)).isEqualTo("USADO");
+    }
 
     private JsonNode get(String ruta) throws Exception {
         HttpResponse<String> respuesta = http.send(HttpRequest.newBuilder(URI.create(API_MAILPIT + ruta)).GET().build(),

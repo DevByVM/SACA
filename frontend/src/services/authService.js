@@ -72,6 +72,22 @@ export const activarCuenta = async ({ token, nombre, contrasenia }) => {
     }
 };
 
+export const consultarRestablecimiento = async (token) => {
+    try {
+        return (await axios.post(`${API_URL}/restablecimiento/consultar`, { token })).data;
+    } catch (error) {
+        throw normalizarError(error, "No se pudo comprobar el enlace de restablecimiento");
+    }
+};
+
+export const restablecerContrasenia = async ({ token, contrasenia }) => {
+    try {
+        return (await axios.post(`${API_URL}/restablecimiento`, { token, contrasenia })).data;
+    } catch (error) {
+        throw normalizarError(error, "No se pudo restablecer la contraseña");
+    }
+};
+
 /**
  * Pide otro enlace de activación con el carnet o el correo institucional.
  *

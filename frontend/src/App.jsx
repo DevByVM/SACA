@@ -42,6 +42,9 @@ function App() {
   const [tokenActivacion, setTokenActivacion] = useState(
     () => extraerTokenDelFragmento(window.location.hash)
   );
+  const [tokenRestablecimiento, setTokenRestablecimiento] = useState(
+    () => extraerTokenDelFragmento(window.location.hash, "restablecimiento")
+  );
 
   // Cómo abrir el inicio de sesión al salir de la activación: con el correo escrito y un aviso, o en el reenvío
   const [entradaLogin, setEntradaLogin] = useState({ clave: 0, correo: "", aviso: "", modo: "login" });
@@ -58,9 +61,14 @@ function App() {
     quitarFragmento(window.location, window.history);
     const alCambiarFragmento = () => {
       const token = extraerTokenDelFragmento(window.location.hash);
+      const restablecimiento = extraerTokenDelFragmento(window.location.hash, "restablecimiento");
       quitarFragmento(window.location, window.history);
       if (token) {
         setTokenActivacion(token);
+        setTokenRestablecimiento(null);
+      } else if (restablecimiento) {
+        setTokenRestablecimiento(restablecimiento);
+        setTokenActivacion(null);
       }
     };
     window.addEventListener("hashchange", alCambiarFragmento);
@@ -118,6 +126,20 @@ function App() {
         onIrAlInicio={() => salirDeActivacion({})}
       />
     );
+  }
+
+  if (tokenRestablecimiento) {
+    return <ActivacionCuenta
+      key={tokenRestablecimiento}
+      restablecimiento
+      token={tokenRestablecimiento}
+      onActivada={(correo) => {
+        cerrarSesion();
+        setTokenRestablecimiento(null);
+        setEntradaLogin((anterior) => ({ correo, aviso: "Contraseña restablecida. Ya puedes iniciar sesión.", modo: "login", clave: anterior.clave + 1 }));
+      }}
+      onIrAlInicio={() => setTokenRestablecimiento(null)}
+    />;
   }
 
   if (!logueado) {

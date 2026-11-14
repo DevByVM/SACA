@@ -41,6 +41,36 @@ El administrador inicia sesión con su correo y contraseña. Desde el menú pued
 
 Si ejecutas el backend desde el IDE en vez de Docker, configura el SMTP de Mailpit según `.env.example` y arráncalo con `docker compose -f docker-compose.correo.yml --profile correo up -d`.
 
+## Gestión de usuarios y restablecimiento
+
+Administración puede editar nombre, carnet, correo institucional y habilitación de las cuentas de estudiante.
+El correo debe pertenecer a `@ues.edu.sv` y tanto el carnet como el correo deben ser únicos. El alta sigue
+siendo por carnet con activación por correo. Si se cambia el correo de una cuenta pendiente, se envía una
+nueva activación al nuevo destino y se invalida la anterior.
+
+Desde **Gestión de usuarios → Restablecer contraseña**, el administrador solicita un enlace que se envía al
+correo institucional vigente. El estudiante elige su contraseña; administración nunca la recibe ni la escribe.
+El enlace vence en una hora, es de un solo uso y una nueva solicitud sustituye la anterior. Solo se guarda su
+hash SHA-256. La contraseña anterior funciona hasta completar el cambio. El proceso conserva la habilitación,
+la activación y los contadores/bloqueo de la cuenta. Las cuentas pendientes deben activarse primero.
+Cambiar el correo invalida los enlaces de restablecimiento existentes.
+
+El envío usa el mismo SMTP y las mismas variables de correo que la activación. La operación administrativa
+confirma la aceptación por SMTP; un fallo devuelve un error y revierte la emisión. No hay reintentos automáticos.
+La tabla `tokens_restablecimiento` se crea con el mecanismo JPA `ddl-auto=update` ya utilizado en instalaciones
+existentes; el script inicial también la incluye.
+
+Para comprobar el correo de pruebas:
+
+```bash
+docker compose -f docker-compose.correo.yml --profile correo up -d
+cd backend
+SACA_PRUEBA_MAILPIT=true ./mvnw -Dtest=CorreoActivacionMailpitTest test
+```
+
+Esta comprobación usa H2 y Mailpit local. El resultado SMTP en producción debe registrarse aparte cuando se
+compruebe allí; el éxito local no demuestra entrega en producción.
+
 ## Plantillas de planificación
 
 Las plantillas son horarios semanales compartidos con franjas `ESTUDIO`, `TRABAJO`, `CLASES` o `DESCANSO`; no se asignan a materias. Administración las gestiona en **Plantillas de planificación**. Solo puede haber una plantilla activa por perfil (`CON_JORNADA_LABORAL` o `SIN_JORNADA_LABORAL`); activar otra del mismo perfil desactiva la anterior.

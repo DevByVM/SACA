@@ -45,12 +45,12 @@ export const MENSAJES_ENLACE = {
 export const correoDeCarnet = (carnet) => `${normalizarCarnet(carnet).toLowerCase()}${DOMINIO_INSTITUCIONAL}`;
 
 // Token del enlace de activación (…/#token=XXXX), o null si no hay o no tiene el formato esperado
-export function extraerTokenDelFragmento(fragmento) {
+export function extraerTokenDelFragmento(fragmento, parametro = "token") {
   const texto = String(fragmento ?? "").replace(/^#/, "");
   if (!texto) {
     return null;
   }
-  const token = new URLSearchParams(texto).get("token");
+  const token = new URLSearchParams(texto).get(parametro);
   return token && FORMATO_TOKEN.test(token) ? token : null;
 }
 

@@ -2,6 +2,15 @@ import { apiRequest } from './client'
 
 export const listarUsuariosAdmin = () => apiRequest('/admin/usuarios')
 
+export const actualizarUsuarioAdmin = (id, datos) => apiRequest(`/admin/usuarios/${id}`, {
+  method: 'PUT',
+  body: JSON.stringify(datos),
+})
+
+export const solicitarRestablecimientoAdmin = (id) => apiRequest(`/admin/usuarios/${id}/restablecimiento`, {
+  method: 'POST',
+})
+
 export const crearUsuarioAdmin = (carnet) => apiRequest('/admin/usuarios', {
   method: 'POST',
   body: JSON.stringify({ carnet }),
