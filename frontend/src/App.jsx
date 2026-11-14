@@ -25,6 +25,7 @@ import Boton from "./components/ui/Boton";
 import { unirClases } from "./components/ui/unirClases";
 import GestionUsuarios from "./components/admin/GestionUsuarios";
 import GestionCatalogoMaterias from "./components/admin/GestionCatalogoMaterias";
+import GestionPlantillas from "./components/admin/GestionPlantillas";
 function App() {
 
   const [logueado, setLogueado] = useState(
@@ -197,6 +198,7 @@ function App() {
               <h1 className="mt-1 text-3xl font-extrabold uppercase leading-tight tracking-tight text-ink-900 sm:text-4xl">
                 {vistaActiva === "admin-usuarios" && "Gestión de usuarios"}
                 {vistaActiva === "admin-catalogo" && "Catálogo de materias"}
+                {vistaActiva === "admin-plantillas" && "Plantillas de planificación"}
                 {vistaActiva === "dashboard" && "Panel de control"}
                 {vistaActiva === "academico" && "Gestión académica"}
                 {vistaActiva === "perfil" && "Perfil académico"}
@@ -243,6 +245,10 @@ function App() {
 
             {vistaActiva === "admin-catalogo" && estudiante?.rol === "ADMINISTRADOR" && (
               <GestionCatalogoMaterias />
+            )}
+
+            {vistaActiva === "admin-plantillas" && estudiante?.rol === "ADMINISTRADOR" && (
+              <GestionPlantillas />
             )}
 
             {vistaActiva === "dashboard" && (

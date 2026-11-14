@@ -92,6 +92,13 @@ function Sidebar({
                 vistaActiva={vistaActiva}
                 setVistaActiva={setVistaActiva}
               />
+              <SidebarItem
+                id="admin-plantillas"
+                label="Plantillas de planificación"
+                icon="fa-calendar-days"
+                vistaActiva={vistaActiva}
+                setVistaActiva={setVistaActiva}
+              />
             </>
           ) : (
             <>
