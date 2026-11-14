@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.saca.api.TipoActividadPrueba.crear;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 // Endpoint semanal del calendario y orden corregido del endpoint anterior
@@ -148,7 +149,7 @@ class CalendarioSemanaTest {
         nueva.setPorcentajeEvaluacion(30);
         nueva.setTiempoEstimadoHoras(4);
         nueva.setEstado("ACTIVO");
-        nueva.setTipoActividad(TipoActividadAcademica.PARCIAL);
+        nueva.setTipoActividad(crear(TipoActividadAcademica.PARCIAL));
         nueva.setMateriaInscrita(materia);
         actividadRepository.save(nueva);
     }
@@ -189,7 +190,7 @@ class CalendarioSemanaTest {
         assertThat(semana.get("eventos").get(2).get("fecha").asText()).isEqualTo("2026-11-06");
         assertThat(semana.get("eventos").get(3).get("fecha").asText()).isEqualTo("2026-11-07");
         JsonNode parcial = semana.get("eventos").get(1);
-        assertThat(parcial.get("tipoActividad").asText()).isEqualTo("PARCIAL");
+        assertThat(parcial.get("tipoActividad").asText()).isEqualTo("Parcial");
         assertThat(parcial.get("porcentajeEvaluacion").decimalValue()).isEqualByComparingTo("30");
         assertThat(semana.get("actividadesSinFecha").asInt()).isZero();
     }

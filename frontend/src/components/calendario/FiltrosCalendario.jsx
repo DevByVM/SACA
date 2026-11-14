@@ -1,9 +1,8 @@
 import { useId, useState } from "react";
 import { unirClases } from "../ui/unirClases";
-import { FILTROS_INICIALES, TIPOS_ACTIVIDAD } from "./constantes";
+import { filtrosIniciales } from "./constantes";
 import GrupoOpciones from "./GrupoOpciones";
 
-const OPCIONES_TIPO = [["CLASE", "Clase"], ...Object.entries(TIPOS_ACTIVIDAD)];
 const OPCIONES_ESTADO = [["PENDIENTE", "Pendiente"], ["COMPLETADA", "Completada"], ["CALIFICADA", "Calificada"]];
 
 // Un filtro aplicado es una opción desmarcada: restringe lo que se muestra
@@ -12,11 +11,15 @@ const contarAplicados = (filtros) =>
 
 // En escritorio los filtros se muestran siempre en una tarjeta compacta; en tablet y móvil se pliegan
 // tras un botón con el número de filtros aplicados para que el calendario quede arriba
-function FiltrosCalendario({ filtros, onCambiar }) {
+function FiltrosCalendario({ filtros, onCambiar, tiposActividad }) {
   const [abierto, setAbierto] = useState(false);
   const idPanel = useId();
   const aplicados = contarAplicados(filtros);
   const resumen = aplicados === 0 ? "Sin filtros" : aplicados === 1 ? "1 filtro aplicado" : `${aplicados} filtros aplicados`;
+  const opcionesTipo = [
+    ["CLASE", "Clase"],
+    ...tiposActividad.map((tipo) => [String(tipo.id), tipo.nombre]),
+  ];
 
   const alternar = (grupo) => (clave) =>
     onCambiar({ ...filtros, [grupo]: { ...filtros[grupo], [clave]: !filtros[grupo][clave] } });
@@ -47,7 +50,7 @@ function FiltrosCalendario({ filtros, onCambiar }) {
         <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end lg:gap-x-6">
           <GrupoOpciones
             titulo="Tipo de evento"
-            opciones={OPCIONES_TIPO}
+            opciones={opcionesTipo}
             valores={filtros.tipos}
             onAlternar={alternar("tipos")}
             columnas="grid-cols-2 sm:grid-cols-5"
@@ -65,7 +68,7 @@ function FiltrosCalendario({ filtros, onCambiar }) {
             <button
               type="button"
               disabled={aplicados === 0}
-              onClick={() => onCambiar(FILTROS_INICIALES)}
+              onClick={() => onCambiar(filtrosIniciales(tiposActividad))}
               className="inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 text-sm font-semibold text-brand-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 disabled:cursor-not-allowed disabled:text-ink-500 disabled:no-underline lg:min-h-8"
             >
               <i className="fa-solid fa-xmark" aria-hidden="true"></i>

@@ -1,7 +1,7 @@
 package com.saca.api.repository;
 
 import com.saca.api.entity.ActividadAcademica;
-import com.saca.api.entity.TipoActividadAcademica;
+import com.saca.api.entity.TipoActividad;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,6 +21,7 @@ public interface ActividadAcademicaRepository extends JpaRepository<ActividadAca
 
     //es necesario especificar un query ya que hay muchas tablas involucradas
     @Query("SELECT aa FROM ActividadAcademica aa " +
+            "JOIN FETCH aa.tipoActividad " +
             "JOIN aa.materiaInscrita materia " +
             "JOIN materia.cicloAcademico ciclo " +
             "JOIN ciclo.estudiante estudiante " +
@@ -31,6 +32,7 @@ public interface ActividadAcademicaRepository extends JpaRepository<ActividadAca
     // Calendario: mismas actividades que la consulta anterior, con materia, ciclo y nota
     // cargados en la misma consulta para no lanzar una por cada actividad
     @Query("SELECT aa FROM ActividadAcademica aa " +
+            "JOIN FETCH aa.tipoActividad " +
             "JOIN FETCH aa.materiaInscrita materia " +
             "JOIN FETCH materia.cicloAcademico ciclo " +
             "LEFT JOIN FETCH aa.nota " +
@@ -39,6 +41,7 @@ public interface ActividadAcademicaRepository extends JpaRepository<ActividadAca
     List<ActividadAcademica> findParaCalendario(@Param("idEstudiante") Long idEstudiante);
 
     @Query("SELECT aa FROM ActividadAcademica aa " +
+            "JOIN FETCH aa.tipoActividad " +
             "JOIN aa.materiaInscrita materia " +
             "JOIN materia.cicloAcademico ciclo " +
             "JOIN ciclo.estudiante estudiante " +
@@ -48,6 +51,7 @@ public interface ActividadAcademicaRepository extends JpaRepository<ActividadAca
     List<ActividadAcademica> findActividadesPorCicloYEstudiante(@Param("idEstudiante") Long idEstudiante,@Param("idCiclo") Long idCiclo);
 
     @Query("SELECT aa FROM ActividadAcademica aa " +
+            "JOIN FETCH aa.tipoActividad " +
             "JOIN FETCH aa.materiaInscrita materia " +
             "JOIN materia.cicloAcademico ciclo " +
             "JOIN ciclo.estudiante estudiante " +
@@ -62,6 +66,8 @@ public interface ActividadAcademicaRepository extends JpaRepository<ActividadAca
             @Param("idEstudiante") Long idEstudiante,
             @Param("inicio") LocalDateTime inicio,
             @Param("fin") LocalDateTime fin,
-            @Param("tiposActividad") Set<TipoActividadAcademica> tiposActividad
+            @Param("tiposActividad") Set<TipoActividad> tiposActividad
     );
+
+    long countByTipoActividadIdTipoActividad(Integer tipoActividadId);
 }

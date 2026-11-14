@@ -7,22 +7,27 @@ import com.saca.api.dto.request.CrearMateriaInscritaRequest;
 import com.saca.api.dto.response.MateriaInscritaResponse;
 import com.saca.api.entity.CicloAcademico;
 import com.saca.api.entity.MateriaInscrita;
+import com.saca.api.entity.MateriaCatalogo;
 
 @Component
 public class MateriaInscritaMapper {
 
-	public MateriaInscrita toEntity(CrearMateriaInscritaRequest request, CicloAcademico cicloAcademico) {
+	public MateriaInscrita toEntity(CrearMateriaInscritaRequest request, CicloAcademico cicloAcademico,
+			MateriaCatalogo catalogoMateria) {
 		MateriaInscrita materiaInscrita = new MateriaInscrita();
 		materiaInscrita.setCicloAcademico(cicloAcademico);
-		materiaInscrita.setNombre(request.nombre());
-		materiaInscrita.setCodigo(request.codigo());
+		materiaInscrita.setCatalogoMateria(catalogoMateria);
+		materiaInscrita.setNombre(catalogoMateria.getNombre());
+		materiaInscrita.setCodigo(catalogoMateria.getCodigo());
 		materiaInscrita.setGrupoTeorico(request.grupoTeorico());
 		return materiaInscrita;
 	}
 
-	public void updateEntity(MateriaInscrita materiaInscrita, ActualizarMateriaInscritaRequest request) {
-		materiaInscrita.setNombre(request.nombre());
-		materiaInscrita.setCodigo(request.codigo());
+	public void updateEntity(MateriaInscrita materiaInscrita, ActualizarMateriaInscritaRequest request,
+			MateriaCatalogo catalogoMateria) {
+		materiaInscrita.setCatalogoMateria(catalogoMateria);
+		materiaInscrita.setNombre(catalogoMateria.getNombre());
+		materiaInscrita.setCodigo(catalogoMateria.getCodigo());
 		materiaInscrita.setGrupoTeorico(request.grupoTeorico());
 	}
 
@@ -35,6 +40,7 @@ public class MateriaInscritaMapper {
 				cicloAcademico.getNombre(),
 				materiaInscrita.getNombre(),
 				materiaInscrita.getCodigo(),
-				materiaInscrita.getGrupoTeorico());
+				materiaInscrita.getGrupoTeorico(),
+				materiaInscrita.getCatalogoMateria() == null ? null : materiaInscrita.getCatalogoMateria().getId());
 	}
 }

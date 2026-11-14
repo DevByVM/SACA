@@ -1,27 +1,29 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api";
+import { useCallback, useEffect, useState } from "react";
+import { API_BASE_URL, clienteHttp } from "../api/client";
 
 function CalendarioSemanal({ estudianteId }) {
 
   const [horarios, setHorarios] = useState([]);
 
-  useEffect(() => {
-    cargar();
-  }, [estudianteId]);
+  const cargar = useCallback(async () => {
+    if (!estudianteId) {
+      setHorarios([]);
+      return;
+    }
 
-  const cargar = async () => {
     try {
-      const res = await axios.get(
+      const res = await clienteHttp.get(
         `${API_BASE_URL}/calendario/semanal/${estudianteId}`
       );
       setHorarios(res.data);
     } catch (error) {
       console.error("Error cargando calendario", error);
     }
-  };
+  }, [estudianteId]);
+
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
 
   const dias = [
     "LUNES",

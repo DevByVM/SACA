@@ -1,6 +1,6 @@
 import Insignia from "../ui/Insignia";
 import { unirClases } from "../ui/unirClases";
-import { ESTILOS_EVENTO, TIPOS_ACTIVIDAD } from "./constantes";
+import { ESTILOS_EVENTO } from "./constantes";
 import { formatearHoras, hora } from "./fechas";
 
 const formatearPorcentaje = (valor) => {
@@ -21,7 +21,7 @@ function EventoCalendario({ evento }) {
       )}
     >
       <div className="flex flex-wrap items-center gap-1">
-        <Insignia tono={esClase ? "marca" : "info"}>{esClase ? "Clase" : TIPOS_ACTIVIDAD[evento.tipoActividad] ?? evento.tipoActividad}</Insignia>
+        <Insignia tono={esClase ? "marca" : "info"}>{esClase ? "Clase" : evento.tipoActividad}</Insignia>
         {!esClase && <span className="font-semibold">{formatearPorcentaje(evento.porcentajeEvaluacion)}</span>}
         {!esClase && evento.tiempoEstimadoHoras != null && (
           <span className="text-ink-600">· {formatearHoras(evento.tiempoEstimadoHoras)}</span>

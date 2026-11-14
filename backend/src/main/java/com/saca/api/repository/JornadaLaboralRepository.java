@@ -9,6 +9,8 @@ import java.util.Optional;
 public interface JornadaLaboralRepository extends JpaRepository<JornadaLaboral, Long> {
     List<JornadaLaboral> findByEstudianteId(Long estudianteId);
 
+    boolean existsByEstudianteId(Long estudianteId);
+
     // La jornada solo se encuentra si pertenece al estudiante indicado
     Optional<JornadaLaboral> findByIdAndEstudianteId(Long id, Long estudianteId);
 

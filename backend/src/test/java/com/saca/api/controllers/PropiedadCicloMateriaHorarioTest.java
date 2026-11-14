@@ -7,12 +7,14 @@ import com.saca.api.entity.DiaSemana;
 import com.saca.api.entity.EstadoCiclo;
 import com.saca.api.entity.Estudiante;
 import com.saca.api.entity.HorarioClase;
+import com.saca.api.entity.MateriaCatalogo;
 import com.saca.api.entity.MateriaInscrita;
 import com.saca.api.entity.ModalidadClase;
 import com.saca.api.repository.CicloAcademicoRepository;
 import com.saca.api.repository.EstudianteRepository;
 import com.saca.api.repository.HorarioClaseRepository;
 import com.saca.api.repository.MateriaInscritaRepository;
+import com.saca.api.repository.MateriaCatalogoRepository;
 import com.saca.api.service.TokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,6 +59,9 @@ class PropiedadCicloMateriaHorarioTest {
 
     @Autowired
     private MateriaInscritaRepository materiaRepository;
+
+    @Autowired
+    private MateriaCatalogoRepository catalogoRepository;
 
     @Autowired
     private HorarioClaseRepository horarioRepository;
@@ -117,8 +122,10 @@ class PropiedadCicloMateriaHorarioTest {
     }
 
     private MateriaInscrita crearMateria(CicloAcademico ciclo, String nombre, String codigo) {
+        MateriaCatalogo catalogo = buscarOCrearMateriaCatalogo(nombre, codigo);
         MateriaInscrita nueva = new MateriaInscrita();
         nueva.setCicloAcademico(ciclo);
+        nueva.setCatalogoMateria(catalogo);
         nueva.setNombre(nombre);
         nueva.setCodigo(codigo);
         nueva.setGrupoTeorico("GT01");
@@ -156,10 +163,23 @@ class PropiedadCicloMateriaHorarioTest {
                 """.formatted(estudianteId, nombre, inicio, fin);
     }
 
-    private static String materia(Long cicloAcademicoId, String nombre, String codigo) {
+    private String materia(Long cicloAcademicoId, String nombre, String codigo) {
         return """
-                {"cicloAcademicoId":%s,"nombre":"%s","codigo":"%s","grupoTeorico":"GT02"}
-                """.formatted(cicloAcademicoId, nombre, codigo);
+                {"cicloAcademicoId":%s,"catalogoMateriaId":%s,"grupoTeorico":"GT02"}
+                """.formatted(cicloAcademicoId, catalogoId(nombre, codigo));
+    }
+
+    private Long catalogoId(String nombre, String codigo) {
+        return buscarOCrearMateriaCatalogo(nombre, codigo).getId();
+    }
+
+    private MateriaCatalogo buscarOCrearMateriaCatalogo(String nombre, String codigo) {
+        return catalogoRepository.findByCodigoIgnoreCase(codigo).orElseGet(() -> {
+            MateriaCatalogo materia = new MateriaCatalogo();
+            materia.setNombre(nombre);
+            materia.setCodigo(codigo);
+            return catalogoRepository.save(materia);
+        });
     }
 
     private static String horario(Long materiaInscritaId, String dia, String inicio, String fin) {
@@ -245,8 +265,8 @@ class PropiedadCicloMateriaHorarioTest {
 
         MvcResult editada = como(tokenA, conEstudiante(put("/api/materias/" + nuevaId), a),
                 """
-                {"nombre":"Materia editada","codigo":"NUEVA-2","grupoTeorico":"GT03"}
-                """);
+                {"catalogoMateriaId":%d,"grupoTeorico":"GT03"}
+                """.formatted(catalogoId("Materia editada", "NUEVA-2")));
         assertThat(estado(editada)).isEqualTo(200);
         assertThat(json(editada).get("codigo").asText()).isEqualTo("NUEVA-2");
 
@@ -316,8 +336,8 @@ class PropiedadCicloMateriaHorarioTest {
                 como(tokenB, conEstudiante(post("/api/materias"), a), materia(cicloA.getId(), "Intrusa", "INTR-1")),
                 como(tokenB, conEstudiante(put("/api/materias/" + materiaA.getId()), a),
                         """
-                        {"nombre":"Tomada","codigo":"TOM","grupoTeorico":"GT01"}
-                        """),
+                        {"catalogoMateriaId":%d,"grupoTeorico":"GT01"}
+                        """.formatted(catalogoId("Tomada", "TOM"))),
                 como(tokenB, conEstudiante(delete("/api/materias/" + materiaA.getId()), a)),
                 como(tokenB, conEstudiante(get("/api/horarios"), a)),
                 como(tokenB, conEstudiante(get("/api/horarios"), a).param("materiaInscritaId", String.valueOf(materiaA.getId()))),
@@ -351,8 +371,8 @@ class PropiedadCicloMateriaHorarioTest {
                 como(tokenB, conEstudiante(get("/api/materias/" + materiaA.getId()), b)),
                 como(tokenB, conEstudiante(put("/api/materias/" + materiaA.getId()), b),
                         """
-                        {"nombre":"Tomada","codigo":"TOM","grupoTeorico":"GT01"}
-                        """),
+                        {"catalogoMateriaId":%d,"grupoTeorico":"GT01"}
+                        """.formatted(catalogoId("Tomada", "TOM"))),
                 como(tokenB, conEstudiante(delete("/api/materias/" + materiaA.getId()), b)),
                 como(tokenB, conEstudiante(get("/api/horarios/" + horarioA.getId()), b)),
                 como(tokenB, conEstudiante(put("/api/horarios/" + horarioA.getId()), b),
@@ -450,8 +470,8 @@ class PropiedadCicloMateriaHorarioTest {
                 """.formatted(a.getId()));
         MvcResult materiaEditada = como(tokenB, conEstudiante(put("/api/materias/" + materiaB.getId()), b),
                 """
-                {"cicloAcademicoId":%d,"nombre":"Materia de B editada","codigo":"MAT-B","grupoTeorico":"GT01"}
-                """.formatted(cicloA.getId()));
+                {"cicloAcademicoId":%d,"catalogoMateriaId":%d,"grupoTeorico":"GT01"}
+                """.formatted(cicloA.getId(), catalogoId("Materia de B editada", "MAT-B")));
         MvcResult horarioEditado = como(tokenB, conEstudiante(put("/api/horarios/" + horarioB.getId()), b),
                 """
                 {"materiaInscritaId":%d,"diaSemana":"MARTES","horaInicio":"08:00","horaFin":"10:00","modalidad":"VIRTUAL","docenteTutor":"Docente de B"}

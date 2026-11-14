@@ -1,21 +1,18 @@
 package com.saca.api.entity;
 
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
-import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -37,18 +34,17 @@ public class PreferenciaNotificacion {
     @JoinColumn(name = "estudiante_id", nullable = false, unique = true)
     private Estudiante estudiante;
 
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(
-            name = "preferencias_notificacion_tipo_actividad",
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "preferencias_notificacion_tipos_catalogo",
             joinColumns = @JoinColumn(name = "preferencia_notificacion_id"),
+            inverseJoinColumns = @JoinColumn(name = "tipo_actividad_id"),
             uniqueConstraints = @UniqueConstraint(
-                    name = "uk_preferencia_notificacion_tipo",
-                    columnNames = {"preferencia_notificacion_id", "tipo_actividad"}
+                    name = "uk_preferencia_notificacion_tipo_catalogo",
+                    columnNames = {"preferencia_notificacion_id", "tipo_actividad_id"}
             )
     )
-    @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_actividad", nullable = false, length = 20)
-    private Set<TipoActividadAcademica> tiposActividadHabilitados = new HashSet<>();
+    private Set<TipoActividad> tiposActividadHabilitados = new java.util.HashSet<>();
 
     public PreferenciaNotificacion() {
     }
@@ -65,13 +61,13 @@ public class PreferenciaNotificacion {
         this.estudiante = estudiante;
     }
 
-    public Set<TipoActividadAcademica> getTiposActividadHabilitados() {
+    public Set<TipoActividad> getTiposActividadHabilitados() {
         return tiposActividadHabilitados;
     }
 
-    public void setTiposActividadHabilitados(Set<TipoActividadAcademica> tiposActividadHabilitados) {
+    public void setTiposActividadHabilitados(Set<TipoActividad> tiposActividadHabilitados) {
         this.tiposActividadHabilitados = tiposActividadHabilitados == null
-                ? new HashSet<>()
-                : new HashSet<>(tiposActividadHabilitados);
+                ? new java.util.HashSet<>()
+                : new java.util.HashSet<>(tiposActividadHabilitados);
     }
 }

@@ -23,6 +23,9 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
 
     boolean existsByCorreoInstitucional(String correoInstitucional);
 
+    @Query("select e.id from Estudiante e where e.cuentaActiva is null or e.cuentaActiva = false")
+    List<Long> findIdsInhabilitados();
+
     Optional<Estudiante> findByCarnet(String carnet);
 
     Optional<Estudiante> findByCorreoInstitucional(String correoInstitucional);

@@ -36,6 +36,7 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.saca.api.TipoActividadPrueba.crear;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 // Endpoint /api/carga/semanas con el estudiante del token. Las fechas se construyen a partir
@@ -150,7 +151,7 @@ class CargaSemanasTest {
         nueva.setPorcentajeEvaluacion(peso);
         nueva.setTiempoEstimadoHoras(horas);
         nueva.setEstado("ACTIVO");
-        nueva.setTipoActividad(TipoActividadAcademica.PARCIAL);
+        nueva.setTipoActividad(crear(TipoActividadAcademica.PARCIAL));
         nueva.setMateriaInscrita(materia);
         if (conNota) {
             Nota nota = new Nota();

@@ -220,7 +220,7 @@ public class CalendarioService {
                 horario.getDocenteTutor(),
                 vinculada == null ? null : vinculada.getIdActividad(),
                 vinculada == null ? null : vinculada.getNombre(),
-                null, null, null, null, null, false, false, false, null, false);
+                null, null, null, null, null, null, false, false, false, null, false);
     }
 
     private static EventoCalendarioResponse actividad(ActividadAcademica actividad, LocalDateTime referencia) {
@@ -239,7 +239,8 @@ public class CalendarioService {
                 materia.getNombre(),
                 null, null, null, null, null,
                 actividad.getIdActividad(),
-                actividad.getTipoActividad(),
+                actividad.getTipoActividad().getIdTipoActividad(),
+                actividad.getTipoActividad().getNombre(),
                 BigDecimal.valueOf(actividad.getPorcentajeEvaluacion()),
                 actividad.getEstado(),
                 calificada ? actividad.getNota().getValorObtenido() : null,

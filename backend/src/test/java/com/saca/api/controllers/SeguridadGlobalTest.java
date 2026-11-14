@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.saca.api.CarnetsDePrueba;
 import com.saca.api.config.ManejadorErroresSeguridad;
 import com.saca.api.config.TokenConfig;
+import com.saca.api.entity.Administrador;
 import com.saca.api.entity.Estudiante;
+import com.saca.api.repository.AdministradorRepository;
 import com.saca.api.repository.EstudianteRepository;
 import com.saca.api.service.TokenService;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,6 +76,9 @@ class SeguridadGlobalTest {
     private EstudianteRepository estudianteRepository;
 
     @Autowired
+    private AdministradorRepository administradorRepository;
+
+    @Autowired
     private TokenService tokenService;
 
     @Autowired
@@ -86,6 +91,7 @@ class SeguridadGlobalTest {
     private ObjectMapper objectMapper;
 
     private Estudiante estudiante;
+    private Administrador administrador;
 
     private record Ruta(String metodo, String patron, String controlador) {
         String url() {
@@ -109,6 +115,12 @@ class SeguridadGlobalTest {
         nuevo.setCuentaActiva(true);
         nuevo.setIntentosFallidos(0);
         estudiante = estudianteRepository.save(nuevo);
+
+        Administrador nuevoAdministrador = new Administrador();
+        nuevoAdministrador.setNombre("Administrador Global");
+        nuevoAdministrador.setCorreo("admin.global." + unico + "@ues.edu.sv");
+        nuevoAdministrador.setContrasenia(new BCryptPasswordEncoder().encode("Administrador123"));
+        administrador = administradorRepository.save(nuevoAdministrador);
     }
 
     private List<Ruta> rutasDeLaAplicacion() {
@@ -170,7 +182,8 @@ class SeguridadGlobalTest {
                 .contains("AuthController", "ActividadAcademicaController", "CalendarioController",
                         "CicloAcademicoController", "DisponibilidadSemanalController",
                         "HorarioClaseController", "JornadaLaboralController", "MateriaInscritaController",
-                        "NotificacionController", "PerfilAcademicoController");
+                        "NotificacionController", "PerfilAcademicoController", "AdministradorController",
+                        "CatalogoMateriaController", "TipoActividadController");
         // 42 rutas tras retirar GreetingController; una ruta nueva entra sola en las comprobaciones siguientes
         assertThat(rutasDeLaAplicacion()).hasSizeGreaterThanOrEqualTo(42);
     }
@@ -199,13 +212,17 @@ class SeguridadGlobalTest {
 
     @Test
     void conTokenValidoNingunaRutaGetEsRechazadaPorSeguridad() throws Exception {
-        String token = tokenService.emitir(estudiante).valor();
+        String tokenEstudiante = tokenService.emitir(estudiante).valor();
+        String tokenAdministrador = tokenService.emitir(administrador).valor();
         List<String> rechazadas = new ArrayList<>();
 
         for (Ruta ruta : rutasDeLaAplicacion()) {
             if (!ruta.metodo().equals("GET")) {
                 continue; // POST, PUT y DELETE con token se cubren en las pruebas de cada módulo
             }
+            String token = ruta.controlador().equals("AdministradorController")
+                    || ruta.patron().startsWith("/api/admin/")
+                    ? tokenAdministrador : tokenEstudiante;
             int estado = mockMvc.perform(conToken(peticion(ruta), token)).andReturn().getResponse().getStatus();
             if (estado == 401 || estado == 403) {
                 rechazadas.add(ruta + " → " + estado);
@@ -264,12 +281,16 @@ class SeguridadGlobalTest {
 
     @Test
     void unTokenValidoEsAceptadoEnTodosLosControladores() throws Exception {
-        String token = tokenService.emitir(estudiante).valor();
+        String tokenEstudiante = tokenService.emitir(estudiante).valor();
+        String tokenAdministrador = tokenService.emitir(administrador).valor();
         Map<String, Ruta> rutas = unaRutaGetPorControlador();
-        // 10 controladores con rutas GET tras retirar GreetingController
+        // Todos los controladores de la aplicación tienen una ruta GET con el rol correspondiente
         assertThat(rutas).hasSizeGreaterThanOrEqualTo(10);
 
         for (Ruta ruta : rutas.values()) {
+            String token = ruta.controlador().equals("AdministradorController")
+                    || ruta.patron().startsWith("/api/admin/")
+                    ? tokenAdministrador : tokenEstudiante;
             assertThat(mockMvc.perform(conToken(peticion(ruta), token)).andReturn().getResponse().getStatus())
                     .as(ruta.toString()).isNotIn(401, 403);
         }

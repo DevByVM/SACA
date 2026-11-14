@@ -20,6 +20,7 @@ import java.time.LocalTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.saca.api.TipoActividadPrueba.crear;
 
 // Cálculo puro de la semana del calendario (lunes a domingo) sin Spring ni base de datos
 class CalendarioSemanaCalculoTest {
@@ -72,7 +73,7 @@ class CalendarioSemanaCalculoTest {
         actividad.setIdActividad(siguienteId++);
         actividad.setMateriaInscrita(materia);
         actividad.setNombre(nombre);
-        actividad.setTipoActividad(tipo);
+        actividad.setTipoActividad(crear(tipo));
         actividad.setPorcentajeEvaluacion(peso);
         actividad.setTiempoEstimadoHoras(3);
         actividad.setEstado("ACTIVO");
@@ -194,7 +195,7 @@ class CalendarioSemanaCalculoTest {
         assertThat(titulos(semana)).containsExactly("Laboratorio 2", "Materia PRN315", "Parcial 1");
         EventoCalendarioResponse eventoParcial = semana.eventos().get(2);
         assertThat(eventoParcial.tipo()).isEqualTo(TipoEventoCalendario.ACTIVIDAD);
-        assertThat(eventoParcial.tipoActividad()).isEqualTo(TipoActividadAcademica.PARCIAL);
+        assertThat(eventoParcial.tipoActividad()).isEqualTo("Parcial");
         assertThat(eventoParcial.porcentajeEvaluacion()).isEqualByComparingTo("30");
         assertThat(eventoParcial.horaInicio()).isEqualTo(LocalTime.of(9, 30));
         assertThat(eventoParcial.horaFin()).isNull();

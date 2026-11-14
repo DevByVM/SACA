@@ -8,17 +8,21 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.BadJwtException;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import com.saca.api.service.EstadoCuentas;
 
 @Configuration
 public class TokenConfig {
@@ -43,7 +47,33 @@ public class TokenConfig {
     }
 
     @Bean
+    public JwtDecoder decodificadorToken(
+            SecretKey claveFirmaToken,
+            ObjectProvider<EstadoCuentas> estadoCuentasProvider) {
+        JwtDecoder decodificador = crearDecodificador(claveFirmaToken);
+        return token -> {
+            Jwt jwt = decodificador.decode(token);
+            Long id;
+            try {
+                id = Long.valueOf(jwt.getSubject());
+            } catch (NumberFormatException e) {
+                throw new BadJwtException("El sujeto del token no es válido", e);
+            }
+
+            String rol = jwt.getClaimAsString("rol");
+            EstadoCuentas estadoCuentas = estadoCuentasProvider.getIfAvailable();
+            if (estadoCuentas != null && !estadoCuentas.estaHabilitado(rol == null ? "" : rol, id)) {
+                throw new BadJwtException("La cuenta asociada al token no está habilitada");
+            }
+            return jwt;
+        };
+    }
+
     public JwtDecoder decodificadorToken(SecretKey claveFirmaToken) {
+        return crearDecodificador(claveFirmaToken);
+    }
+
+    private JwtDecoder crearDecodificador(SecretKey claveFirmaToken) {
         NimbusJwtDecoder decodificador = NimbusJwtDecoder.withSecretKey(claveFirmaToken)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();

@@ -11,9 +11,16 @@ public record LoginResponse(
         String carnet,
         String correoInstitucional,
         String token,
-        Instant expiraEn) {
+        Instant expiraEn,
+        String rol) {
+
+    public LoginResponse(boolean autenticado, String mensaje, Long estudianteId, String nombre,
+            String carnet, String correoInstitucional, String token, Instant expiraEn) {
+        this(autenticado, mensaje, estudianteId, nombre, carnet, correoInstitucional, token, expiraEn,
+                autenticado ? "ESTUDIANTE" : null);
+    }
 
     public static LoginResponse error(String mensaje) {
-        return new LoginResponse(false, mensaje, null, null, null, null, null, null);
+        return new LoginResponse(false, mensaje, null, null, null, null, null, null, null);
     }
 }

@@ -104,7 +104,8 @@ function Login({ onLoginSuccess, correoInicial = "", avisoInicial = "", modoInic
                     id: respuesta.estudianteId,
                     nombre: respuesta.nombre,
                     carnet: respuesta.carnet,
-                    correoInstitucional: respuesta.correoInstitucional
+                    correoInstitucional: respuesta.correoInstitucional,
+                    rol: respuesta.rol || "ESTUDIANTE",
                 };
 
                 // Guarda el token y los datos del estudiante en sessionStorage

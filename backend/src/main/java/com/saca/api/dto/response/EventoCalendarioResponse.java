@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 import com.saca.api.entity.ModalidadClase;
-import com.saca.api.entity.TipoActividadAcademica;
 import com.saca.api.entity.TipoEventoCalendario;
 
 // Un evento es una clase (horario recurrente ubicado en su fecha) o una actividad académica.
@@ -28,7 +27,8 @@ public record EventoCalendarioResponse(
 		String actividadVinculadaNombre,
 		// Solo actividades
 		Long actividadId,
-		TipoActividadAcademica tipoActividad,
+		Integer tipoActividadId,
+		String tipoActividad,
 		BigDecimal porcentajeEvaluacion,
 		String estado,
 		Double notaObtenida,

@@ -2,7 +2,7 @@ package com.saca.api.service;
 
 import com.saca.api.entity.Estudiante;
 import com.saca.api.entity.PreferenciaNotificacion;
-import com.saca.api.entity.TipoActividadAcademica;
+import com.saca.api.entity.TipoActividad;
 import com.saca.api.mapper.ActividadAcademicaMapper;
 import com.saca.api.repository.ActividadAcademicaRepository;
 import com.saca.api.repository.EstudianteRepository;
@@ -55,7 +55,8 @@ class NotificacionServiceTest {
                 relojFijo
         );
         PreferenciaNotificacion preferencia = new PreferenciaNotificacion();
-        preferencia.setTiposActividadHabilitados(Set.of(TipoActividadAcademica.PARCIAL));
+        TipoActividad parcial = new TipoActividad(1, "Parcial", true);
+        preferencia.setTiposActividadHabilitados(Set.of(parcial));
 
         when(estudianteRepository.existsById(7L)).thenReturn(true);
         when(preferenciaRepository.findByEstudianteId(7L)).thenReturn(Optional.of(preferencia));
@@ -70,7 +71,7 @@ class NotificacionServiceTest {
                 org.mockito.ArgumentMatchers.eq(7L),
                 inicioCaptor.capture(),
                 finCaptor.capture(),
-                org.mockito.ArgumentMatchers.eq(Set.of(TipoActividadAcademica.PARCIAL))
+                org.mockito.ArgumentMatchers.eq(Set.of(parcial))
         );
         assertThat(inicioCaptor.getValue()).isEqualTo(LocalDateTime.of(2026, 9, 30, 0, 0));
         assertThat(finCaptor.getValue()).isEqualTo(LocalDateTime.of(2026, 10, 8, 0, 0));

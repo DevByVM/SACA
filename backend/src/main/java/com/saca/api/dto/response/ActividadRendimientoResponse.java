@@ -3,12 +3,10 @@ package com.saca.api.dto.response;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.saca.api.entity.TipoActividadAcademica;
-
 public record ActividadRendimientoResponse(
 		Long idActividad,
 		String nombre,
-		TipoActividadAcademica tipoActividad,
+		String tipoActividad,
 		String estado,
 		LocalDateTime fechaEntrega,
 		BigDecimal porcentajeEvaluacion,

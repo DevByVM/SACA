@@ -6,6 +6,7 @@ import com.saca.api.entity.ActividadAcademica;
 import com.saca.api.entity.CicloAcademico;
 import com.saca.api.entity.EstadoCiclo;
 import com.saca.api.entity.MateriaInscrita;
+import com.saca.api.entity.TipoActividad;
 import com.saca.api.entity.TipoActividadAcademica;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +42,9 @@ class PreferenciaNotificacionRepositoryTest {
     @Autowired
     private MateriaInscritaRepository materiaRepository;
 
+    @Autowired
+    private TipoActividadRepository tipoActividadRepository;
+
     @Test
     void guardaYRecuperaLosTiposHabilitadosDelEstudiante() {
         Estudiante estudiante = guardarEstudiante("UP23006", "edgardo@ues.edu.sv");
@@ -48,7 +52,7 @@ class PreferenciaNotificacionRepositoryTest {
         PreferenciaNotificacion preferencia = new PreferenciaNotificacion();
         preferencia.setEstudiante(estudiante);
         preferencia.setTiposActividadHabilitados(
-                Set.of(TipoActividadAcademica.PARCIAL, TipoActividadAcademica.PROYECTO)
+                Set.of(tipo(TipoActividadAcademica.PARCIAL), tipo(TipoActividadAcademica.PROYECTO))
         );
         preferenciaRepository.saveAndFlush(preferencia);
 
@@ -57,10 +61,8 @@ class PreferenciaNotificacionRepositoryTest {
                 .orElseThrow();
 
         assertThat(recuperada.getTiposActividadHabilitados())
-                .containsExactlyInAnyOrder(
-                        TipoActividadAcademica.PARCIAL,
-                        TipoActividadAcademica.PROYECTO
-                );
+                .extracting(TipoActividad::getNombre)
+                .containsExactlyInAnyOrder("Parcial", "Proyecto");
     }
 
     @Test
@@ -68,15 +70,16 @@ class PreferenciaNotificacionRepositoryTest {
         Estudiante primerEstudiante = guardarEstudiante("UP23007", "primero@ues.edu.sv");
         Estudiante segundoEstudiante = guardarEstudiante("UP23008", "segundo@ues.edu.sv");
 
-        guardarPreferencia(primerEstudiante, Set.of(TipoActividadAcademica.LABORATORIO));
-        guardarPreferencia(segundoEstudiante, Set.of(TipoActividadAcademica.INVESTIGACION));
+        guardarPreferencia(primerEstudiante, Set.of(tipo(TipoActividadAcademica.LABORATORIO)));
+        guardarPreferencia(segundoEstudiante, Set.of(tipo(TipoActividadAcademica.INVESTIGACION)));
 
         PreferenciaNotificacion recuperada = preferenciaRepository
                 .findByEstudianteId(segundoEstudiante.getId())
                 .orElseThrow();
 
         assertThat(recuperada.getTiposActividadHabilitados())
-                .containsExactly(TipoActividadAcademica.INVESTIGACION);
+                .extracting(TipoActividad::getNombre)
+                .containsExactly("Investigación");
     }
 
     @Test
@@ -86,18 +89,18 @@ class PreferenciaNotificacionRepositoryTest {
         Estudiante estudiante = guardarEstudiante("UP23009", "ventana@ues.edu.sv");
         MateriaInscrita materia = guardarMateriaActiva(estudiante);
 
-        guardarActividad(materia, "Entrega al inicio", inicio, TipoActividadAcademica.PARCIAL, "ACTIVO");
-        guardarActividad(materia, "Entrega antes del límite", fin.minusNanos(1_000), TipoActividadAcademica.PARCIAL, "ACTIVO");
-        guardarActividad(materia, "Entrega en el límite", fin, TipoActividadAcademica.PARCIAL, "ACTIVO");
-        guardarActividad(materia, "Entrega vencida", inicio.minusNanos(1_000), TipoActividadAcademica.PARCIAL, "ACTIVO");
-        guardarActividad(materia, "Actividad completada", inicio.plusDays(2), TipoActividadAcademica.PARCIAL, "COMPLETADA");
-        guardarActividad(materia, "Tipo deshabilitado", inicio.plusDays(2), TipoActividadAcademica.PROYECTO, "ACTIVO");
+        guardarActividad(materia, "Entrega al inicio", inicio, tipo(TipoActividadAcademica.PARCIAL), "ACTIVO");
+        guardarActividad(materia, "Entrega antes del límite", fin.minusNanos(1_000), tipo(TipoActividadAcademica.PARCIAL), "ACTIVO");
+        guardarActividad(materia, "Entrega en el límite", fin, tipo(TipoActividadAcademica.PARCIAL), "ACTIVO");
+        guardarActividad(materia, "Entrega vencida", inicio.minusNanos(1_000), tipo(TipoActividadAcademica.PARCIAL), "ACTIVO");
+        guardarActividad(materia, "Actividad completada", inicio.plusDays(2), tipo(TipoActividadAcademica.PARCIAL), "COMPLETADA");
+        guardarActividad(materia, "Tipo deshabilitado", inicio.plusDays(2), tipo(TipoActividadAcademica.PROYECTO), "ACTIVO");
 
         List<ActividadAcademica> notificaciones = actividadRepository.findNotificacionesProximasPorEstudiante(
                 estudiante.getId(),
                 inicio,
                 fin,
-                Set.of(TipoActividadAcademica.PARCIAL)
+                Set.of(tipo(TipoActividadAcademica.PARCIAL))
         );
 
         assertThat(notificaciones)
@@ -118,7 +121,7 @@ class PreferenciaNotificacionRepositoryTest {
 
     private void guardarPreferencia(
             Estudiante estudiante,
-            Set<TipoActividadAcademica> tiposActividad
+            Set<TipoActividad> tiposActividad
     ) {
         PreferenciaNotificacion preferencia = new PreferenciaNotificacion();
         preferencia.setEstudiante(estudiante);
@@ -148,7 +151,7 @@ class PreferenciaNotificacionRepositoryTest {
             MateriaInscrita materia,
             String nombre,
             LocalDateTime fechaEntrega,
-            TipoActividadAcademica tipoActividad,
+            TipoActividad tipoActividad,
             String estado
     ) {
         ActividadAcademica actividad = new ActividadAcademica();
@@ -161,5 +164,20 @@ class PreferenciaNotificacionRepositoryTest {
         actividad.setTipoActividad(tipoActividad);
         actividad.setMateriaInscrita(materia);
         actividadRepository.saveAndFlush(actividad);
+    }
+
+    private TipoActividad tipo(TipoActividadAcademica tipo) {
+        String nombre = switch (tipo) {
+            case PARCIAL -> "Parcial";
+            case LABORATORIO -> "Laboratorio";
+            case PROYECTO -> "Proyecto";
+            case INVESTIGACION -> "Investigación";
+        };
+        return tipoActividadRepository.findByNombreIgnoreCase(nombre).orElseGet(() -> {
+            TipoActividad nuevo = new TipoActividad();
+            nuevo.setNombre(nombre);
+            nuevo.setActivo(true);
+            return tipoActividadRepository.saveAndFlush(nuevo);
+        });
     }
 }

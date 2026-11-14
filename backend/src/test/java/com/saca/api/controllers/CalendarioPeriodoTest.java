@@ -38,6 +38,7 @@ import java.time.LocalTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.saca.api.TipoActividadPrueba.crear;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 // Vista mensual del calendario: endpoint /periodo, sus validaciones y su coste en consultas SQL
@@ -161,7 +162,7 @@ class CalendarioPeriodoTest {
         nueva.setPorcentajeEvaluacion(10);
         nueva.setTiempoEstimadoHoras(3);
         nueva.setEstado("ACTIVO");
-        nueva.setTipoActividad(TipoActividadAcademica.LABORATORIO);
+        nueva.setTipoActividad(crear(TipoActividadAcademica.LABORATORIO));
         nueva.setMateriaInscrita(materia);
         if (conNota) {
             Nota nota = new Nota();

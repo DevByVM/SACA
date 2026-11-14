@@ -18,6 +18,8 @@ import {
   eliminarMateria,
   listarMaterias,
 } from "../api/materiasApi";
+import { listarCatalogoMaterias } from "../api/catalogoMateriasApi";
+import { listarTiposActividad } from "../api/tiposActividadApi";
 
 import {
   getActividadesByEstudianteIdAndCicloActivo,
@@ -46,8 +48,7 @@ const cicloInicial = {
 
 const materiaInicial = {
   cicloAcademicoId: "",
-  nombre: "",
-  codigo: "",
+  catalogoMateriaId: "",
   grupoTeorico: "",
 };
 
@@ -67,7 +68,7 @@ const actividadInicial = {
   fechaInicio: "",
   fechaEntrega: "",
   tiempoEstimadoHoras: "",
-  tipoActividad: "",
+  tipoActividadId: "",
   materiaInscritaId: "",
   porcentajeEvaluacion: "5",
   notaObtenida: "",
@@ -118,6 +119,8 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
   const [cargando, setCargando] = useState(false);
   const [ciclos, setCiclos] = useState([]);
   const [materias, setMaterias] = useState([]);
+  const [catalogoMaterias, setCatalogoMaterias] = useState([]);
+  const [tiposActividad, setTiposActividad] = useState([]);
   const [horarios, setHorarios] = useState([]);
   const [cicloForm, setCicloForm] = useState(cicloInicial);
   const [materiaForm, setMateriaForm] = useState(materiaInicial);
@@ -169,6 +172,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       if (vistaObjetivo === "materias") {
         await cargarColeccion("ciclos", () => listarCiclos(estudianteId), setCiclos);
         await cargarColeccion("materias", () => listarMaterias(estudianteId), setMaterias);
+        await cargarColeccion("catalogo-materias", listarCatalogoMaterias, setCatalogoMaterias);
       }
 
       if (vistaObjetivo === "horarios") {
@@ -186,6 +190,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
         // El reporte de rendimiento permite elegir entre los ciclos del estudiante
         await cargarColeccion("ciclos", () => listarCiclos(estudianteId), setCiclos);
         await cargarColeccion("materias", () => listarMaterias(estudianteId), setMaterias);
+        await cargarColeccion("tipos-actividad", listarTiposActividad, setTiposActividad);
         await cargarColeccion(
           "actividades",
           () => getActividadesByEstudianteIdAndCicloActivo(estudianteId),
@@ -205,6 +210,8 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       solicitudesEnCurso.current.clear();
       setCiclos([]);
       setMaterias([]);
+      setCatalogoMaterias([]);
+      setTiposActividad([]);
       setHorarios([]);
       setActividades([]);
       estudianteAnterior.current = estudianteId;
@@ -246,6 +253,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
     const payload = {
       ...materiaForm,
       cicloAcademicoId: Number(materiaForm.cicloAcademicoId),
+      catalogoMateriaId: Number(materiaForm.catalogoMateriaId),
     };
 
     await guardar(async () => {
@@ -329,6 +337,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       fechaEntrega: formatFechaLocalDateTime(actividadForm.fechaEntrega),
       tiempoEstimadoHoras: actividadForm.tiempoEstimadoHoras ? Number(actividadForm.tiempoEstimadoHoras) : null,
       materiaInscritaId: Number(actividadForm.materiaInscritaId),
+      tipoActividadId: Number(actividadForm.tipoActividadId),
       porcentajeEvaluacion: porcentajeNuevo,
       fechaCompletada:
         editando.tipo === "actividad" && actividadForm.fechaCompletada
@@ -476,7 +485,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       tiempoEstimadoHoras: actividad.tiempoEstimadoHoras
         ? Number(actividad.tiempoEstimadoHoras)
         : null,
-      tipoActividad: actividad.tipoActividad,
+      tipoActividadId: Number(actividad.tipoActividadId),
       materiaInscritaId: Number(actividad.materiaInscritaId),
       porcentajeEvaluacion: Number(actividad.porcentajeEvaluacion || 0),
       estado: "COMPLETADA",
@@ -505,7 +514,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       tiempoEstimadoHoras: actividad.tiempoEstimadoHoras
         ? Number(actividad.tiempoEstimadoHoras)
         : null,
-      tipoActividad: actividad.tipoActividad,
+      tipoActividadId: Number(actividad.tipoActividadId),
       materiaInscritaId: Number(actividad.materiaInscritaId),
       porcentajeEvaluacion: Number(actividad.porcentajeEvaluacion || 0),
       estado: "ACTIVO",
@@ -550,8 +559,9 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
     setEditando({ tipo: "materia", id: materia.id });
     setMateriaForm({
       cicloAcademicoId: materia.cicloAcademicoId,
-      nombre: materia.nombre,
-      codigo: materia.codigo,
+      catalogoMateriaId: materia.catalogoMateriaId
+        ?? catalogoMaterias.find((item) => item.codigo === materia.codigo)?.id
+        ?? "",
       grupoTeorico: materia.grupoTeorico,
     });
     setFormularioAbierto(true);
@@ -581,7 +591,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       fechaInicio: actividad.fechaInicio,
       fechaEntrega: actividad.fechaEntrega,
       tiempoEstimadoHoras: actividad.tiempoEstimadoHoras,
-      tipoActividad: actividad.tipoActividad,
+      tipoActividadId: actividad.tipoActividadId,
       materiaInscritaId: actividad.materiaInscritaId,
       porcentajeEvaluacion: actividad.porcentajeEvaluacion,
       notaObtenida: actividad.notaObtenida ?? "",
@@ -672,6 +682,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
       {vista === "materias" && (
         <TablaMaterias
           materias={materias}
+          tiposActividad={tiposActividad}
           onEdit={editarMateria}
           onDelete={(id) => eliminar("materia", id)}
         />
@@ -725,6 +736,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
         {vista === "materias" && (
           <FormularioMateria
             ciclos={ciclos}
+            catalogoMaterias={catalogoMaterias}
             form={materiaForm}
             setForm={setMateriaForm}
             onSubmit={guardarMateria}
@@ -744,6 +756,7 @@ function GestionAcademica({ estudiante, onActividadesActualizadas }) {
         {vista === "actividades" && (
           <FormularioActividades
             materias={materias}
+            tiposActividad={tiposActividad}
             form={actividadForm}
             setForm={setActividadForm}
             onSubmit={guardarActividad}
@@ -791,7 +804,7 @@ function FormularioCiclo({ form, setForm, onSubmit, onCancel }) {
   );
 }
 
-function FormularioMateria({ ciclos, form, setForm, onSubmit, onCancel }) {
+function FormularioMateria({ ciclos, catalogoMaterias, form, setForm, onSubmit, onCancel }) {
   return (
     <form className="grid gap-4 sm:grid-cols-2" onSubmit={onSubmit}>
       <Selector
@@ -801,8 +814,18 @@ function FormularioMateria({ ciclos, form, setForm, onSubmit, onCancel }) {
         onValorChange={(cicloAcademicoId) => setForm({ ...form, cicloAcademicoId })}
         options={ciclos.map((ciclo) => ({ value: ciclo.id, label: `${ciclo.nombre} - ${ciclo.anio}` }))}
       />
-      <CampoUi className="sm:col-span-2" label="Nombre" value={form.nombre} onValorChange={(nombre) => setForm({ ...form, nombre })} />
-      <CampoUi label="Codigo" value={form.codigo} onValorChange={(codigo) => setForm({ ...form, codigo })} />
+      <Selector
+        className="sm:col-span-2"
+        label="Materia del catálogo"
+        value={form.catalogoMateriaId}
+        onValorChange={(catalogoMateriaId) => setForm({ ...form, catalogoMateriaId })}
+        options={catalogoMaterias.map((materia) => ({
+          value: materia.id,
+          label: `${materia.codigo} - ${materia.nombre}`,
+        }))}
+        ayuda={catalogoMaterias.length === 0 ? "El administrador debe agregar materias al catálogo antes de inscribirlas." : undefined}
+        disabled={catalogoMaterias.length === 0}
+      />
       <CampoUi label="Grupo teorico" value={form.grupoTeorico} onValorChange={(grupoTeorico) => setForm({ ...form, grupoTeorico })} />
       <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:col-span-2 sm:flex-row sm:justify-end">
         <Boton variante="secundario" onClick={onCancel}>
@@ -867,7 +890,7 @@ function FormularioHorario({ materias, actividades, form, setForm, onSubmit, onC
 }
 
 //form de actividades
-function FormularioActividades({ materias, form, setForm, onSubmit, onCancel, fechaEntregaMinima }) {
+function FormularioActividades({ materias, tiposActividad, form, setForm, onSubmit, onCancel, fechaEntregaMinima }) {
   return (
     <form className="grid gap-4 sm:grid-cols-2" onSubmit={onSubmit}>
       <Selector
@@ -876,7 +899,14 @@ function FormularioActividades({ materias, form, setForm, onSubmit, onCancel, fe
         onValorChange={(materiaInscritaId) => setForm({ ...form, materiaInscritaId })}
         options={materias.map((materia) => ({ value: materia.id, label: `${materia.codigo} - ${materia.nombre}` }))}
       />
-      <Selector label="Tipo de Actividad" value={form.tipoActividad} onValorChange={(tipoActividad) => setForm({ ...form, tipoActividad })} options={["PARCIAL", "LABORATORIO", "PROYECTO", "INVESTIGACION"]} />
+      <Selector
+        label="Tipo de actividad"
+        value={form.tipoActividadId}
+        onValorChange={(tipoActividadId) => setForm({ ...form, tipoActividadId })}
+        options={tiposActividad.map((tipo) => ({ value: tipo.id, label: tipo.nombre }))}
+        disabled={tiposActividad.length === 0}
+        ayuda={tiposActividad.length === 0 ? "No hay tipos de actividad disponibles." : undefined}
+      />
       <CampoUi className="sm:col-span-2" label="Nombre" value={form.nombre} onValorChange={(nombre) => setForm({ ...form, nombre })} />
       <CampoUi className="sm:col-span-2" label="Porcentaje de evaluacion (ej. 10%)" type="number" min={1} max={100} value={form.porcentajeEvaluacion} onValorChange={(porcentajeEvaluacion) => setForm({ ...form, porcentajeEvaluacion })} />
       <CampoUi label="Fecha inicio" type="datetime-local" value={form.fechaInicio} onValorChange={(fechaInicio) => setForm({ ...form, fechaInicio })} />

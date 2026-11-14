@@ -43,7 +43,8 @@ class TokenServiceTest {
         assertThat(jwt.getIssuedAt()).isEqualTo(ahora);
         assertThat(jwt.getExpiresAt()).isEqualTo(ahora.plus(Duration.ofHours(8)));
         assertThat(emitido.expiraEn()).isEqualTo(jwt.getExpiresAt());
-        assertThat(jwt.getClaims()).containsOnlyKeys("iss", "sub", "iat", "exp");
+        assertThat(jwt.getClaimAsString("rol")).isEqualTo("ESTUDIANTE");
+        assertThat(jwt.getClaims()).containsOnlyKeys("iss", "sub", "iat", "exp", "rol");
     }
 
     // Barrera central de emisión

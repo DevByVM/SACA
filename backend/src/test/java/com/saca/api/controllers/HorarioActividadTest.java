@@ -37,6 +37,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.saca.api.TipoActividadPrueba.crear;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -144,7 +145,7 @@ class HorarioActividadTest {
         nueva.setPorcentajeEvaluacion(10);
         nueva.setTiempoEstimadoHoras(4);
         nueva.setEstado("ACTIVO");
-        nueva.setTipoActividad(tipo);
+        nueva.setTipoActividad(crear(tipo));
         nueva.setMateriaInscrita(materia);
         return actividadRepository.save(nueva);
     }
@@ -188,7 +189,8 @@ class HorarioActividadTest {
                  "porcentajeEvaluacion":%s,"tiempoEstimadoHoras":4,"estado":"ACTIVO","tipoActividad":"%s",
                  "materiaInscritaId":%s,"notaId":null,"notaObtenida":null}
                 """.formatted(actividad.getNombre(), FORMATO_FECHA.format(actividad.getFechaInicio()),
-                FORMATO_FECHA.format(actividad.getFechaEntrega()), porcentaje, actividad.getTipoActividad(), materiaId);
+                FORMATO_FECHA.format(actividad.getFechaEntrega()), porcentaje,
+                actividad.getTipoActividad().getNombre(), materiaId);
     }
 
     private JsonNode json(MvcResult resultado) throws Exception {

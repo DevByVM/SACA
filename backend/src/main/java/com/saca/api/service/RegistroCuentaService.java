@@ -28,6 +28,7 @@ import com.saca.api.entity.Estudiante;
 import com.saca.api.exception.ValidacionNegocioException;
 import com.saca.api.proteccion.ProteccionSolicitudes;
 import com.saca.api.repository.EstudianteRepository;
+import com.saca.api.repository.AdministradorRepository;
 import com.saca.api.service.CorreoActivacionService.CorreoNoDisponibleException;
 import com.saca.api.service.CorreoActivacionService.CorreoNoEnviadoException;
 import com.saca.api.service.TokenActivacionService.EstadoToken;
@@ -84,6 +85,7 @@ public class RegistroCuentaService {
             "Este enlace ya se utilizó. Inicia sesión con tu correo institucional y tu contraseña.";
 
     private final EstudianteRepository repository;
+    private final AdministradorRepository administradores;
     private final TokenActivacionService tokens;
     private final ContraseniaPendienteService contraseniaPendiente;
     private final CorreoActivacionService correo;
@@ -96,11 +98,13 @@ public class RegistroCuentaService {
     private final AtomicLong ultimoAvisoLimite = new AtomicLong(Long.MIN_VALUE / 2);
     private final AtomicLong ultimoAvisoSinCorreo = new AtomicLong(Long.MIN_VALUE / 2);
 
-    public RegistroCuentaService(EstudianteRepository repository, TokenActivacionService tokens,
+    public RegistroCuentaService(EstudianteRepository repository, AdministradorRepository administradores,
+            TokenActivacionService tokens,
             ContraseniaPendienteService contraseniaPendiente, CorreoActivacionService correo,
             EnvioCorreoActivacion envio, ProteccionSolicitudes proteccion,
             PlatformTransactionManager gestorTransacciones, Clock relojAplicacion) {
         this.repository = repository;
+        this.administradores = administradores;
         this.tokens = tokens;
         this.contraseniaPendiente = contraseniaPendiente;
         this.correo = correo;
@@ -152,6 +156,9 @@ public class RegistroCuentaService {
     private TokenGenerado prepararCuenta(String carnet, String correoInstitucional, String hashPendiente) {
         List<Long> encontrados = repository.idsPorCarnetOCorreo(carnet, correoInstitucional);
         if (encontrados.isEmpty()) {
+            if (administradores.findByCorreoIgnoreCase(correoInstitucional).isPresent()) {
+                return null;
+            }
             Estudiante nuevo = new Estudiante();
             nuevo.setCarnet(carnet);
             nuevo.setCorreoInstitucional(correoInstitucional);

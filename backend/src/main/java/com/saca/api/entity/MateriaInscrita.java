@@ -22,6 +22,10 @@ public class MateriaInscrita {
 	@JoinColumn(name = "ciclo_academico_id", nullable = false)
 	private CicloAcademico cicloAcademico;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "catalogo_materia_id")
+	private MateriaCatalogo catalogoMateria;
+
 	@Column(name = "nombre", nullable = false, length = 120)
 	private String nombre;
 
@@ -48,6 +52,14 @@ public class MateriaInscrita {
 
 	public void setCicloAcademico(CicloAcademico cicloAcademico) {
 		this.cicloAcademico = cicloAcademico;
+	}
+
+	public MateriaCatalogo getCatalogoMateria() {
+		return catalogoMateria;
+	}
+
+	public void setCatalogoMateria(MateriaCatalogo catalogoMateria) {
+		this.catalogoMateria = catalogoMateria;
 	}
 
 	public String getNombre() {
