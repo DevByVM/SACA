@@ -2,6 +2,7 @@ package com.saca.api.service;
 
 import com.saca.api.dto.response.CargaPorSemanasResponse;
 import com.saca.api.dto.response.CargaSemanalResponse;
+import com.saca.api.dto.response.ParametrosCargaResponse;
 import com.saca.api.dto.response.SemanaCargaResponse;
 import com.saca.api.entity.ActividadAcademica;
 import com.saca.api.entity.CicloAcademico;
@@ -25,12 +26,14 @@ import static com.saca.api.TipoActividadPrueba.crear;
 // el cálculo de la carga semanal
 class CargaSemanasCalculoTest {
 
+    private static final ParametrosCargaResponse PARAMETROS = new ParametrosCargaResponse(20, 35);
+
     // Miércoles 4 de noviembre de 2026 a las 10:00
     private static final LocalDateTime AHORA = LocalDateTime.of(2026, 11, 4, 10, 0);
     private static final LocalDate LUNES = LocalDate.of(2026, 11, 2);
 
-    private final CargaAcademicaService cargaAcademicaService = new CargaAcademicaService(null, new ActividadAcademicaMapper(), null);
-    private final CargaSemanasService servicio = new CargaSemanasService(cargaAcademicaService, null, null, null);
+    private final CargaAcademicaService cargaAcademicaService = new CargaAcademicaService(null, new ActividadAcademicaMapper(), null, null);
+    private final CargaSemanasService servicio = new CargaSemanasService(cargaAcademicaService, null, null, null, null);
     private long siguienteId = 1;
 
     private CicloAcademico ciclo(EstadoCiclo estado, LocalDate inicio, LocalDate fin) {
@@ -74,7 +77,7 @@ class CargaSemanasCalculoTest {
     }
 
     private CargaPorSemanasResponse calcular(List<ActividadAcademica> actividades) {
-        return servicio.calcular(AHORA, List.of(cicloActivo), actividades);
+        return servicio.calcular(AHORA, List.of(cicloActivo), actividades, PARAMETROS);
     }
 
     private static List<String> nombres(List<?> actividades) {
@@ -82,6 +85,20 @@ class CargaSemanasCalculoTest {
     }
 
     // ================= Semanas
+
+    @Test
+    void todasLasSemanasUsanLosMismosUmbralesPersonalizados() {
+        var respuesta = servicio.calcular(AHORA, List.of(cicloActivo), List.of(
+                actividad("Exactamente primero", 12.5, 5, AHORA.plusHours(2)),
+                actividad("Exactamente segundo", 28.75, 5, AHORA.plusWeeks(1)),
+                actividad("Supera segundo", 28.76, 5, AHORA.plusWeeks(2))), new ParametrosCargaResponse(12.5, 28.75));
+        assertThat(respuesta.semanas()).extracting(s -> s.carga().horas().nivel()).containsExactly(
+                NivelCarga.NORMAL, NivelCarga.ELEVADA, NivelCarga.CRITICA, NivelCarga.NORMAL);
+        assertThat(respuesta.semanas()).allSatisfy(semana -> {
+            assertThat(semana.carga().horas().umbralElevada()).isEqualByComparingTo("12.5");
+            assertThat(semana.carga().horas().umbralCritica()).isEqualByComparingTo("28.75");
+        });
+    }
 
     @Test
     void lasSemanasVanDeLunesADomingoDesdeLaActualHastaElFinDelCiclo() {
@@ -149,7 +166,7 @@ class CargaSemanasCalculoTest {
 
         CargaSemanalResponse semana = calcular(actividades).semanas().get(2).carga();
         CargaSemanalResponse directa = cargaAcademicaService.calcular(actividades,
-                LocalDate.of(2026, 11, 16).atStartOfDay(), LocalDate.of(2026, 11, 22).atTime(LocalTime.MAX));
+                LocalDate.of(2026, 11, 16).atStartOfDay(), LocalDate.of(2026, 11, 22).atTime(LocalTime.MAX), PARAMETROS);
 
         assertThat(semana.nivelGeneral()).isEqualTo(directa.nivelGeneral()).isEqualTo(NivelCarga.CRITICA);
         assertThat(semana.horas()).isEqualTo(directa.horas());
@@ -195,7 +212,7 @@ class CargaSemanasCalculoTest {
         CicloAcademico largo = ciclo(EstadoCiclo.ACTIVO, LocalDate.of(2026, 8, 15), LocalDate.of(2026, 12, 6));
         ActividadAcademica diciembre = actividad(materia(largo), "Final de diciembre", 4, 20, LocalDateTime.of(2026, 12, 2, 9, 0));
 
-        CargaPorSemanasResponse respuesta = servicio.calcular(AHORA, List.of(corto, largo), List.of(diciembre));
+        CargaPorSemanasResponse respuesta = servicio.calcular(AHORA, List.of(corto, largo), List.of(diciembre), PARAMETROS);
 
         assertThat(respuesta.inicioCiclo()).isEqualTo(LocalDate.of(2026, 8, 15));
         assertThat(respuesta.finCiclo()).isEqualTo(LocalDate.of(2026, 12, 6));
@@ -207,8 +224,8 @@ class CargaSemanasCalculoTest {
     void sinCicloActivoNoHaySemanasNiFechas() {
         CicloAcademico finalizado = ciclo(EstadoCiclo.FINALIZADO, LocalDate.of(2026, 8, 1), LocalDate.of(2026, 12, 15));
 
-        CargaPorSemanasResponse sinCiclos = servicio.calcular(AHORA, List.of(), List.of());
-        CargaPorSemanasResponse soloFinalizado = servicio.calcular(AHORA, List.of(finalizado), List.of());
+        CargaPorSemanasResponse sinCiclos = servicio.calcular(AHORA, List.of(), List.of(), PARAMETROS);
+        CargaPorSemanasResponse soloFinalizado = servicio.calcular(AHORA, List.of(finalizado), List.of(), PARAMETROS);
 
         for (CargaPorSemanasResponse respuesta : List.of(sinCiclos, soloFinalizado)) {
             assertThat(respuesta.cicloActivo()).isFalse();
@@ -223,7 +240,7 @@ class CargaSemanasCalculoTest {
         CicloAcademico terminado = ciclo(EstadoCiclo.ACTIVO, LocalDate.of(2026, 2, 3), LocalDate.of(2026, 6, 20));
 
         CargaPorSemanasResponse respuesta = servicio.calcular(AHORA, List.of(terminado),
-                List.of(actividad(materia(terminado), "De junio", 5, 20, LocalDateTime.of(2026, 6, 10, 9, 0))));
+                List.of(actividad(materia(terminado), "De junio", 5, 20, LocalDateTime.of(2026, 6, 10, 9, 0))), PARAMETROS);
 
         assertThat(respuesta.cicloActivo()).isTrue();
         assertThat(respuesta.finCiclo()).isEqualTo(LocalDate.of(2026, 6, 20));
@@ -234,7 +251,7 @@ class CargaSemanasCalculoTest {
     void unCicloQueAunNoEmpiezaComienzaEnLaSemanaDeSuInicio() {
         CicloAcademico futuro = ciclo(EstadoCiclo.ACTIVO, LocalDate.of(2026, 12, 2), LocalDate.of(2026, 12, 20));
 
-        CargaPorSemanasResponse respuesta = servicio.calcular(AHORA, List.of(futuro), List.of());
+        CargaPorSemanasResponse respuesta = servicio.calcular(AHORA, List.of(futuro), List.of(), PARAMETROS);
 
         assertThat(respuesta.semanas()).extracting(SemanaCargaResponse::inicio).containsExactly(
                 LocalDate.of(2026, 11, 30), LocalDate.of(2026, 12, 7), LocalDate.of(2026, 12, 14));
@@ -245,7 +262,7 @@ class CargaSemanasCalculoTest {
     void unCicloDemasiadoLargoSeLimitaA53Semanas() {
         CicloAcademico largo = ciclo(EstadoCiclo.ACTIVO, LocalDate.of(2026, 1, 1), LocalDate.of(2029, 1, 1));
 
-        CargaPorSemanasResponse respuesta = servicio.calcular(AHORA, List.of(largo), List.of());
+        CargaPorSemanasResponse respuesta = servicio.calcular(AHORA, List.of(largo), List.of(), PARAMETROS);
 
         assertThat(respuesta.semanas()).hasSize(CargaSemanasService.MAXIMO_SEMANAS);
         assertThat(respuesta.semanasLimitadas()).isTrue();
@@ -255,7 +272,7 @@ class CargaSemanasCalculoTest {
     void elFinDeCicloEnMitadDeSemanaIncluyeEsaSemanaCompleta() {
         CicloAcademico termina = ciclo(EstadoCiclo.ACTIVO, LocalDate.of(2026, 8, 1), LocalDate.of(2026, 11, 11));
 
-        CargaPorSemanasResponse respuesta = servicio.calcular(AHORA, List.of(termina), List.of());
+        CargaPorSemanasResponse respuesta = servicio.calcular(AHORA, List.of(termina), List.of(), PARAMETROS);
 
         assertThat(respuesta.semanas()).extracting(SemanaCargaResponse::fin).containsExactly(
                 LocalDate.of(2026, 11, 8), LocalDate.of(2026, 11, 15));

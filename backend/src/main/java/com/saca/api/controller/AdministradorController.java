@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.saca.api.dto.RegistroRequest;
+import com.saca.api.dto.request.ActualizarUsuarioAdminRequest;
 import com.saca.api.dto.request.CatalogoMateriaRequest;
 import com.saca.api.dto.request.CrearUsuarioAdminRequest;
 import com.saca.api.dto.request.EstadoCatalogoMateriaRequest;
@@ -24,6 +25,7 @@ import com.saca.api.dto.response.UsuarioAdminResponse;
 import com.saca.api.service.AdministradorGestionService;
 import com.saca.api.service.CatalogoMateriaService;
 import com.saca.api.service.RegistroCuentaService;
+import com.saca.api.service.RestablecimientoContraseniaService;
 
 import jakarta.validation.Valid;
 
@@ -34,12 +36,25 @@ public class AdministradorController {
     private final AdministradorGestionService gestion;
     private final CatalogoMateriaService catalogo;
     private final RegistroCuentaService registro;
+    private final RestablecimientoContraseniaService restablecimiento;
 
     public AdministradorController(AdministradorGestionService gestion, CatalogoMateriaService catalogo,
-            RegistroCuentaService registro) {
+            RegistroCuentaService registro, RestablecimientoContraseniaService restablecimiento) {
         this.gestion = gestion;
         this.catalogo = catalogo;
         this.registro = registro;
+        this.restablecimiento = restablecimiento;
+    }
+
+    @PutMapping("/usuarios/{id}")
+    public UsuarioAdminResponse actualizarUsuario(@PathVariable Long id,
+            @Valid @RequestBody ActualizarUsuarioAdminRequest request) {
+        return gestion.actualizar(id, request);
+    }
+
+    @PostMapping("/usuarios/{id}/restablecimiento")
+    public CuentaResponse solicitarRestablecimiento(@PathVariable Long id) {
+        return restablecimiento.solicitar(id);
     }
 
     @GetMapping("/usuarios")

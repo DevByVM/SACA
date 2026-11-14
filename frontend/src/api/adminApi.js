@@ -1,6 +1,22 @@
 import { apiRequest } from './client'
 
+export const obtenerParametrosCargaAdmin = () => apiRequest('/admin/parametros-carga')
+
+export const guardarParametrosCargaAdmin = (datos) => apiRequest('/admin/parametros-carga', {
+  method: 'PUT',
+  body: JSON.stringify(datos),
+})
+
 export const listarUsuariosAdmin = () => apiRequest('/admin/usuarios')
+
+export const actualizarUsuarioAdmin = (id, datos) => apiRequest(`/admin/usuarios/${id}`, {
+  method: 'PUT',
+  body: JSON.stringify(datos),
+})
+
+export const solicitarRestablecimientoAdmin = (id) => apiRequest(`/admin/usuarios/${id}/restablecimiento`, {
+  method: 'POST',
+})
 
 export const crearUsuarioAdmin = (carnet) => apiRequest('/admin/usuarios', {
   method: 'POST',

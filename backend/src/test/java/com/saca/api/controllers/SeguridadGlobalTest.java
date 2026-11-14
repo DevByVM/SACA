@@ -63,7 +63,8 @@ class SeguridadGlobalTest {
 
     // Únicas rutas que pueden responder sin token, con su método
     private static final Set<String> RUTAS_PUBLICAS = Set.of("POST /api/auth/login", "POST /api/auth/registro",
-            "POST /api/auth/activacion", "POST /api/auth/activacion/consultar", "POST /api/auth/reenviar-activacion");
+            "POST /api/auth/activacion", "POST /api/auth/activacion/consultar", "POST /api/auth/reenviar-activacion",
+            "POST /api/auth/restablecimiento", "POST /api/auth/restablecimiento/consultar");
 
     @Autowired
     private MockMvc mockMvc;
@@ -189,7 +190,7 @@ class SeguridadGlobalTest {
     }
 
     @Test
-    void sinTokenTodasLasRutasResponden401JsonSalvoLoginYRegistro() throws Exception {
+    void sinTokenTodasLasRutasResponden401JsonSalvoLosFlujosPublicosDeCuenta() throws Exception {
         List<String> publicasEncontradas = new ArrayList<>();
         List<String> noProtegidas = new ArrayList<>();
 

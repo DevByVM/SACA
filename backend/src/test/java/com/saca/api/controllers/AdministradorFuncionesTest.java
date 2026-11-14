@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -91,6 +92,58 @@ class AdministradorFuncionesTest {
         assertThat(respuesta.get("autenticado").asBoolean()).isTrue();
         assertThat(respuesta.get("rol").asText()).isEqualTo("ADMINISTRADOR");
         assertThat(respuesta.get("carnet").isNull()).isTrue();
+        String token = respuesta.get("token").asText();
+        assertThat(token).isNotBlank();
+        mockMvc.perform(get("/api/admin/usuarios").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void unaContraseniaAdministrativaIncorrectaNoEmiteSesion() throws Exception {
+        String cuerpo = """
+                {"correoInstitucional":"%s","contrasenia":"ClaveIncorrecta123"}
+                """.formatted(administrador.getCorreo());
+        JsonNode respuesta = objectMapper.readTree(mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON).content(cuerpo))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(respuesta.get("autenticado").asBoolean()).isFalse();
+        assertThat(respuesta.get("token").isNull()).isTrue();
+    }
+
+    @Test
+    void funcionesAdministrativasExigenSesionYRolAdministrador() throws Exception {
+        for (String ruta : List.of("/api/admin/usuarios", "/api/admin/catalogo-materias",
+                "/api/admin/tipos-actividad", "/api/admin/plantillas-planificacion")) {
+            mockMvc.perform(get(ruta)).andExpect(status().isUnauthorized());
+            mockMvc.perform(get(ruta).header("Authorization", "Bearer " + tokenEstudiante))
+                    .andExpect(status().isForbidden());
+            mockMvc.perform(get(ruta).header("Authorization", "Bearer " + tokenAdministrador))
+                    .andExpect(status().isOk());
+        }
+        mockMvc.perform(post("/api/admin/usuarios").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/admin/usuarios").header("Authorization", "Bearer " + tokenEstudiante)
+                .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void loginEstudiantilConservaSuRolYSuAccesoAlPerfil() throws Exception {
+        String cuerpo = """
+                {"correoInstitucional":"%s","contrasenia":"Estudiante123"}
+                """.formatted(estudiante.getCorreoInstitucional());
+        JsonNode respuesta = objectMapper.readTree(mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON).content(cuerpo))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(respuesta.get("autenticado").asBoolean()).isTrue();
+        assertThat(respuesta.get("rol").asText()).isEqualTo("ESTUDIANTE");
+        String token = respuesta.get("token").asText();
+        mockMvc.perform(get("/api/auth/perfil").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/admin/usuarios").header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/auth/perfil").header("Authorization", "Bearer " + tokenAdministrador))
+                .andExpect(status().isForbidden());
     }
 
     @Test

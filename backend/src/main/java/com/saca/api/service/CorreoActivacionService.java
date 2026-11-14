@@ -60,6 +60,24 @@ public class CorreoActivacionService {
     }
 
     public void enviarActivacion(String correoDestino, String token, LocalDateTime expiraEn) {
+        enviar(correoDestino, token, expiraEn, ASUNTO, () -> cuerpo(enlace(token), expiraEn));
+    }
+
+    public void enviarRestablecimiento(String correoDestino, String token, LocalDateTime expiraEn) {
+        enviar(correoDestino, token, expiraEn, "Restablece tu contraseña de SACA UES", () -> """
+                Administración solicitó restablecer tu contraseña de SACA UES.
+
+                Abre este enlace para elegir una nueva contraseña:
+                %s/#restablecimiento=%s
+
+                El enlace es de un solo uso y vence el %s (hora de El Salvador).
+                Tu contraseña actual sigue vigente hasta completar el cambio.
+                Si no esperabas este mensaje, no abras el enlace y consulta con administración.
+                """.formatted(urlFrontend, token, FORMATO_VENCIMIENTO.format(expiraEn)));
+    }
+
+    private void enviar(String correoDestino, String token, LocalDateTime expiraEn, String asunto,
+            java.util.function.Supplier<String> texto) {
         if (!disponible()) {
             throw new CorreoNoDisponibleException();
         }
@@ -70,8 +88,8 @@ public class CorreoActivacionService {
         SimpleMailMessage mensaje = new SimpleMailMessage();
         mensaje.setFrom(remitente);
         mensaje.setTo(correoDestino);
-        mensaje.setSubject(ASUNTO);
-        mensaje.setText(cuerpo(enlace(token), expiraEn));
+        mensaje.setSubject(asunto);
+        mensaje.setText(texto.get());
 
         try {
             clienteSmtp.send(mensaje);

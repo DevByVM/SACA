@@ -2,6 +2,7 @@ package com.saca.api.service;
 
 import com.saca.api.dto.response.CalendarioPeriodoResponse;
 import com.saca.api.dto.response.CargaSemanalResponse;
+import com.saca.api.dto.response.ParametrosCargaResponse;
 import com.saca.api.dto.response.EventoCalendarioResponse;
 import com.saca.api.dto.response.ResumenDiaCalendarioResponse;
 import com.saca.api.entity.ActividadAcademica;
@@ -27,6 +28,8 @@ import static com.saca.api.TipoActividadPrueba.crear;
 
 // Vista mensual del calendario: periodo arbitrario con resumen diario calculado con las reglas de la carga semanal
 class CalendarioPeriodoCalculoTest {
+
+    private static final ParametrosCargaResponse PARAMETROS = new ParametrosCargaResponse(20, 35);
 
     // Cuadrícula de noviembre de 2026: del lunes 26 de octubre al domingo 6 de diciembre
     private static final LocalDate DESDE = LocalDate.of(2026, 10, 26);
@@ -178,8 +181,8 @@ class CalendarioPeriodoCalculoTest {
                 actividad("Parcial C", 40, 2, ahora.plusDays(4).withHour(9)),
                 actividad("Tarea", 5, 1, ahora.plusDays(4).withHour(15)));
 
-        CargaSemanalResponse carga = new CargaAcademicaService(null, new ActividadAcademicaMapper(), null)
-                .calcular(actividades, ahora, ahora.plusDays(7));
+        CargaSemanalResponse carga = new CargaAcademicaService(null, new ActividadAcademicaMapper(), null, null)
+                .calcular(actividades, ahora, ahora.plusDays(7), PARAMETROS);
         CalendarioPeriodoResponse periodo = servicio.calcularPeriodo(ahora.toLocalDate(), ahora.toLocalDate().plusDays(6),
                 List.of(), actividades);
 

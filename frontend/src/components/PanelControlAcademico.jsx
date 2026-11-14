@@ -30,6 +30,8 @@ const TONOS_SEMAFORO = {
 function PanelControlAcademico({ estudiante, onNavegar }) {
   const {
     cargando,
+    error,
+    reintentar,
     actividades,
     horasPendientes,
     ventana,
@@ -50,6 +52,11 @@ function PanelControlAcademico({ estudiante, onNavegar }) {
       <EstadoVacio cargando mensaje="Sincronizando análisis horario de SACA UES..." />
     );
   }
+
+  if (error || !indicadorHoras) return <Aviso tono="peligro" titulo="No se pudo cargar el panel">
+    <p>{error || "No se recibieron los indicadores de carga. Inténtalo de nuevo."}</p>
+    <Boton variante="secundario" onClick={reintentar} className="mt-3">Reintentar</Boton>
+  </Aviso>;
 
   // Avisos: una entrada por tipo (alta ponderación / conflicto laboral), en el orden de las actividades
   const avisos = actividades.flatMap((act) => {

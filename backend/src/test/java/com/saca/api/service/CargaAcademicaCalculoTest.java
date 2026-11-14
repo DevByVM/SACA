@@ -1,6 +1,7 @@
 package com.saca.api.service;
 
 import com.saca.api.dto.response.CargaSemanalResponse;
+import com.saca.api.dto.response.ParametrosCargaResponse;
 import com.saca.api.entity.ActividadAcademica;
 import com.saca.api.entity.MateriaInscrita;
 import com.saca.api.entity.NivelCarga;
@@ -20,10 +21,12 @@ import static com.saca.api.TipoActividadPrueba.crear;
 // Cálculo puro de la carga semanal (horas y exigencia evaluativa) con una ventana fija
 class CargaAcademicaCalculoTest {
 
+    private static final ParametrosCargaResponse PARAMETROS = new ParametrosCargaResponse(20, 35);
+
     private static final LocalDateTime DESDE = LocalDateTime.of(2026, 11, 2, 8, 0);
     private static final LocalDateTime HASTA = DESDE.plusDays(7);
 
-    private final CargaAcademicaService servicio = new CargaAcademicaService(null, new ActividadAcademicaMapper(), null);
+    private final CargaAcademicaService servicio = new CargaAcademicaService(null, new ActividadAcademicaMapper(), null, null);
     private final MateriaInscrita materia = materia();
     private long siguienteId = 1;
 
@@ -54,7 +57,7 @@ class CargaAcademicaCalculoTest {
     }
 
     private CargaSemanalResponse calcular(ActividadAcademica... actividades) {
-        return servicio.calcular(List.of(actividades), DESDE, HASTA);
+        return servicio.calcular(List.of(actividades), DESDE, HASTA, PARAMETROS);
     }
 
     private static void assertDecimal(BigDecimal actual, String esperado) {
@@ -92,6 +95,22 @@ class CargaAcademicaCalculoTest {
     }
 
     // ================= Límites de la carga horaria
+
+    @Test
+    void usaUmbralesConfiguradosInclusivosYConservaLaExigenciaEvaluativa() {
+        ParametrosCargaResponse personalizados = new ParametrosCargaResponse(12.5, 28.75);
+        for (double[] caso : new double[][] {{12.5, 0}, {12.51, 1}, {28.75, 1}, {28.76, 2}}) {
+            CargaSemanalResponse r = servicio.calcular(List.of(enDias(caso[0], 5, 1)), DESDE, HASTA, personalizados);
+            assertThat(r.horas().nivel()).isEqualTo(NivelCarga.values()[(int) caso[1]]);
+            assertThat(r.horas().umbralElevada()).isEqualByComparingTo("12.5");
+            assertThat(r.horas().umbralCritica()).isEqualByComparingTo("28.75");
+            assertThat(r.exigencia().nivel()).isEqualTo(NivelCarga.NORMAL);
+            assertThat(r.motivos().get(0)).contains(caso[1] == 2 ? "28.75 h" : "12.5 h");
+        }
+        var exigenciaAntes = calcular(enDias(10, 30, 1)).exigencia();
+        var exigenciaDespues = servicio.calcular(List.of(enDias(10, 30, 1)), DESDE, HASTA, personalizados).exigencia();
+        assertThat(exigenciaDespues).isEqualTo(exigenciaAntes);
+    }
 
     @Test
     void limitesDeHoras() {

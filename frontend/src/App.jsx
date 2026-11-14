@@ -27,6 +27,7 @@ import GestionUsuarios from "./components/admin/GestionUsuarios";
 import GestionCatalogoMaterias from "./components/admin/GestionCatalogoMaterias";
 import GestionTiposActividad from "./components/admin/GestionTiposActividad";
 import GestionPlantillas from "./components/admin/GestionPlantillas";
+import GestionParametrosCarga from "./components/admin/GestionParametrosCarga";
 function App() {
 
   const [logueado, setLogueado] = useState(
@@ -41,6 +42,9 @@ function App() {
   // dirección en cuanto se lee (ver el efecto siguiente)
   const [tokenActivacion, setTokenActivacion] = useState(
     () => extraerTokenDelFragmento(window.location.hash)
+  );
+  const [tokenRestablecimiento, setTokenRestablecimiento] = useState(
+    () => extraerTokenDelFragmento(window.location.hash, "restablecimiento")
   );
 
   // Cómo abrir el inicio de sesión al salir de la activación: con el correo escrito y un aviso, o en el reenvío
@@ -58,9 +62,14 @@ function App() {
     quitarFragmento(window.location, window.history);
     const alCambiarFragmento = () => {
       const token = extraerTokenDelFragmento(window.location.hash);
+      const restablecimiento = extraerTokenDelFragmento(window.location.hash, "restablecimiento");
       quitarFragmento(window.location, window.history);
       if (token) {
         setTokenActivacion(token);
+        setTokenRestablecimiento(null);
+      } else if (restablecimiento) {
+        setTokenRestablecimiento(restablecimiento);
+        setTokenActivacion(null);
       }
     };
     window.addEventListener("hashchange", alCambiarFragmento);
@@ -118,6 +127,20 @@ function App() {
         onIrAlInicio={() => salirDeActivacion({})}
       />
     );
+  }
+
+  if (tokenRestablecimiento) {
+    return <ActivacionCuenta
+      key={tokenRestablecimiento}
+      restablecimiento
+      token={tokenRestablecimiento}
+      onActivada={(correo) => {
+        cerrarSesion();
+        setTokenRestablecimiento(null);
+        setEntradaLogin((anterior) => ({ correo, aviso: "Contraseña restablecida. Ya puedes iniciar sesión.", modo: "login", clave: anterior.clave + 1 }));
+      }}
+      onIrAlInicio={() => setTokenRestablecimiento(null)}
+    />;
   }
 
   if (!logueado) {
@@ -201,6 +224,7 @@ function App() {
                 {vistaActiva === "admin-catalogo" && "Catálogo de materias"}
                 {vistaActiva === "admin-tipos-actividad" && "Tipos de actividad"}
                 {vistaActiva === "admin-plantillas" && "Plantillas de planificación"}
+                {vistaActiva === "admin-parametros-carga" && "Parámetros de carga académica"}
                 {vistaActiva === "dashboard" && "Panel de control"}
                 {vistaActiva === "academico" && "Gestión académica"}
                 {vistaActiva === "perfil" && "Perfil académico"}
@@ -255,6 +279,10 @@ function App() {
 
             {vistaActiva === "admin-plantillas" && estudiante?.rol === "ADMINISTRADOR" && (
               <GestionPlantillas />
+            )}
+
+            {vistaActiva === "admin-parametros-carga" && estudiante?.rol === "ADMINISTRADOR" && (
+              <GestionParametrosCarga />
             )}
 
             {vistaActiva === "dashboard" && (

@@ -277,6 +277,30 @@ CREATE TABLE `franjas_plantilla_planificacion` (
     REFERENCES `plantillas_planificacion` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- SDACAS-36: enlaces de restablecimiento separados de la activación; solo se guarda SHA-256.
+-- En instalaciones existentes Hibernate ddl-auto=update crea esta tabla sin alterar las cuentas.
+CREATE TABLE IF NOT EXISTS `tokens_restablecimiento` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `estudiante_id` bigint NOT NULL,
+  `hash_token` varchar(64) NOT NULL,
+  `expira_en` datetime(6) NOT NULL,
+  `usado_en` datetime(6) DEFAULT NULL,
+  `invalidado_en` datetime(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_restablecimiento_hash` (`hash_token`),
+  KEY `idx_restablecimiento_estudiante` (`estudiante_id`),
+  CONSTRAINT `fk_restablecimiento_estudiante` FOREIGN KEY (`estudiante_id`) REFERENCES `estudiantes` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- SDACAS-37: configuración global, sin relación por estudiante o por semana.
+CREATE TABLE IF NOT EXISTS `parametros_carga` (
+  `clave` varchar(20) NOT NULL,
+  `umbral_elevada` double NOT NULL,
+  `umbral_critica` double NOT NULL,
+  PRIMARY KEY (`clave`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+-- La aplicación crea GLOBAL con 20 y 35 si falta; conserva cualquier configuración existente.
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

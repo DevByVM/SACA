@@ -41,6 +41,59 @@ El administrador inicia sesión con su correo y contraseña. Desde el menú pued
 
 Si ejecutas el backend desde el IDE en vez de Docker, configura el SMTP de Mailpit según `.env.example` y arráncalo con `docker compose -f docker-compose.correo.yml --profile correo up -d`.
 
+## Gestión de usuarios y restablecimiento
+
+Administración puede editar nombre, carnet, correo institucional y habilitación de las cuentas de estudiante.
+El correo debe pertenecer a `@ues.edu.sv` y tanto el carnet como el correo deben ser únicos. El alta sigue
+siendo por carnet con activación por correo. Si se cambia el correo de una cuenta pendiente, se envía una
+nueva activación al nuevo destino y se invalida la anterior.
+
+Desde **Gestión de usuarios → Restablecer contraseña**, el administrador solicita un enlace que se envía al
+correo institucional vigente. El estudiante elige su contraseña; administración nunca la recibe ni la escribe.
+El enlace vence en una hora, es de un solo uso y una nueva solicitud sustituye la anterior. Solo se guarda su
+hash SHA-256. La contraseña anterior funciona hasta completar el cambio. El proceso conserva la habilitación,
+la activación y los contadores/bloqueo de la cuenta. Las cuentas pendientes deben activarse primero.
+Cambiar el correo invalida los enlaces de restablecimiento existentes.
+
+El envío usa el mismo SMTP y las mismas variables de correo que la activación. La operación administrativa
+confirma la aceptación por SMTP; un fallo devuelve un error y revierte la emisión. No hay reintentos automáticos.
+La tabla `tokens_restablecimiento` se crea con el mecanismo JPA `ddl-auto=update` ya utilizado en instalaciones
+existentes; el script inicial también la incluye.
+
+Para comprobar el correo de pruebas:
+
+```bash
+docker compose -f docker-compose.correo.yml --profile correo up -d
+cd backend
+SACA_PRUEBA_MAILPIT=true ./mvnw -Dtest=CorreoActivacionMailpitTest test
+```
+
+Esta comprobación usa H2 y Mailpit local. El resultado SMTP en producción debe registrarse aparte cuando se
+compruebe allí; el éxito local no demuestra entrega en producción.
+
+## Parámetros de carga académica — SDACAS-37
+
+El menú de administración incluye **Parámetros de carga**, con dos umbrales globales de horas inicialmente
+en **20 y 35**. Solo administración puede consultar y actualizar `GET/PUT /api/admin/parametros-carga`.
+Ambos valores deben ser finitos, positivos y el primero menor que el segundo; se admiten decimales.
+Guardar requiere confirmar el alcance global. Cancelar descarta la edición sin enviar una actualización.
+
+La configuración se guarda en `parametros_carga`, bajo la clave de dominio `GLOBAL`, sin relación con
+estudiantes o semanas. El arranque crea los valores iniciales únicamente si falta esa configuración.
+Las instalaciones existentes crean la nueva tabla mediante el `ddl-auto=update` utilizado por el proyecto,
+sin sustituir los datos guardados.
+
+La siguiente consulta de carga semanal o de semanas del ciclo toma los umbrales guardados. El cálculo,
+los motivos, los textos y las barras utilizan los mismos valores; no hay configuraciones por estudiante o semana.
+Normal incluye el primer umbral, elevada incluye el segundo y crítica comienza por encima del segundo.
+Las reglas de porcentajes, peso y cantidad de evaluaciones no cambian.
+La consulta del ciclo obtiene los parámetros una sola vez, sin consultas adicionales por cada semana.
+Los paneles muestran un error con reintento si no se puede obtener la carga, en lugar de mostrar una clasificación normal.
+
+Comprobaciones automatizadas relevantes: `ParametrosCargaAdminTest`, `ParametrosCargaIntegracionTest`,
+`CargaAcademicaCalculoTest`, `CargaSemanasCalculoTest` y `CargaSemanasTest` en el backend;
+`parametrosCarga.test.js` en el frontend. La validación del entorno publicado debe ejecutarse allí.
+
 ## Plantillas de planificación
 
 Las plantillas son horarios semanales compartidos con franjas `ESTUDIO`, `TRABAJO`, `CLASES` o `DESCANSO`; no se asignan a materias. Administración las gestiona en **Plantillas de planificación**. Solo puede haber una plantilla activa por perfil (`CON_JORNADA_LABORAL` o `SIN_JORNADA_LABORAL`); activar otra del mismo perfil desactiva la anterior.

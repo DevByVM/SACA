@@ -23,6 +23,10 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
 
     boolean existsByCorreoInstitucional(String correoInstitucional);
 
+    boolean existsByCarnetIgnoreCaseAndIdNot(String carnet, Long id);
+
+    boolean existsByCorreoInstitucionalIgnoreCaseAndIdNot(String correoInstitucional, Long id);
+
     @Query("select e.id from Estudiante e where e.cuentaActiva is null or e.cuentaActiva = false")
     List<Long> findIdsInhabilitados();
 
