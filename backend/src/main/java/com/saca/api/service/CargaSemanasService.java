@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.saca.api.dto.response.CargaPorSemanasResponse;
 import com.saca.api.dto.response.SemanaCargaResponse;
+import com.saca.api.dto.response.ParametrosCargaResponse;
 import com.saca.api.entity.ActividadAcademica;
 import com.saca.api.entity.CicloAcademico;
 import com.saca.api.entity.EstadoCiclo;
@@ -37,32 +38,34 @@ public class CargaSemanasService {
 	private final CicloAcademicoRepository cicloAcademicoRepository;
 	private final ActividadAcademicaRepository actividadAcademicaRepository;
 	private final Clock relojAplicacion;
+	private final ParametrosCargaService parametrosCargaService;
 
 	public CargaSemanasService(
 			CargaAcademicaService cargaAcademicaService,
 			CicloAcademicoRepository cicloAcademicoRepository,
 			ActividadAcademicaRepository actividadAcademicaRepository,
-			Clock relojAplicacion) {
+			Clock relojAplicacion, ParametrosCargaService parametrosCargaService) {
 		this.cargaAcademicaService = cargaAcademicaService;
 		this.cicloAcademicoRepository = cicloAcademicoRepository;
 		this.actividadAcademicaRepository = actividadAcademicaRepository;
 		this.relojAplicacion = relojAplicacion;
+		this.parametrosCargaService = parametrosCargaService;
 	}
 
-	// Dos consultas en total: los ciclos activos y sus actividades con materia, ciclo y nota ya cargados
+	// Configuración una sola vez por consulta; las semanas usan la misma instantánea de umbrales.
 	@Transactional(readOnly = true)
 	public CargaPorSemanasResponse obtenerCargaPorSemanas(Long estudianteId) {
 		return calcular(
 				LocalDateTime.now(relojAplicacion),
 				cicloAcademicoRepository.findByEstudianteIdAndEstadoOrderByAnioDescFechaInicioDesc(estudianteId, EstadoCiclo.ACTIVO),
-				actividadAcademicaRepository.findParaCalendario(estudianteId));
+				actividadAcademicaRepository.findParaCalendario(estudianteId), parametrosCargaService.obtener());
 	}
 
-	// Cálculo puro: recibe el momento actual, los ciclos y las actividades de los ciclos activos
+	// Cálculo puro: recibe el momento actual, ciclos, actividades y los mismos umbrales para todas las semanas.
 	public CargaPorSemanasResponse calcular(
 			LocalDateTime ahora,
 			List<CicloAcademico> ciclos,
-			List<ActividadAcademica> actividades) {
+			List<ActividadAcademica> actividades, ParametrosCargaResponse parametros) {
 		List<CicloAcademico> activos = ciclos.stream()
 				.filter(ciclo -> ciclo.getEstado() == EstadoCiclo.ACTIVO)
 				.toList();
@@ -93,7 +96,7 @@ public class CargaSemanasService {
 					? "desde ahora hasta el domingo " + DIA_MES.format(domingo)
 					: "en la semana del " + DIA_MES.format(lunes) + " al " + DIA_MES.format(domingo);
 			semanas.add(new SemanaCargaResponse(lunes, domingo, semanaActual,
-					cargaAcademicaService.calcular(actividades, desde, domingo.atTime(LocalTime.MAX), descripcion)));
+					cargaAcademicaService.calcular(actividades, desde, domingo.atTime(LocalTime.MAX), descripcion, parametros)));
 		}
 
 		int sinFecha = semanas.isEmpty() ? 0 : semanas.get(0).carga().actividadesSinFecha();

@@ -226,14 +226,14 @@ class CargaSemanasTest {
     }
 
     @Test
-    void todasLasSemanasSeResuelvenConDosConsultas() throws Exception {
+    void todasLasSemanasSeResuelvenConTresConsultas() throws Exception {
         Statistics estadisticas = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
         estadisticas.clear();
 
         MvcResult resultado = semanas(tokenA);
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
-        // Ciclos activos y actividades con materia, ciclo y nota; no depende del número de semanas
-        assertThat(estadisticas.getPrepareStatementCount()).isEqualTo(2);
+        // Ciclos, actividades con relaciones y configuración global una sola vez, sin consultas por semana.
+        assertThat(estadisticas.getPrepareStatementCount()).isEqualTo(3);
     }
 }

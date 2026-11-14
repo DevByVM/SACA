@@ -106,6 +106,13 @@ function Sidebar({
                 vistaActiva={vistaActiva}
                 setVistaActiva={setVistaActiva}
               />
+              <SidebarItem
+                id="admin-parametros-carga"
+                label="Parámetros de carga"
+                icon="fa-sliders"
+                vistaActiva={vistaActiva}
+                setVistaActiva={setVistaActiva}
+              />
             </>
           ) : (
             <>

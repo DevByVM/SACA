@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { jornadaService } from '../services/jornadaLaboralService.js';
 import { obtenerCargaSemanal } from '../api/cargaApi.js';
+import { obtenerEscalaHoras, porcentajeHoras } from '../utils/parametrosCarga.js';
 
 // =====================================================================
 // Constantes compartidas
@@ -8,11 +9,6 @@ import { obtenerCargaSemanal } from '../api/cargaApi.js';
 
 // Aviso de alta ponderación (Dashboard): porcentaje de evaluación mínimo
 export const UMBRAL_ALTA_PONDERACION = 15;
-
-// Escala de la barra de horas; los umbrales coinciden con CargaAcademicaService y la clasificación la decide el backend
-export const UMBRAL_HORAS_ELEVADA = 20;
-export const UMBRAL_HORAS_CRITICA = 35;
-export const HORAS_ESCALA_MAXIMA = 40;
 
 export const NIVELES_CARGA = {
   NORMAL: 'Normal',
@@ -166,6 +162,8 @@ export function useCargaAcademica(estudiante) {
   const [jornadas, setJornadas] = useState([]);
   const [carga, setCarga] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [intento, setIntento] = useState(0);
 
   useEffect(() => {
     if (!estudianteId) return;
@@ -173,6 +171,7 @@ export function useCargaAcademica(estudiante) {
     const cargarDatosSaca = async () => {
       try {
         setLoading(true);
+        setError("");
 
         // Las jornadas solo alimentan los avisos de conflicto; la carga la calcula el backend
         const [datosJornadas, datosCarga] = await Promise.all([
@@ -181,15 +180,16 @@ export function useCargaAcademica(estudiante) {
         ]);
         setJornadas(datosJornadas);
         setCarga(datosCarga);
-      } catch (error) {
-        console.error("Error al sincronizar el Semáforo Horario SACA:", error);
+      } catch {
+        setCarga(null);
+        setError("No se pudo consultar la carga académica. Revisa la conexión e inténtalo de nuevo.");
       } finally {
         setLoading(false);
       }
     };
 
     cargarDatosSaca();
-  }, [estudianteId]);
+  }, [estudianteId, intento]);
 
   // El backend ya devuelve las actividades de la ventana ordenadas por entrega, porcentaje y horas
   const actividadesBase = carga?.actividadesPendientes ?? SIN_ACTIVIDADES;
@@ -233,13 +233,16 @@ export function useCargaAcademica(estudiante) {
 
   return {
     cargando: loading && Boolean(estudianteId),
+    error,
+    reintentar: () => setIntento((actual) => actual + 1),
     actividades,
     actividadesCompletadas,
     jornadas,
     horasPendientes,
     ventana,
     semaforo: obtenerConfigSemaforo(carga?.nivelGeneral),
-    porcentajeCarga: Math.min((horasPendientes / HORAS_ESCALA_MAXIMA) * 100, 100),
+    porcentajeCarga: porcentajeHoras(horasPendientes, carga?.horas),
+    escalaHoras: obtenerEscalaHoras(carga?.horas),
     avisosPonderacion,
     avisosConflicto,
     // Indicadores independientes y explicación de la clasificación general

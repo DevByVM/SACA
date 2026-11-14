@@ -5,9 +5,9 @@ import {
   formatearPorcentaje,
   obtenerPrioridad,
   obtenerIdActividad,
-  NIVELES_CARGA,
-  HORAS_ESCALA_MAXIMA
+  NIVELES_CARGA
 } from '../../hooks/useCargaAcademica.js';
+import { describirUmbrales, porcentajeHoras } from '../../utils/parametrosCarga.js';
 import Aviso from '../ui/Aviso';
 import IndicadorTiempoDisponible from './IndicadorTiempoDisponible';
 import Boton from '../ui/Boton';
@@ -131,6 +131,7 @@ function DesgloseSemana({ semana, id, cacheTiempo }) {
     return (
       <div id={id} role="region" aria-labelledby={idTitulo} aria-live="polite" className="mt-4 rounded-xl border border-line bg-surface-muted p-3 sm:p-4">
         {encabezado}
+        <p className="mt-3 text-sm text-ink-600">{describirUmbrales(carga.horas)}</p>
         {/* El tiempo disponible no forma parte del análisis superior, así que no se duplica */}
         <IndicadorTiempoDisponible semana={semana} cache={cacheTiempo} />
         <Aviso tono="info" icono="fa-solid fa-arrow-up" className="mt-3">
@@ -144,6 +145,7 @@ function DesgloseSemana({ semana, id, cacheTiempo }) {
   return (
     <div id={id} role="region" aria-labelledby={idTitulo} aria-live="polite" className="mt-4 rounded-xl border border-line bg-surface-muted p-3 sm:p-4">
       {encabezado}
+      <p className="mt-3 text-sm text-ink-600">{describirUmbrales(carga.horas)}</p>
 
       <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {[
@@ -323,7 +325,7 @@ function CargaPorSemanas({ onIrAAcademico }) {
                 <span className="block h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
                   <span
                     className={unirClases('block h-full rounded-full', BARRAS_NIVEL[nivel])}
-                    style={{ width: `${Math.min((horas / HORAS_ESCALA_MAXIMA) * 100, 100)}%` }}
+                    style={{ width: `${porcentajeHoras(horas, item.carga.horas)}%` }}
                   ></span>
                 </span>
                 <span className="flex justify-between gap-1 text-xs text-ink-600">

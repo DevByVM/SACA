@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.saca.api.dto.response.CargaSemanalResponse;
 import com.saca.api.dto.response.IndicadorExigenciaResponse;
 import com.saca.api.dto.response.IndicadorHorasResponse;
+import com.saca.api.dto.response.ParametrosCargaResponse;
 import com.saca.api.entity.ActividadAcademica;
 import com.saca.api.entity.NivelCarga;
 import com.saca.api.mapper.ActividadAcademicaMapper;
@@ -25,12 +26,9 @@ import com.saca.api.repository.ActividadAcademicaRepository;
 
 // Carga semanal: dos indicadores independientes sobre las actividades pendientes de los próximos 7 días:
 // la carga horaria (tiempo estimado) y la exigencia evaluativa (porcentajes). Los porcentajes nunca se
-// convierten en horas. Los umbrales son valores iniciales del proyecto, no normas oficiales de la UES.
+// convierten en horas. Los umbrales horarios son globales y configurables por administración.
 @Service
 public class CargaAcademicaService {
-
-	public static final BigDecimal HORAS_ELEVADA = BigDecimal.valueOf(20);
-	public static final BigDecimal HORAS_CRITICA = BigDecimal.valueOf(35);
 	// Mismo umbral que la prioridad «Alta» de las actividades
 	public static final BigDecimal PESO_ALTO = BigDecimal.valueOf(30);
 	public static final BigDecimal PESO_ACUMULADO_ELEVADA = BigDecimal.valueOf(30);
@@ -44,14 +42,16 @@ public class CargaAcademicaService {
 	private final ActividadAcademicaRepository actividadAcademicaRepository;
 	private final ActividadAcademicaMapper actividadAcademicaMapper;
 	private final Clock relojAplicacion;
+	private final ParametrosCargaService parametrosCargaService;
 
 	public CargaAcademicaService(
 			ActividadAcademicaRepository actividadAcademicaRepository,
 			ActividadAcademicaMapper actividadAcademicaMapper,
-			Clock relojAplicacion) {
+			Clock relojAplicacion, ParametrosCargaService parametrosCargaService) {
 		this.actividadAcademicaRepository = actividadAcademicaRepository;
 		this.actividadAcademicaMapper = actividadAcademicaMapper;
 		this.relojAplicacion = relojAplicacion;
+		this.parametrosCargaService = parametrosCargaService;
 	}
 
 	@Transactional(readOnly = true)
@@ -60,18 +60,19 @@ public class CargaAcademicaService {
 		return calcular(
 				actividadAcademicaRepository.findActividadesCicloActivoPorEstudiante(estudianteId),
 				desde,
-				desde.plusDays(DIAS_VENTANA));
+				desde.plusDays(DIAS_VENTANA), parametrosCargaService.obtener());
 	}
 
-	// Cálculo puro: recibe las actividades de los ciclos activos y la ventana [desde, hasta]
-	public CargaSemanalResponse calcular(List<ActividadAcademica> actividades, LocalDateTime desde, LocalDateTime hasta) {
-		return calcular(actividades, desde, hasta, "en los próximos 7 días");
+	// Cálculo puro: recibe actividades, ventana [desde, hasta] y una instantánea de los umbrales.
+	public CargaSemanalResponse calcular(List<ActividadAcademica> actividades, LocalDateTime desde, LocalDateTime hasta,
+			ParametrosCargaResponse parametros) {
+		return calcular(actividades, desde, hasta, "en los próximos 7 días", parametros);
 	}
 
 	// Mismo cálculo para otra ventana (semanas del ciclo); la descripción solo cambia el texto
 	// de los motivos, por ejemplo «en la semana del 9/11 al 15/11»
 	public CargaSemanalResponse calcular(List<ActividadAcademica> actividades, LocalDateTime desde, LocalDateTime hasta,
-			String descripcionVentana) {
+			String descripcionVentana, ParametrosCargaResponse parametros) {
 		List<ActividadAcademica> pendientes = new ArrayList<>();
 		List<ActividadAcademica> noPendientes = new ArrayList<>();
 		int sinFecha = 0;
@@ -98,7 +99,7 @@ public class CargaAcademicaService {
 		pendientes.sort(orden);
 		noPendientes.sort(orden);
 
-		IndicadorHorasResponse horas = calcularHoras(pendientes);
+		IndicadorHorasResponse horas = calcularHoras(pendientes, parametros);
 		List<ActividadAcademica> evaluaciones = pendientes.stream()
 				.filter(actividad -> actividad.getPorcentajeEvaluacion() > 0)
 				.toList();
@@ -134,14 +135,16 @@ public class CargaAcademicaService {
 		return actividad.getFechaEntrega() != null ? actividad.getFechaEntrega() : actividad.getFechaInicio();
 	}
 
-	private static IndicadorHorasResponse calcularHoras(List<ActividadAcademica> pendientes) {
+	private static IndicadorHorasResponse calcularHoras(List<ActividadAcademica> pendientes, ParametrosCargaResponse parametros) {
+		BigDecimal elevada = BigDecimal.valueOf(parametros.umbralElevada());
+		BigDecimal critica = BigDecimal.valueOf(parametros.umbralCritica());
 		BigDecimal total = pendientes.stream()
 				.map(actividad -> BigDecimal.valueOf(actividad.getTiempoEstimadoHoras()))
 				.reduce(BigDecimal.ZERO, BigDecimal::add);
-		NivelCarga nivel = total.compareTo(HORAS_CRITICA) > 0
+		NivelCarga nivel = total.compareTo(critica) > 0
 				? NivelCarga.CRITICA
-				: total.compareTo(HORAS_ELEVADA) > 0 ? NivelCarga.ELEVADA : NivelCarga.NORMAL;
-		return new IndicadorHorasResponse(total, nivel, HORAS_ELEVADA, HORAS_CRITICA);
+				: total.compareTo(elevada) > 0 ? NivelCarga.ELEVADA : NivelCarga.NORMAL;
+		return new IndicadorHorasResponse(total, nivel, elevada, critica);
 	}
 
 	private static IndicadorExigenciaResponse calcularExigencia(List<ActividadAcademica> evaluaciones) {
@@ -193,9 +196,9 @@ public class CargaAcademicaService {
 		String horasTexto = numero(horas.horasPendientes()) + " h pendientes " + descripcionVentana;
 
 		motivos.add(switch (horas.nivel()) {
-			case CRITICA -> "Carga horaria crítica: " + horasTexto + " (más de " + numero(HORAS_CRITICA) + " h).";
-			case ELEVADA -> "Carga horaria elevada: " + horasTexto + " (más de " + numero(HORAS_ELEVADA) + " h).";
-			case NORMAL -> "Carga horaria normal: " + horasTexto + " (hasta " + numero(HORAS_ELEVADA) + " h).";
+			case CRITICA -> "Carga horaria crítica: " + horasTexto + " (más de " + numero(horas.umbralCritica()) + " h).";
+			case ELEVADA -> "Carga horaria elevada: " + horasTexto + " (más de " + numero(horas.umbralElevada()) + " h).";
+			case NORMAL -> "Carga horaria normal: " + horasTexto + " (hasta " + numero(horas.umbralElevada()) + " h).";
 		});
 
 		String pesoTexto = numero(exigencia.pesoAcumulado()) + " % de peso acumulado";

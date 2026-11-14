@@ -6,13 +6,12 @@ import {
   formatearFechaCorta,
   formatearPorcentaje,
   obtenerConfigSemaforo,
-  NIVELES_CARGA,
-  UMBRAL_HORAS_ELEVADA,
-  UMBRAL_HORAS_CRITICA,
-  HORAS_ESCALA_MAXIMA
+  NIVELES_CARGA
 } from '../hooks/useCargaAcademica.js';
+import { describirUmbrales } from '../utils/parametrosCarga.js';
 import CargaPorSemanas from './carga/CargaPorSemanas';
 import Aviso from './ui/Aviso';
+import Boton from './ui/Boton';
 import EncabezadoModulo from './ui/EncabezadoModulo';
 import EstadoVacio from './ui/EstadoVacio';
 import Insignia from './ui/Insignia';
@@ -65,12 +64,15 @@ const etiquetaPrioridad = (act) => (act.estado === 'COMPLETADA' ? 'Completada' :
 function TableroCargaSemanal({ estudiante, onNavegar }) {
   const {
     cargando,
+    error,
+    reintentar,
     actividades,
     actividadesCompletadas,
     horasPendientes,
     ventana,
     semaforo,
     porcentajeCarga,
+    escalaHoras,
     avisosConflicto,
     indicadorHoras,
     exigencia,
@@ -166,16 +168,24 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
     );
   }
 
+  if (error || !indicadorHoras || !escalaHoras) return <Aviso tono="peligro" titulo="No se pudo cargar el análisis">
+    <p>{error || "No se recibieron los indicadores de carga. Inténtalo de nuevo."}</p>
+    <Boton variante="secundario" onClick={reintentar} className="mt-3">Reintentar</Boton>
+  </Aviso>;
+
+  const umbralElevada = Number(indicadorHoras?.umbralElevada);
+  const umbralCritica = Number(indicadorHoras?.umbralCritica);
+
   const rangoTexto = ventana
     ? `${formatearFechaCorta(ventana.desde)} – ${formatearFechaCorta(ventana.hasta)}`
     : '';
 
   const margenTexto =
-    horasPendientes > UMBRAL_HORAS_CRITICA
-      ? `Superas el umbral crítico de horas (${UMBRAL_HORAS_CRITICA} hrs) por ${(horasPendientes - UMBRAL_HORAS_CRITICA).toFixed(1)} hrs.`
-      : horasPendientes > UMBRAL_HORAS_ELEVADA
-        ? `Te quedan ${(UMBRAL_HORAS_CRITICA - horasPendientes).toFixed(1)} hrs antes de una carga horaria crítica (más de ${UMBRAL_HORAS_CRITICA} hrs).`
-        : `Te quedan ${(UMBRAL_HORAS_ELEVADA - horasPendientes).toFixed(1)} hrs antes de una carga horaria elevada (más de ${UMBRAL_HORAS_ELEVADA} hrs).`;
+    indicadorHoras?.nivel === 'CRITICA'
+      ? `Superas el umbral crítico de horas (${umbralCritica} hrs) por ${(horasPendientes - umbralCritica).toFixed(1)} hrs.`
+      : indicadorHoras?.nivel === 'ELEVADA'
+        ? `Te quedan ${(umbralCritica - horasPendientes).toFixed(1)} hrs antes de una carga horaria crítica (más de ${umbralCritica} hrs).`
+        : `Te quedan ${(umbralElevada - horasPendientes).toFixed(1)} hrs antes de una carga horaria elevada (más de ${umbralElevada} hrs).`;
 
   const maxHorasDia = Math.max(...horasPorFecha.map((dia) => dia.horas), 0);
   const diaMasCargado = maxHorasDia > 0 ? horasPorFecha.find((dia) => dia.horas === maxHorasDia) : null;
@@ -271,31 +281,21 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
             </div>
             <span
               className="absolute top-0 h-3 w-px bg-ink-600"
-              style={{ left: `${(UMBRAL_HORAS_ELEVADA / HORAS_ESCALA_MAXIMA) * 100}%` }}
+              style={{ left: `${(umbralElevada / escalaHoras) * 100}%` }}
               aria-hidden="true"
             ></span>
             <span
               className="absolute top-0 h-3 w-px bg-ink-600"
-              style={{ left: `${(UMBRAL_HORAS_CRITICA / HORAS_ESCALA_MAXIMA) * 100}%` }}
+              style={{ left: `${(umbralCritica / escalaHoras) * 100}%` }}
               aria-hidden="true"
             ></span>
           </div>
 
-          <div className="relative mt-1 h-5 text-xs font-bold text-ink-600">
-            <span className="absolute left-0">0</span>
-            <span
-              className="absolute -translate-x-1/2"
-              style={{ left: `${(UMBRAL_HORAS_ELEVADA / HORAS_ESCALA_MAXIMA) * 100}%` }}
-            >
-              {UMBRAL_HORAS_ELEVADA}
-            </span>
-            <span
-              className="absolute -translate-x-1/2"
-              style={{ left: `${(UMBRAL_HORAS_CRITICA / HORAS_ESCALA_MAXIMA) * 100}%` }}
-            >
-              {UMBRAL_HORAS_CRITICA}
-            </span>
-            <span className="absolute right-0">{HORAS_ESCALA_MAXIMA}</span>
+          <div className="mt-1 flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs font-bold text-ink-600">
+            <span>0</span>
+            <span>Primer umbral: {umbralElevada}</span>
+            <span>Segundo umbral: {umbralCritica}</span>
+            <span>Escala: {Number(escalaHoras.toPrecision(6))} hrs</span>
           </div>
         </div>
 
@@ -314,7 +314,7 @@ function TableroCargaSemanal({ estudiante, onNavegar }) {
         >
           <p className="text-3xl font-bold text-ink-900">{horasPendientes.toFixed(1)} hrs</p>
           <p className="mt-1 text-sm text-ink-600">
-            Tiempo estimado de las actividades pendientes. Normal hasta {UMBRAL_HORAS_ELEVADA} hrs, elevada con más de {UMBRAL_HORAS_ELEVADA} y crítica con más de {UMBRAL_HORAS_CRITICA}.
+            Tiempo estimado de las actividades pendientes. {describirUmbrales(indicadorHoras)}
           </p>
         </Tarjeta>
 

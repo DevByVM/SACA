@@ -27,6 +27,7 @@ import GestionUsuarios from "./components/admin/GestionUsuarios";
 import GestionCatalogoMaterias from "./components/admin/GestionCatalogoMaterias";
 import GestionTiposActividad from "./components/admin/GestionTiposActividad";
 import GestionPlantillas from "./components/admin/GestionPlantillas";
+import GestionParametrosCarga from "./components/admin/GestionParametrosCarga";
 function App() {
 
   const [logueado, setLogueado] = useState(
@@ -223,6 +224,7 @@ function App() {
                 {vistaActiva === "admin-catalogo" && "Catálogo de materias"}
                 {vistaActiva === "admin-tipos-actividad" && "Tipos de actividad"}
                 {vistaActiva === "admin-plantillas" && "Plantillas de planificación"}
+                {vistaActiva === "admin-parametros-carga" && "Parámetros de carga académica"}
                 {vistaActiva === "dashboard" && "Panel de control"}
                 {vistaActiva === "academico" && "Gestión académica"}
                 {vistaActiva === "perfil" && "Perfil académico"}
@@ -277,6 +279,10 @@ function App() {
 
             {vistaActiva === "admin-plantillas" && estudiante?.rol === "ADMINISTRADOR" && (
               <GestionPlantillas />
+            )}
+
+            {vistaActiva === "admin-parametros-carga" && estudiante?.rol === "ADMINISTRADOR" && (
+              <GestionParametrosCarga />
             )}
 
             {vistaActiva === "dashboard" && (
