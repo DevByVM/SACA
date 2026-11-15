@@ -123,6 +123,7 @@ function Sidebar({
               <SidebarItem id="disponibilidad" label="Gestión de disponibilidad" icon="fa-clock" vistaActiva={vistaActiva} setVistaActiva={setVistaActiva} />
               <SidebarItem id="jornada" label="Horario Laboral" icon="fa-briefcase" vistaActiva={vistaActiva} setVistaActiva={setVistaActiva} />
               <SidebarItem id="calendario" label="Calendario Académico" icon="fa-calendar-week" vistaActiva={vistaActiva} setVistaActiva={setVistaActiva} />
+              <SidebarItem id="horario-estudio" label="Horario de Estudio" icon="fa-calendar-check" vistaActiva={vistaActiva} setVistaActiva={setVistaActiva} />
               <SidebarItem id="notificaciones" label="Notificaciones" icon="fa-bell" vistaActiva={vistaActiva} setVistaActiva={setVistaActiva} />
             </>
           )}

@@ -21,6 +21,7 @@ import { RegistroJornada } from "./components/GestionJornadaLaboral.jsx";
 import CalendarioAcademico from "./components/CalendarioAcademico.jsx";
 import ConfiguracionNotificaciones from "./components/ConfiguracionNotificaciones.jsx";
 import NotificacionesProximas from "./components/NotificacionesProximas.jsx";
+import HorarioEstudio from "./components/horario/HorarioEstudio.jsx";
 import Boton from "./components/ui/Boton";
 import { unirClases } from "./components/ui/unirClases";
 import GestionUsuarios from "./components/admin/GestionUsuarios";
@@ -232,6 +233,7 @@ function App() {
                 {vistaActiva === "disponibilidad" && "Gestión de disponibilidad"}
                 {vistaActiva === "jornada" && "Gestión de jornada laboral"}
                 {vistaActiva === "calendario" && "Calendario académico"}
+                {vistaActiva === "horario-estudio" && "Horario de estudio"}
                 {vistaActiva === "notificaciones" && "Notificaciones"}
               </h1>
 
@@ -317,6 +319,10 @@ function App() {
               <CalendarioAcademico
                 estudiante={estudiante}
               />
+            )}
+
+            {vistaActiva === "horario-estudio" && (
+              <HorarioEstudio estudiante={estudiante} onNavegar={setVistaActiva} />
             )}
 
             {vistaActiva === "notificaciones" && (

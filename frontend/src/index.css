@@ -62,3 +62,39 @@ body {
 a {
   color: inherit;
 }
+
+/* Exportar a PDF con la impresión del navegador: solo se imprime la hoja del horario confirmado,
+   que vive fuera de #root para no heredar la altura fija ni el desplazamiento del diseño.
+   La aplicación solo se oculta si la hoja está en la página: en los demás módulos Ctrl+P
+   imprime la pantalla como siempre. */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm;
+  }
+
+  body:has(.hoja-impresion) {
+    background: #fff;
+    min-height: 0;
+  }
+
+  body:has(.hoja-impresion) #root,
+  body:has(.hoja-impresion) .Toastify {
+    display: none !important;
+  }
+
+  .hoja-impresion {
+    display: block !important;
+    color: #000;
+    font-size: 11pt;
+  }
+
+  .hoja-impresion .tabla-horario th,
+  .hoja-impresion .tabla-horario td {
+    border-bottom: 1px solid #999;
+  }
+
+  .hoja-impresion .tabla-horario tr {
+    break-inside: avoid;
+  }
+}
