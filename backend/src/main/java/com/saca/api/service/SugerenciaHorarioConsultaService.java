@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
@@ -77,10 +78,39 @@ public class SugerenciaHorarioConsultaService {
 		this.plantillaPlanificacionRepository = plantillaPlanificacionRepository;
 	}
 
+	public record DatosSemana(
+			List<MateriaActiva> materiasActivas,
+			List<ActividadPendiente> actividades,
+			Map<LocalDate, VentanasDisponibles> ventanasPorFecha,
+			PlantillaHorarioSugeridaResponse plantilla,
+			List<String> advertencias) {
+	}
+
 	@Transactional(readOnly = true)
 	public HorarioSugeridoResponse obtener(Long estudianteId) {
 		LocalDateTime ahora = LocalDateTime.now(relojAplicacion).truncatedTo(ChronoUnit.SECONDS);
 		LocalDate desde = ahora.toLocalDate().with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+		LocalDate hasta = desde.plusDays(SugerenciaHorarioParametros.DIAS_SEMANA - 1);
+		Optional<DatosSemana> datos = datosSemana(estudianteId, desde);
+		if (datos.isEmpty()) {
+			return sinCicloVigente(ahora, desde, hasta);
+		}
+
+		return sugerenciaHorarioService.generar(
+				desde,
+				datos.get().materiasActivas(),
+				datos.get().actividades(),
+				datos.get().ventanasPorFecha(),
+				datos.get().plantilla(),
+				null,
+				datos.get().advertencias());
+	}
+
+	// Materias, actividades y ventanas libres de la semana que empieza en desde. También sirve para
+	// validar un horario editado por el estudiante con las mismas restricciones de la sugerencia.
+	// Vacío si ningún ciclo activo cubre la semana.
+	@Transactional(readOnly = true)
+	public Optional<DatosSemana> datosSemana(Long estudianteId, LocalDate desde) {
 		LocalDate hasta = desde.plusDays(SugerenciaHorarioParametros.DIAS_SEMANA - 1);
 		List<CicloAcademico> ciclosActivos = cicloAcademicoRepository
 				.findByEstudianteIdAndEstadoOrderByAnioDescFechaInicioDesc(estudianteId, EstadoCiclo.ACTIVO)
@@ -88,7 +118,7 @@ public class SugerenciaHorarioConsultaService {
 				.filter(ciclo -> !ciclo.getFechaFin().isBefore(desde) && !ciclo.getFechaInicio().isAfter(hasta))
 				.toList();
 		if (ciclosActivos.isEmpty()) {
-			return sinCicloVigente(ahora, desde, hasta);
+			return Optional.empty();
 		}
 
 		Map<Long, CicloAcademico> ciclosPorId = new HashMap<>();
@@ -149,14 +179,12 @@ public class SugerenciaHorarioConsultaService {
 					advertencias));
 		}
 
-		return sugerenciaHorarioService.generar(
-				desde,
+		return Optional.of(new DatosSemana(
 				materiasActivas,
 				actividades,
 				ventanasPorFecha,
 				plantillaRespuesta,
-				null,
-				advertencias);
+				advertencias));
 	}
 
 	private VentanasDisponibles calcularVentanas(

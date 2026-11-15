@@ -301,6 +301,33 @@ CREATE TABLE IF NOT EXISTS `parametros_carga` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 -- La aplicación crea GLOBAL con 20 y 35 si falta; conserva cualquier configuración existente.
 
+-- Horario de estudio confirmado: uno por estudiante y semana (lunes). En instalaciones existentes
+-- Hibernate ddl-auto=update crea estas tablas. La materia se copia (id y nombre) sin clave foránea
+-- para que eliminar una materia inscrita no falle ni deje el horario confirmado sin nombre.
+CREATE TABLE IF NOT EXISTS `horarios_estudio` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `estudiante_id` bigint NOT NULL,
+  `semana_inicio` date NOT NULL,
+  `semana_fin` date NOT NULL,
+  `confirmado_en` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_horario_estudio_semana` (`estudiante_id`,`semana_inicio`),
+  CONSTRAINT `fk_horario_estudio_estudiante` FOREIGN KEY (`estudiante_id`) REFERENCES `estudiantes` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE IF NOT EXISTS `bloques_horario_estudio` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `horario_id` bigint NOT NULL,
+  `fecha` date NOT NULL,
+  `hora_inicio` time(6) NOT NULL,
+  `hora_fin` time(6) NOT NULL,
+  `materia_inscrita_id` bigint NOT NULL,
+  `nombre_materia` varchar(120) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_bloque_horario_estudio_horario` (`horario_id`),
+  CONSTRAINT `fk_bloque_horario_estudio_horario` FOREIGN KEY (`horario_id`) REFERENCES `horarios_estudio` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
